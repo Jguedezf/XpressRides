@@ -2,16 +2,16 @@
 --  XpressRides (Decarrerita)
 --  Script SQL FINAL — Versión para modelador (Reverse Engineer)
 --  Base de Datos I · UNEG · Prof. María Raquel Herrera E.
---  MySQL 8.x / MariaDB 10.x
+--  MySQL 8.0
 --  Fecha: Junio 2026
 -- ================================================================
 
-DROP DATABASE IF EXISTS xpressrides;
-CREATE DATABASE xpressrides
+DROP DATABASE IF EXISTS decarrerita;
+CREATE DATABASE decarrerita
   CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 
-USE xpressrides;
+USE decarrerita;
 
 -- ================================================================
 -- BLOQUE 1: CATÁLOGOS BASE
@@ -277,6 +277,61 @@ CREATE TABLE pago_chofer (
   CONSTRAINT fk_pago_banco  FOREIGN KEY (id_banco)  REFERENCES banco(id)
 );
 
+-- ----------------------------------------------------------------
+-- Tabla factura: comprobante fiscal generado automáticamente al
+-- completar cada traslado. Los montos (USD, VES, tasa BCV) NO se
+-- duplican aquí: se consultan directamente desde traslado mediante
+-- la relación id_traslado, evitando redundancia de datos.
+-- El nombre/cédula del cliente tampoco se duplica: ya existen en
+-- la tabla usuario y se consultan mediante traslado -> cliente -> usuario.
+-- Campos como razon_social y direccion_fiscal SÍ se almacenan aparte,
+-- porque pueden diferir de los datos de registro del usuario (p. ej.
+-- el cliente factura a nombre de otra persona o con otra dirección).
+-- ----------------------------------------------------------------
+CREATE TABLE factura (
+  id                  INT           AUTO_INCREMENT PRIMARY KEY,
+  id_traslado         INT           NOT NULL UNIQUE,
+  nro_documento       VARCHAR(20)   NOT NULL UNIQUE,
+  nro_control         VARCHAR(20)   NOT NULL UNIQUE,
+  serie               VARCHAR(5)    NOT NULL DEFAULT 'A',
+  fecha_emision       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  razon_social        VARCHAR(120)  NOT NULL,
+  rif_cedula          VARCHAR(15)   NOT NULL,
+  direccion_fiscal    VARCHAR(200)  NOT NULL,
+  codigo_actividad    VARCHAR(10)   NOT NULL DEFAULT '9609',
+  igtf_porcentaje     DECIMAL(5,2)  NOT NULL DEFAULT 0.00,
+  igtf_monto_usd      DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  observacion_fiscal  VARCHAR(255)  NOT NULL DEFAULT
+    'Documento generado conforme a normativa SENIAT vigente. En una implementación productiva real, este comprobante sería emitido a través de un proveedor de facturación electrónica homologado.',
+  CONSTRAINT chk_igtf_valido CHECK (igtf_porcentaje >= 0 AND igtf_porcentaje <= 100),
+  CONSTRAINT fk_factura_traslado FOREIGN KEY (id_traslado) REFERENCES traslado(id)
+);
+
+-- ----------------------------------------------------------------
+-- Tabla notificacion: registro de eventos para mostrar al usuario
+-- dentro de la web (campanita de notificaciones), ya que una
+-- aplicación web no puede enviar notificaciones push nativas como
+-- una app de teléfono. Cada fila es un aviso que el usuario ve al
+-- entrar o refrescar su panel. El campo id_usuario referencia
+-- directamente a usuario (no a cliente o chofer por separado),
+-- porque ambos roles heredan de usuario y así una sola tabla cubre
+-- notificaciones para cualquier tipo de cuenta.
+-- ----------------------------------------------------------------
+CREATE TABLE notificacion (
+  id            INT           AUTO_INCREMENT PRIMARY KEY,
+  id_usuario    INT           NOT NULL,
+  id_traslado   INT           NULL,
+  tipo          ENUM('viaje_solicitado','chofer_asignado','chofer_en_camino',
+                      'viaje_iniciado','viaje_completado','factura_emitida',
+                      'pago_recibido','recarga_acreditada','viaje_cancelado')
+                              NOT NULL,
+  mensaje       VARCHAR(200)  NOT NULL,
+  leida         TINYINT(1)    NOT NULL DEFAULT 0,
+  fecha_hora    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_notif_usuario  FOREIGN KEY (id_usuario)  REFERENCES usuario(id) ON DELETE CASCADE,
+  CONSTRAINT fk_notif_traslado FOREIGN KEY (id_traslado) REFERENCES traslado(id)
+);
+
 -- ================================================================
 -- BLOQUE 6: FUNCIÓN HAVERSINE
 -- ================================================================
@@ -316,7 +371,7 @@ CREATE PROCEDURE sp_solicitar_traslado(
   OUT p_id_traslado      INT,
   OUT p_mensaje          VARCHAR(300)
 )
-BEGIN
+sp_solicitar_traslado: BEGIN
   DECLARE TARIFA_BASE      DECIMAL(8,2)  DEFAULT 1.00;
   DECLARE COSTO_KM         DECIMAL(8,4)  DEFAULT 0.45;
   DECLARE RECARGO_ESP      DECIMAL(8,2)  DEFAULT 1.50;
@@ -345,6 +400,7 @@ BEGIN
   DECLARE v_tasa_ves       DECIMAL(14,4);
   DECLARE v_id_chofer      INT;
   DECLARE v_id_vehiculo    INT;
+  DECLARE v_id_zona_chofer INT;
   DECLARE v_radio          DECIMAL(5,1);
   DECLARE v_id_zona_dest   INT;
 
@@ -458,8 +514,8 @@ BEGIN
   SET v_id_chofer = NULL;
   SET v_radio = RADIO_1;
   WHILE v_id_chofer IS NULL AND v_radio <= RADIO_3 DO
-    SELECT c.id, v.id
-      INTO v_id_chofer, v_id_vehiculo
+    SELECT c.id, v.id, c.id_zona_actual
+      INTO v_id_chofer, v_id_vehiculo, v_id_zona_chofer
       FROM chofer c
       JOIN zona  zo ON zo.id = c.id_zona_actual
       JOIN vehiculo v ON v.id_chofer = c.id AND v.activo = 1
@@ -506,8 +562,8 @@ BEGIN
     v_costo_cli, v_monto_ch, v_monto_emp,
     v_costo_ves, 'solicitado',
     CEILING(fn_distancia_km(
-      (SELECT latitud FROM zona WHERE id = c.id_zona_actual LIMIT 1),
-      (SELECT longitud FROM zona WHERE id = c.id_zona_actual LIMIT 1),
+      (SELECT latitud FROM zona WHERE id = v_id_zona_chofer LIMIT 1),
+      (SELECT longitud FROM zona WHERE id = v_id_zona_chofer LIMIT 1),
       v_lat1, v_lon1
     ) / 30 * 60),
     NOW()
@@ -534,7 +590,7 @@ BEGIN
     ' | Pasajeros: ', p_nro_pasajeros,
     ' | Costo: $', v_costo_cli, ' USD',
     ' | Bs. ', v_costo_ves);
-END$$
+END sp_solicitar_traslado$$
 
 DELIMITER ;
 
@@ -626,6 +682,134 @@ CREATE OR REPLACE VIEW v_traslados_cancelados AS
   JOIN zona     zo  ON t.id_zona_origen  = zo.id
   JOIN zona     zd  ON t.id_zona_destino = zd.id
   WHERE t.estado = 'cancelado';
+
+CREATE OR REPLACE VIEW v_facturas_emitidas AS
+  SELECT
+    f.id, f.nro_documento, f.nro_control, f.serie, f.fecha_emision,
+    f.razon_social, f.rif_cedula,
+    t.costo_cliente_usd  AS monto_usd,
+    t.costo_cliente_ves  AS monto_ves,
+    f.igtf_monto_usd,
+    zo.nombre AS zona_origen,
+    zd.nombre AS zona_destino
+  FROM factura f
+  JOIN traslado t ON f.id_traslado = t.id
+  JOIN zona zo ON t.id_zona_origen  = zo.id
+  JOIN zona zd ON t.id_zona_destino = zd.id
+  ORDER BY f.fecha_emision DESC;
+
+CREATE OR REPLACE VIEW v_notificaciones_pendientes AS
+  SELECT
+    n.id, n.id_usuario, n.tipo, n.mensaje, n.fecha_hora,
+    CONCAT(u.nombre, ' ', u.apellido) AS usuario,
+    u.rol AS rol_usuario
+  FROM notificacion n
+  JOIN usuario u ON n.id_usuario = u.id
+  WHERE n.leida = 0
+  ORDER BY n.fecha_hora DESC;
+
+-- ================================================================
+-- BLOQUE 8B: TRIGGER DE FACTURACIÓN Y NOTIFICACIONES AUTOMÁTICAS
+-- ================================================================
+-- Reacciona a los cambios de estado del traslado para generar,
+-- en el mismo trigger, tanto la factura fiscal (al completarse)
+-- como las notificaciones que el cliente y el chofer verán en su
+-- campanita de avisos dentro de la web. Se centraliza en un solo
+-- trigger porque ambos efectos dependen del mismo evento: un
+-- cambio de estado en traslado.
+-- ================================================================
+
+DELIMITER $$
+
+CREATE TRIGGER trg_traslado_eventos
+AFTER UPDATE ON traslado
+FOR EACH ROW
+BEGIN
+  DECLARE v_id_usuario_cliente INT;
+  DECLARE v_id_usuario_chofer  INT;
+
+  -- Se obtienen los usuarios dueños del traslado para notificarles
+  SELECT u.id INTO v_id_usuario_cliente
+    FROM cliente cl JOIN usuario u ON cl.id_usuario = u.id
+    WHERE cl.id = NEW.id_cliente;
+
+  SELECT u.id INTO v_id_usuario_chofer
+    FROM chofer ch JOIN usuario u ON ch.id_usuario = u.id
+    WHERE ch.id = NEW.id_chofer;
+
+  -- Notificación: chofer asignado (cambia de solicitado a aceptado)
+  IF NEW.estado = 'aceptado' AND OLD.estado <> 'aceptado' THEN
+    INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+    VALUES (v_id_usuario_cliente, NEW.id, 'chofer_asignado',
+      'Tu chofer fue asignado y va en camino hacia tu ubicación.');
+  END IF;
+
+  -- Notificación: chofer en camino
+  IF NEW.estado = 'en_camino' AND OLD.estado <> 'en_camino' THEN
+    INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+    VALUES (v_id_usuario_cliente, NEW.id, 'chofer_en_camino',
+      'Tu chofer está en camino al punto de recogida.');
+  END IF;
+
+  -- Notificación: viaje iniciado (cliente abordó)
+  IF NEW.estado = 'en_progreso' AND OLD.estado <> 'en_progreso' THEN
+    INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+    VALUES (v_id_usuario_cliente, NEW.id, 'viaje_iniciado',
+      'Tu viaje ha comenzado. ¡Buen viaje!');
+  END IF;
+
+  -- Al completarse: factura + notificación a cliente y a chofer
+  IF NEW.estado = 'completado' AND OLD.estado <> 'completado' THEN
+
+    INSERT INTO factura (
+      id_traslado, nro_documento, nro_control, serie,
+      razon_social, rif_cedula, direccion_fiscal,
+      igtf_porcentaje, igtf_monto_usd
+    )
+    SELECT
+      NEW.id,
+      CONCAT('FAC-', LPAD(NEW.id, 8, '0')),
+      CONCAT('00-', LPAD(NEW.id, 8, '0')),
+      'A',
+      CONCAT(u.nombre, ' ', u.apellido),
+      u.cedula,
+      'Ciudad Guayana, Venezuela',
+      0.00,
+      0.00
+    FROM cliente cl
+    JOIN usuario u ON cl.id_usuario = u.id
+    WHERE cl.id = NEW.id_cliente;
+
+    INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+    VALUES (v_id_usuario_cliente, NEW.id, 'viaje_completado',
+      CONCAT('Viaje completado. Total: $', NEW.costo_cliente_usd, ' USD. Califica tu experiencia.'));
+
+    INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+    VALUES (v_id_usuario_cliente, NEW.id, 'factura_emitida',
+      'Tu factura electrónica fue generada y está disponible para descarga.');
+
+    INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+    VALUES (v_id_usuario_chofer, NEW.id, 'viaje_completado',
+      CONCAT('Viaje completado. Ganaste: $', NEW.monto_chofer_usd, ' USD.'));
+
+  END IF;
+
+  -- Notificación: viaje cancelado, a ambas partes
+  IF NEW.estado = 'cancelado' AND OLD.estado <> 'cancelado' THEN
+    INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+    VALUES (v_id_usuario_cliente, NEW.id, 'viaje_cancelado',
+      CONCAT('Tu viaje fue cancelado. Motivo: ', IFNULL(NEW.motivo_cancelacion, 'No especificado')));
+
+    IF v_id_usuario_chofer IS NOT NULL THEN
+      INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+      VALUES (v_id_usuario_chofer, NEW.id, 'viaje_cancelado',
+        'El viaje asignado fue cancelado.');
+    END IF;
+  END IF;
+
+END$$
+
+DELIMITER ;
 
 -- ================================================================
 -- BLOQUE 9: DATOS INICIALES
