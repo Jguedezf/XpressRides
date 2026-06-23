@@ -36,6 +36,8 @@ public class Banco {
     @Column(name = "activo", nullable = false)
     private Boolean activo;
 
-    @Column(name = "creado_en", nullable = false, updatable = false)
+    @Column(name = "creado_en", nullable = false, updatable = false,
+            insertable = true)
+    @org.hibernate.annotations.CreationTimestamp
     private LocalDateTime creadoEn;
 }
