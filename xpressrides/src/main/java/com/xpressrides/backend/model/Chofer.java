@@ -1,6 +1,5 @@
 package com.xpressrides.backend.model;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -15,6 +14,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.*;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "chofer")
@@ -55,10 +55,7 @@ public class Chofer {
     @Column(name = "creado_en")
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "chofer")
+    @OneToMany(mappedBy = "driver")
     private List<EvaluacionPsicologica> evaluacionesPsicologicas;
-
-    @OneToMany(mappedBy = "chofer")
-    private List<RevisionVehiculo> revisionesVehiculo;
 
 }

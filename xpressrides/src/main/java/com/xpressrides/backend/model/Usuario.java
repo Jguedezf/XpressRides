@@ -25,7 +25,7 @@ public class Usuario {
     private Integer id;
 
     @Column(name = "cedula")
-    private String cI;
+    private String ci;
 
     @Column(name = "nombre")
     private String name;

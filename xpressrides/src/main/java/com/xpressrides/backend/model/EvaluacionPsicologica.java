@@ -1,5 +1,6 @@
 package com.xpressrides.backend.model;
 
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ import lombok.Data;
 @Entity
 @Table(name = "evaluacion_psicologica")
 @Data
+
 public class EvaluacionPsicologica {
 
     @Id

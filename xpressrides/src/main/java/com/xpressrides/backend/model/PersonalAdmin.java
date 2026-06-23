@@ -1,6 +1,5 @@
 package com.xpressrides.backend.model;
 
-import java.beans.ConstructorProperties;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;

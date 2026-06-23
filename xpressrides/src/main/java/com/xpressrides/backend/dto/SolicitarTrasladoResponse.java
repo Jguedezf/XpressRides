@@ -1,5 +1,10 @@
 package com.xpressrides.backend.dto;
 
-public class SolicitarTrasladoResponse {
+import lombok.Data;
 
+@Data
+public class SolicitarTrasladoResponse {
+    private boolean success;
+    private Integer idTraslado;
+    private String message;
 }
