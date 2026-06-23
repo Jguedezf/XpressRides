@@ -1,0 +1,64 @@
+package com.xpressrides.backend.model;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.*;
+
+@Entity
+@Table(name = "chofer")
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
+
+public class Chofer {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @OneToOne
+    @JoinColumn(name = "id_usuario")
+    private Usuario username;
+
+    @ManyToOne
+    @JoinColumn(name = "id_banco")
+    private Banco banco;
+
+    @ManyToOne
+    @JoinColumn(name = "id_zona_actual")
+    private Zona zonaActual;
+
+    @Column(name = "numero_cuenta")
+    private String numeroCuenta;
+
+    @Column(name = "saldo_acumulado_usd")
+    private BigDecimal balance;
+
+    @Column(name = "habilitado")
+    private boolean enabled;
+
+    @Column(name = "disponible")
+    private boolean available;
+
+    @Column(name = "creado_en")
+    private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "chofer")
+    private List<EvaluacionPsicologica> evaluacionesPsicologicas;
+
+    @OneToMany(mappedBy = "chofer")
+    private List<RevisionVehiculo> revisionesVehiculo;
+
+}
