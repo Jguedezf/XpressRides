@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - XpressRides</title>
+
+    <!-- 1. Importando la fuente oficial del sistema (Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- 2. Importando la hoja de estilos global con ruta absoluta -->
+    <link rel="stylesheet" href="/css/estilos.css">
+
+    <style>
+        /* Clases utilitarias exclusivas para centrar esta pantalla usando nuestras variables */
+        .login-container {
+            min-height: 100vh;
+            padding: var(--space-lg);
+            background-color: var(--color-bg-card);
+        }
+        .login-box {
+            width: 100%;
+            max-width: 400px;
+        }
+        .brand-logo {
+            color: var(--color-primary);
+            font-weight: 800;
+            font-size: var(--font-size-highlight);
+            margin-bottom: var(--space-xs);
+        }
+        .brand-text {
+            color: var(--color-secondary);
+        }
+        a.custom-link {
+            color: var(--color-accent);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+        a.custom-link:hover {
+            color: var(--color-secondary);
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body class="d-flex align-center justify-center login-container">
+
+<main class="login-box flex-col align-center">
+
+    <!-- Bloque de Marca (Logo y Eslogan) -->
+    <div class="text-center mb-md">
+        <h1 class="brand-logo">Xpress<span class="brand-text">Rides</span></h1>
+        <p class="text-small" style="color: var(--color-text-muted);">Tu transporte rápido y seguro en Ciudad Guayana</p>
+    </div>
+
+    <!-- Tarjeta Central de Login -->
+    <div class="card w-100" style="width: 100%; background-color: var(--color-bg-main);">
+        <!-- Uso del tono de comunicación cercano según el manual -->
+        <h2 class="h2-subtitle text-center" style="color: var(--color-secondary);">¡Qué bueno verte de nuevo!</h2>
+        <p class="text-normal text-center mb-md" style="color: var(--color-text-muted);">Ingresa tus datos para continuar</p>
+
+        <!-- Este bloque de error está oculto por defecto -->
+        <div class="alert-error" id="login-error" style="display: none;">
+            Credenciales incorrectas. Verifica tu cédula o contraseña e intenta de nuevo.
+        </div>
+
+        <!-- Formulario con las clases estándar de estilos.css -->
+        <form id="login-form">
+            <div class="input-group">
+                <label for="username" class="input-label">Cédula o Correo electrónico</label>
+                <input type="text" id="username" class="input-field" placeholder="Ej. V-12345678 o correo@mail.com" required>
+            </div>
+
+            <div class="input-group">
+                <label for="password" class="input-label">Contraseña</label>
+                <input type="password" id="password" class="input-field" placeholder="Ingresa tu contraseña" required>
+            </div>
+
+            <div class="mt-md">
+                <!-- Botón Naranja Xpress -->
+                <button type="submit" class="btn-primary" id="btn-submit">Iniciar sesión</button>
+            </div>
+        </form>
+
+        <div class="text-center mt-md">
+            <p class="text-small" style="color: var(--color-text-muted);">
+                ¿Aún no tienes cuenta? <a href="/views/registro.html" class="custom-link">Regístrate aquí</a>
+            </p>
+        </div>
+    </div>
+
+</main>
+
+<!-- Script Temporal Hito 1.2 -->
+<script>
+    document.getElementById('login-form').addEventListener('submit', function(e) {
+        e.preventDefault(); // Evitamos que la página recargue
+
+        const btn = document.getElementById('btn-submit');
+        const originalText = btn.innerText;
+
+        // Efecto visual de carga
+        btn.innerText = 'Iniciando...';
+        btn.disabled = true;
+
+        // Simulamos un retraso de red de 1 segundo
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.disabled = false;
+
+            // Prueba visual: Si escribes 'error', salta la alerta roja
+            const userVal = document.getElementById('username').value.trim().toLowerCase();
+            if (userVal === 'error') {
+                document.getElementById('login-error').style.display = 'block';
+            } else {
+                document.getElementById('login-error').style.display = 'none';
+                // Redirección simulada (comentada por ahora)
+                // window.location.href = '/views/cliente-dashboard.html';
+                console.log("¡Formulario procesado! Listo para conectar con Java.");
+            }
+        }, 1000);
+    });
+</script>
+</body>
+</html>

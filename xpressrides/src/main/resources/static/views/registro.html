@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro - XpressRides</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/css/estilos.css">
+
+    <style>
+        .login-container {
+            min-height: 100vh;
+            padding: var(--space-xl) var(--space-lg);
+            background-color: var(--color-bg-card);
+        }
+        .login-box {
+            width: 100%;
+            max-width: 500px; /* Un poco más ancho que el login por la cantidad de campos */
+        }
+        .brand-logo {
+            color: var(--color-primary);
+            font-weight: 800;
+            font-size: var(--font-size-highlight);
+            margin-bottom: var(--space-xs);
+        }
+        .brand-text {
+            color: var(--color-secondary);
+        }
+        a.custom-link {
+            color: var(--color-accent);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+        a.custom-link:hover {
+            color: var(--color-secondary);
+            text-decoration: underline;
+        }
+        /* Estilos para el selector de tipo de usuario */
+        .role-selector {
+            display: flex;
+            gap: var(--space-sm);
+            margin-bottom: var(--space-lg);
+        }
+        .role-option {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border: 2px solid #CCCCCC;
+            border-radius: var(--radius-btn);
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--color-text-muted);
+            transition: all 0.2s ease;
+        }
+        .role-option.active {
+            border-color: var(--color-primary);
+            color: var(--color-primary);
+            background-color: rgba(197, 90, 17, 0.05);
+        }
+        input[type="radio"] {
+            display: none;
+        }
+    </style>
+</head>
+<body class="d-flex align-center justify-center login-container">
+
+<main class="login-box flex-col align-center">
+
+    <div class="text-center mb-md">
+        <h1 class="brand-logo">Xpress<span class="brand-text">Rides</span></h1>
+    </div>
+
+    <div class="card w-100" style="width: 100%; background-color: var(--color-bg-main);">
+        <h2 class="h2-subtitle text-center" style="color: var(--color-secondary);">¡Únete a nosotros!</h2>
+        <p class="text-normal text-center mb-md" style="color: var(--color-text-muted);">Crea tu cuenta en minutos</p>
+
+        <div class="alert-success" id="register-success" style="display: none;">
+            ¡Cuenta creada con éxito! Redirigiendo al inicio de sesión...
+        </div>
+
+        <form id="register-form">
+
+            <div class="input-group">
+                <label class="input-label">¿Cómo deseas registrarte?</label>
+                <div class="role-selector">
+                    <label class="role-option active" id="lbl-cliente">
+                        <input type="radio" name="rol" value="cliente" checked onchange="toggleForm()">
+                        Soy Cliente
+                    </label>
+                    <label class="role-option" id="lbl-chofer">
+                        <input type="radio" name="rol" value="chofer" onchange="toggleForm()">
+                        Soy Chofer
+                    </label>
+                </div>
+            </div>
+
+            <div class="d-flex gap-sm">
+                <div class="input-group">
+                    <label for="nombre" class="input-label">Nombre</label>
+                    <input type="text" id="nombre" class="input-field" placeholder="Ej. Juan" required>
+                </div>
+                <div class="input-group">
+                    <label for="apellido" class="input-label">Apellido</label>
+                    <input type="text" id="apellido" class="input-field" placeholder="Ej. Pérez" required>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="cedula" class="input-label">Cédula de Identidad</label>
+                <input type="text" id="cedula" class="input-field" placeholder="V-12345678" required>
+            </div>
+
+            <div class="input-group">
+                <label for="telefono" class="input-label">Teléfono</label>
+                <input type="tel" id="telefono" class="input-field" placeholder="0414-1234567" required>
+            </div>
+
+            <div class="input-group">
+                <label for="password" class="input-label">Contraseña</label>
+                <input type="password" id="password" class="input-field" placeholder="Crea una contraseña segura" required>
+            </div>
+
+            <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+
+            <div id="campos-cliente">
+                <div class="input-group d-flex align-center gap-sm">
+                    <input type="checkbox" id="es_estudiante" style="width: 18px; height: 18px; accent-color: var(--color-primary);">
+                    <label for="es_estudiante" class="input-label" style="margin-bottom: 0;">Soy estudiante activo de la UNEG (Aplica para descuentos)</label>
+                </div>
+            </div>
+
+            <div id="campos-chofer" style="display: none;">
+                <p class="text-small mb-md" style="color: var(--color-primary); font-weight: 600;">Datos obligatorios para postularte como chofer:</p>
+
+                <div class="input-group">
+                    <label for="banco" class="input-label">Banco para recibir pagos</label>
+                    <select id="banco" class="input-field">
+                        <option value="">Seleccione un banco...</option>
+                        <option value="1">Banco de Venezuela</option>
+                        <option value="2">Banesco</option>
+                        <option value="3">Mercantil</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="cuenta" class="input-label">Número de Cuenta (20 dígitos)</label>
+                    <input type="text" id="cuenta" class="input-field" placeholder="0102...">
+                </div>
+
+                <p class="text-small mt-md mb-sm" style="font-weight: 600;">Contactos de Emergencia (Mínimo 2 requeridos)</p>
+
+                <div class="card" style="padding: var(--space-md); margin-bottom: var(--space-sm); background-color: white; border: 1px solid #ddd;">
+                    <div class="input-group">
+                        <label class="input-label">Nombre del Contacto 1</label>
+                        <input type="text" id="emergencia1_nombre" class="input-field" placeholder="Ej. María Pérez (Madre)">
+                    </div>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label class="input-label">Teléfono del Contacto 1</label>
+                        <input type="text" id="emergencia1_tel" class="input-field" placeholder="0414-0000000">
+                    </div>
+                </div>
+
+                <div class="card" style="padding: var(--space-md); margin-bottom: var(--space-md); background-color: white; border: 1px solid #ddd;">
+                    <div class="input-group">
+                        <label class="input-label">Nombre del Contacto 2</label>
+                        <input type="text" id="emergencia2_nombre" class="input-field" placeholder="Ej. Carlos López (Esposo)">
+                    </div>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label class="input-label">Teléfono del Contacto 2</label>
+                        <input type="text" id="emergencia2_tel" class="input-field" placeholder="0424-0000000">
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-md">
+                <button type="submit" class="btn-primary" id="btn-submit">Registrarme</button>
+            </div>
+        </form>
+
+        <div class="text-center mt-md">
+            <p class="text-small" style="color: var(--color-text-muted);">
+                ¿Ya tienes una cuenta? <a href="/views/login.html" class="custom-link">Inicia sesión</a>
+            </p>
+        </div>
+    </div>
+
+</main>
+
+<script>
+    // Función para alternar los campos según el rol seleccionado
+    function toggleForm() {
+        const isChofer = document.querySelector('input[name="rol"][value="chofer"]').checked;
+        const camposCliente = document.getElementById('campos-cliente');
+        const camposChofer = document.getElementById('campos-chofer');
+        const lblCliente = document.getElementById('lbl-cliente');
+        const lblChofer = document.getElementById('lbl-chofer');
+
+        if (isChofer) {
+            camposCliente.style.display = 'none';
+            camposChofer.style.display = 'block';
+            lblChofer.classList.add('active');
+            lblCliente.classList.remove('active');
+
+            // Hacer requeridos los campos de chofer para validación HTML5
+            document.getElementById('banco').required = true;
+            document.getElementById('cuenta').required = true;
+            document.getElementById('emergencia1_nombre').required = true;
+            document.getElementById('emergencia1_tel').required = true;
+            document.getElementById('emergencia2_nombre').required = true;
+            document.getElementById('emergencia2_tel').required = true;
+        } else {
+            camposCliente.style.display = 'block';
+            camposChofer.style.display = 'none';
+            lblCliente.classList.add('active');
+            lblChofer.classList.remove('active');
+
+            // Quitar requeridos
+            document.getElementById('banco').required = false;
+            document.getElementById('cuenta').required = false;
+            document.getElementById('emergencia1_nombre').required = false;
+            document.getElementById('emergencia1_tel').required = false;
+            document.getElementById('emergencia2_nombre').required = false;
+            document.getElementById('emergencia2_tel').required = false;
+        }
+    }
+
+    // Simulación de envío del formulario
+    document.getElementById('register-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const btn = document.getElementById('btn-submit');
+        const originalText = btn.innerText;
+
+        btn.innerText = 'Creando cuenta...';
+        btn.disabled = true;
+
+        setTimeout(() => {
+            document.getElementById('register-form').style.display = 'none';
+            document.getElementById('register-success').style.display = 'block';
+
+            // Redirigir al login tras 2 segundos
+            setTimeout(() => {
+                // window.location.href = '/views/login.html';
+                console.log("Simulando redirección al login...");
+            }, 2000);
+        }, 1500);
+    });
+</script>
+</body>
+</html>
