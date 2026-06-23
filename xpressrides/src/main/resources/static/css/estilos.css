@@ -1,0 +1,389 @@
+/* ==========================================================================
+   XpressRides - Estilos Globales Compartidos
+   Equipo Frontend: Manuel, Ángel, Freddy
+   ========================================================================== */
+
+/* --- 1. TOKENS DE DISEÑO (Variables) --- */
+:root {
+    /* Paleta de Colores */
+    --color-primary: #C55A11; /* Naranja Xpress */
+    --color-primary-hover: #A84A0A;
+    --color-secondary: #1F4E79; /* Azul Profundo */
+    --color-secondary-hover: #163B5D;
+    --color-accent: #2E75B6; /* Azul Medio */
+    --color-bg-main: #FFFFFF; /* Blanco Puro */
+    --color-bg-card: #F5F5F5; /* Gris Claro */
+    --color-success: #1E6B3C; /* Verde Confirmación */
+    --color-success-bg: #E2EFDA;
+    --color-error: #C00000; /* Rojo Alerta */
+    --color-error-bg: #FCE4D6;
+    --color-text-main: #333333;
+    --color-text-muted: #666666;
+
+    /* Escala Tipográfica */
+    --font-family-base: 'Inter', -apple-system, 'Segoe UI', Arial, sans-serif;
+    --font-size-h1: 28px;
+    --font-size-h2: 20px;
+    --font-size-normal: 15px;
+    --font-size-small: 13px;
+    --font-size-highlight: 32px;
+
+    /* Espaciado (Múltiplos de 8) */
+    --space-xs: 4px;
+    --space-sm: 8px;
+    --space-md: 16px;
+    --space-lg: 24px;
+    --space-xl: 32px;
+    --space-xxl: 48px;
+
+    /* Bordes (Border Radius) */
+    --radius-input: 6px;
+    --radius-btn: 8px;
+    --radius-card: 12px;
+    --radius-round: 50%;
+}
+
+/* --- 2. RESET Y BASE --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family-base);
+    background-color: var(--color-bg-main);
+    color: var(--color-text-main);
+    line-height: 1.5;
+    /* Evitar scroll horizontal en móviles */
+    overflow-x: hidden;
+}
+
+/* --- 3. TIPOGRAFÍA --- */
+.h1-title {
+    font-size: var(--font-size-h1);
+    font-weight: 700;
+    color: var(--color-secondary);
+    margin-bottom: var(--space-md);
+}
+
+.h2-subtitle {
+    font-size: var(--font-size-h2);
+    font-weight: 600;
+    margin-bottom: var(--space-sm);
+}
+
+.text-normal {
+    font-size: var(--font-size-normal);
+    font-weight: 400;
+}
+
+.text-small {
+    font-size: var(--font-size-small);
+    color: var(--color-text-muted);
+}
+
+.text-highlight {
+    font-size: var(--font-size-highlight);
+    font-weight: 700;
+    color: var(--color-secondary);
+}
+
+.text-monospace {
+    font-family: 'Courier New', Courier, monospace;
+}
+
+/* --- 4. COMPONENTES PRINCIPALES --- */
+
+/* Botones */
+.btn-primary {
+    background-color: var(--color-primary);
+    color: #FFFFFF;
+    font-size: var(--font-size-normal);
+    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: var(--radius-btn);
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    text-align: center;
+    transition: background-color 0.2s ease;
+}
+
+.btn-primary:hover {
+    background-color: var(--color-primary-hover);
+}
+
+.btn-primary:disabled {
+    background-color: #CCCCCC;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    background-color: #FFFFFF;
+    color: var(--color-secondary);
+    border: 2px solid var(--color-secondary);
+    font-size: var(--font-size-normal);
+    font-weight: 600;
+    padding: 10px 24px;
+    border-radius: var(--radius-btn);
+    cursor: pointer;
+    width: 100%;
+    text-align: center;
+    transition: background-color 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background-color: var(--color-bg-card);
+}
+
+.btn-danger {
+    background-color: var(--color-error);
+    color: #FFFFFF;
+    border: none;
+    font-size: var(--font-size-normal);
+    font-weight: 600;
+    padding: 12px 24px;
+    border-radius: var(--radius-btn);
+    cursor: pointer;
+}
+
+/* Formularios */
+.input-group {
+    margin-bottom: var(--space-md);
+    width: 100%;
+}
+
+.input-label {
+    display: block;
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    margin-bottom: var(--space-xs);
+    color: var(--color-secondary);
+}
+
+.input-field {
+    border: 1px solid #CCCCCC;
+    border-radius: var(--radius-input);
+    padding: 10px 14px;
+    font-size: var(--font-size-normal);
+    font-family: var(--font-family-base);
+    width: 100%;
+    background-color: #FFFFFF;
+    transition: border-color 0.2s ease;
+}
+
+.input-field:focus {
+    border-color: var(--color-accent);
+    outline: none;
+}
+
+/* Tarjetas (Cards) */
+.card {
+    background-color: var(--color-bg-card);
+    border-radius: var(--radius-card);
+    padding: var(--space-lg);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    margin-bottom: var(--space-md);
+}
+
+.card-interactive {
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* Alertas y Notificaciones */
+.alert-success {
+    background-color: var(--color-success-bg);
+    color: var(--color-success);
+    border-left: 4px solid var(--color-success);
+    padding: 12px 16px;
+    border-radius: var(--radius-input);
+    font-weight: 500;
+    margin-bottom: var(--space-md);
+}
+
+.alert-error {
+    background-color: var(--color-error-bg);
+    color: var(--color-error);
+    border-left: 4px solid var(--color-error);
+    padding: 12px 16px;
+    border-radius: var(--radius-input);
+    font-weight: 500;
+    margin-bottom: var(--space-md);
+}
+
+/* --- 5. COMPONENTES ESPECÍFICOS XPRESSRIDES --- */
+
+/* Campanita de Notificaciones */
+.notification-bell {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -8px;
+    background-color: var(--color-error);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 12px;
+}
+
+/* Etiquetas (NUEVO, Platino, etc) */
+.badge-green {
+    background-color: #D5F5E3;
+    color: var(--color-success);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+/* Navegación Inferior (Persistent Bottom Nav) */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #FFFFFF;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    display: flex;
+    justify-content: space-around;
+    padding: var(--space-sm) 0;
+    z-index: 1000;
+}
+
+.bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    font-size: 12px;
+}
+
+.bottom-nav-item.active {
+    color: var(--color-primary);
+    font-weight: 600;
+}
+
+/* Modales / Overlays (Para Matchmaking y Factura) */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal-content {
+    background-color: #FFFFFF;
+    padding: var(--space-lg);
+    border-radius: var(--radius-card);
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+/* Toggle Switch (Disponibilidad Chofer) */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: var(--color-success);
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(22px);
+}
+
+/* Botón Flotante (SOS / Mapa) */
+.fab {
+    position: fixed;
+    bottom: 80px; /* Sobre la barra inferior */
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background-color: var(--color-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(197, 90, 17, 0.3);
+    cursor: pointer;
+    z-index: 1000;
+}
+
+.fab.sos {
+    background-color: var(--color-error);
+    box-shadow: 0 4px 10px rgba(192, 0, 0, 0.3);
+}
+
+/* Avatar de Perfil */
+.avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: var(--radius-round);
+    object-fit: cover;
+    border: 2px solid var(--color-bg-card);
+}
+
+/* --- 6. UTILIDADES DE LAYOUT (Flexbox) --- */
+.d-flex { display: flex; }
+.flex-col { flex-direction: column; }
+.align-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.gap-sm { gap: var(--space-sm); }
+.gap-md { gap: var(--space-md); }
+.mt-md { margin-top: var(--space-md); }
+.mb-md { margin-bottom: var(--space-md); }
+.text-center { text-align: center; }
