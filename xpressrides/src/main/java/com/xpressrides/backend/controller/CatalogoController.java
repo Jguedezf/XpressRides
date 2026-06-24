@@ -8,8 +8,8 @@
  *  Módulo:      Catálogos Base
  *  Descripción: Controlador REST para catálogos geográficos
  *               y bancarios — expone endpoints GET al frontend
- *  Versión:     1.0.0
- *  Fecha:       22/06/2026  17:58
+ *  Versión:     1.1.0
+ *  Fecha:       24/06/2026  11:00
  * ============================================================
  */
 package com.xpressrides.backend.controller;
@@ -35,8 +35,8 @@ public class CatalogoController {
         this.catalogoService = catalogoService;
     }
 
-    // GET /api/zonas — retorna todas las zonas activas
-    @GetMapping("/zonas")
+    // GET /api/zones — retorna todas las zonas activas
+    @GetMapping("/zones")
     public ResponseEntity<Map<String, Object>> listarZonas() {
         List<Zona> zonas = catalogoService.listarZonasActivas();
         Map<String, Object> response = new HashMap<>();
@@ -46,8 +46,8 @@ public class CatalogoController {
         return ResponseEntity.ok(response);
     }
 
-    // GET /api/zonas/todas — retorna todas las zonas sin filtro (admin)
-    @GetMapping("/zonas/todas")
+    // GET /api/zones/all — retorna todas las zonas sin filtro (admin)
+    @GetMapping("/zones/all")
     public ResponseEntity<Map<String, Object>> listarTodasLasZonas() {
         List<Zona> zonas = catalogoService.listarTodasLasZonas();
         Map<String, Object> response = new HashMap<>();
@@ -57,8 +57,8 @@ public class CatalogoController {
         return ResponseEntity.ok(response);
     }
 
-    // GET /api/bancos — retorna todos los bancos activos
-    @GetMapping("/bancos")
+    // GET /api/banks — retorna todos los bancos activos
+    @GetMapping("/banks")
     public ResponseEntity<Map<String, Object>> listarBancos() {
         List<Banco> bancos = catalogoService.listarBancosActivos();
         Map<String, Object> response = new HashMap<>();
@@ -68,8 +68,8 @@ public class CatalogoController {
         return ResponseEntity.ok(response);
     }
 
-    // GET /api/bancos/todos — retorna todos los bancos sin filtro (admin)
-    @GetMapping("/bancos/todos")
+    // GET /api/banks/all — retorna todos los bancos sin filtro (admin)
+    @GetMapping("/banks/all")
     public ResponseEntity<Map<String, Object>> listarTodosLosBancos() {
         List<Banco> bancos = catalogoService.listarTodosLosBancos();
         Map<String, Object> response = new HashMap<>();

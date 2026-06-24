@@ -8,8 +8,8 @@
  *  Módulo:      Pagos y Facturación
  *  Descripción: Controlador REST para pagos — expone endpoints
  *               para recargas de clientes y pagos a choferes
- *  Versión:     1.0.0
- *  Fecha:       23/06/2026  HH:MM
+ *  Versión:     1.1.0
+ *  Fecha:       24/06/2026  11:00
  * ============================================================
  */
 package com.xpressrides.backend.controller;
@@ -36,8 +36,8 @@ public class PagoController {
         this.pagoService = pagoService;
     }
 
-    // POST /api/recargas — cliente recarga su saldo
-    @PostMapping("/recargas")
+    // POST /api/top-ups — cliente recarga su saldo
+    @PostMapping("/top-ups")
     public ResponseEntity<Map<String, Object>> registrarRecarga(
             @Valid @RequestBody RecargaSaldo recarga) {
         Map<String, Object> response = new HashMap<>();
@@ -55,8 +55,8 @@ public class PagoController {
         }
     }
 
-    // GET /api/recargas/cliente/{id} — historial de recargas de un cliente
-    @GetMapping("/recargas/cliente/{id}")
+    // GET /api/top-ups/client/{id} — historial de recargas de un cliente
+    @GetMapping("/top-ups/client/{id}")
     public ResponseEntity<Map<String, Object>> historialRecargas(
             @PathVariable Integer id) {
         List<RecargaSaldo> recargas = pagoService.historialRecargas(id);
@@ -67,8 +67,8 @@ public class PagoController {
         return ResponseEntity.ok(response);
     }
 
-    // POST /api/pagos-chofer — personal admin registra pago a chofer
-    @PostMapping("/pagos-chofer")
+    // POST /api/driver-payments — personal admin registra pago a chofer
+    @PostMapping("/driver-payments")
     public ResponseEntity<Map<String, Object>> registrarPagoChofer(
             @Valid @RequestBody PagoChofer pago) {
         Map<String, Object> response = new HashMap<>();
@@ -86,8 +86,8 @@ public class PagoController {
         }
     }
 
-    // GET /api/pagos-chofer/chofer/{id} — historial de pagos de un chofer
-    @GetMapping("/pagos-chofer/chofer/{id}")
+    // GET /api/driver-payments/driver/{id} — historial de pagos de un chofer
+    @GetMapping("/driver-payments/driver/{id}")
     public ResponseEntity<Map<String, Object>> historialPagosChofer(
             @PathVariable Integer id) {
         List<PagoChofer> pagos = pagoService.historialPagosChofer(id);

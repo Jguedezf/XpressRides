@@ -8,8 +8,8 @@
  *  Módulo:      Reportes — Vistas SQL
  *  Descripción: Controlador REST para todos los reportes —
  *               expone 7 endpoints GET al panel administrativo
- *  Versión:     1.0.0
- *  Fecha:       22/06/2026  HH:MM
+ *  Versión:     1.1.0
+ *  Fecha:       24/06/2026  11:00
  * ============================================================
  */
 package com.xpressrides.backend.controller;
@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/reportes")
+@RequestMapping("/api/reports")
 @CrossOrigin(origins = "*")
 public class ReporteController {
 
@@ -34,8 +34,8 @@ public class ReporteController {
         this.reporteService = reporteService;
     }
 
-    // GET /api/reportes/historial-traslados
-    @GetMapping("/historial-traslados")
+    // GET /api/reports/trip-history
+    @GetMapping("/trip-history")
     public ResponseEntity<Map<String, Object>> historialTraslados() {
         List<HistorialTraslados> data = reporteService.listarHistorialTraslados();
         Map<String, Object> response = new HashMap<>();
@@ -45,8 +45,8 @@ public class ReporteController {
         return ResponseEntity.ok(response);
     }
 
-    // GET /api/reportes/ganancias
-    @GetMapping("/ganancias")
+    // GET /api/reports/earnings
+    @GetMapping("/earnings")
     public ResponseEntity<Map<String, Object>> ganancias() {
         List<GananciasEmpresa> data = reporteService.listarGanancias();
         Map<String, Object> response = new HashMap<>();
@@ -56,8 +56,8 @@ public class ReporteController {
         return ResponseEntity.ok(response);
     }
 
-    // GET /api/reportes/pagos-chofer
-    @GetMapping("/pagos-chofer")
+    // GET /api/reports/driver-payments
+    @GetMapping("/driver-payments")
     public ResponseEntity<Map<String, Object>> pagosPorChofer() {
         List<PagosPorChofer> data = reporteService.listarPagosPorChofer();
         Map<String, Object> response = new HashMap<>();
@@ -67,8 +67,8 @@ public class ReporteController {
         return ResponseEntity.ok(response);
     }
 
-    // GET /api/reportes/pendientes-pago
-    @GetMapping("/pendientes-pago")
+    // GET /api/reports/pending-payments
+    @GetMapping("/pending-payments")
     public ResponseEntity<Map<String, Object>> pendientesPago() {
         List<PendientesPagoChofer> data = reporteService.listarPendientesPago();
         Map<String, Object> response = new HashMap<>();
@@ -78,8 +78,8 @@ public class ReporteController {
         return ResponseEntity.ok(response);
     }
 
-    // GET /api/reportes/cancelados
-    @GetMapping("/cancelados")
+    // GET /api/reports/cancelled
+    @GetMapping("/cancelled")
     public ResponseEntity<Map<String, Object>> cancelados() {
         List<TrasladosCancelados> data = reporteService.listarCancelados();
         Map<String, Object> response = new HashMap<>();
@@ -89,8 +89,8 @@ public class ReporteController {
         return ResponseEntity.ok(response);
     }
 
-    // GET /api/reportes/facturas
-    @GetMapping("/facturas")
+    // GET /api/reports/invoices
+    @GetMapping("/invoices")
     public ResponseEntity<Map<String, Object>> facturas() {
         List<FacturasEmitidas> data = reporteService.listarFacturas();
         Map<String, Object> response = new HashMap<>();
@@ -100,8 +100,8 @@ public class ReporteController {
         return ResponseEntity.ok(response);
     }
 
-    // GET /api/reportes/notificaciones
-    @GetMapping("/notificaciones")
+    // GET /api/reports/notifications
+    @GetMapping("/notifications")
     public ResponseEntity<Map<String, Object>> notificaciones() {
         List<NotificacionesPendientes> data = reporteService.listarNotificaciones();
         Map<String, Object> response = new HashMap<>();

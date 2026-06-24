@@ -9,8 +9,8 @@
  *  Descripción: Controlador REST para la tasa BCV —
  *               consulta de tasa vigente y registro de nueva tasa.
  *               El registro solo lo hace personal_admin.
- *  Versión:     1.0.0
- *  Fecha:       22/06/2026  HH:MM
+ *  Versión:     1.1.0
+ *  Fecha:       24/06/2026  11:00
  * ============================================================
  */
 package com.xpressrides.backend.controller;
@@ -37,9 +37,9 @@ public class TasaBcvController {
         this.tasaBcvService = tasaBcvService;
     }
 
-    // GET /api/tasa-bcv/vigente — retorna la tasa BCV del día
+    // GET /api/exchange-rate/current — retorna la tasa BCV del día
     // Si hoy es feriado o fin de semana, retorna la del último día hábil
-    @GetMapping("/tasa-bcv/vigente")
+    @GetMapping("/exchange-rate/current")
     public ResponseEntity<Map<String, Object>> obtenerTasaVigente() {
         Optional<TasaBcv> tasa = tasaBcvService.obtenerTasaVigente();
         Map<String, Object> response = new HashMap<>();
@@ -56,8 +56,8 @@ public class TasaBcvController {
         }
     }
 
-    // GET /api/tasa-bcv/historial — retorna todas las tasas registradas
-    @GetMapping("/tasa-bcv/historial")
+    // GET /api/exchange-rate/history — retorna todas las tasas registradas
+    @GetMapping("/exchange-rate/history")
     public ResponseEntity<Map<String, Object>> listarHistorial() {
         List<TasaBcv> historial = tasaBcvService.listarHistorial();
         Map<String, Object> response = new HashMap<>();
@@ -67,10 +67,10 @@ public class TasaBcvController {
         return ResponseEntity.ok(response);
     }
 
-    // POST /api/tasa-bcv — registra una nueva tasa BCV
+    // POST /api/exchange-rate — registra una nueva tasa BCV
     // Solo personal_admin puede usar este endpoint
     // La seguridad por rol la agrega Eliuber cuando tenga el login listo
-    @PostMapping("/tasa-bcv")
+    @PostMapping("/exchange-rate")
     public ResponseEntity<Map<String, Object>> registrarTasa(@Valid @RequestBody TasaBcv tasa) {
         Map<String, Object> response = new HashMap<>();
         try {
