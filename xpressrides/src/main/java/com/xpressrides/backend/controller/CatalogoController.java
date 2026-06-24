@@ -8,15 +8,15 @@
  *  Módulo:      Catálogos Base
  *  Descripción: Controlador REST para catálogos geográficos
  *               y bancarios — expone endpoints GET al frontend
- *  Versión:     1.1.0
- *  Fecha:       24/06/2026  11:00
+ *  Versión:     1.2.0
+ *  Fecha:       24/06/2026
  * ============================================================
  */
 package com.xpressrides.backend.controller;
 
-import com.xpressrides.backend.model.Banco;
-import com.xpressrides.backend.model.Zona;
-import com.xpressrides.backend.service.CatalogoService;
+import com.xpressrides.backend.model.Bank;
+import com.xpressrides.backend.model.Zone;
+import com.xpressrides.backend.service.CatalogService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
@@ -28,20 +28,20 @@ import java.util.Map;
 @CrossOrigin(origins = "*")
 public class CatalogoController {
 
-    private final CatalogoService catalogoService;
+    private final CatalogService catalogService;
 
     // Inyección de dependencias por constructor
-    public CatalogoController(CatalogoService catalogoService) {
-        this.catalogoService = catalogoService;
+    public CatalogoController(CatalogService catalogService) {
+        this.catalogService = catalogService;
     }
 
     // GET /api/zones — retorna todas las zonas activas
     @GetMapping("/zones")
     public ResponseEntity<Map<String, Object>> listarZonas() {
-        List<Zona> zonas = catalogoService.listarZonasActivas();
+        List<Zone> zones = catalogService.listarZonasActivas();
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
-        response.put("data", zonas);
+        response.put("data", zones);
         response.put("message", "OK");
         return ResponseEntity.ok(response);
     }
@@ -49,10 +49,10 @@ public class CatalogoController {
     // GET /api/zones/all — retorna todas las zonas sin filtro (admin)
     @GetMapping("/zones/all")
     public ResponseEntity<Map<String, Object>> listarTodasLasZonas() {
-        List<Zona> zonas = catalogoService.listarTodasLasZonas();
+        List<Zone> zones = catalogService.listarTodasLasZonas();
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
-        response.put("data", zonas);
+        response.put("data", zones);
         response.put("message", "OK");
         return ResponseEntity.ok(response);
     }
@@ -60,10 +60,10 @@ public class CatalogoController {
     // GET /api/banks — retorna todos los bancos activos
     @GetMapping("/banks")
     public ResponseEntity<Map<String, Object>> listarBancos() {
-        List<Banco> bancos = catalogoService.listarBancosActivos();
+        List<Bank> banks = catalogService.listarBancosActivos();
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
-        response.put("data", bancos);
+        response.put("data", banks);
         response.put("message", "OK");
         return ResponseEntity.ok(response);
     }
@@ -71,10 +71,10 @@ public class CatalogoController {
     // GET /api/banks/all — retorna todos los bancos sin filtro (admin)
     @GetMapping("/banks/all")
     public ResponseEntity<Map<String, Object>> listarTodosLosBancos() {
-        List<Banco> bancos = catalogoService.listarTodosLosBancos();
+        List<Bank> banks = catalogService.listarTodosLosBancos();
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
-        response.put("data", bancos);
+        response.put("data", banks);
         response.put("message", "OK");
         return ResponseEntity.ok(response);
     }
