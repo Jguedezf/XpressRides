@@ -4,12 +4,14 @@ package com.xpressrides.backend.dto;
 public class AuthResponse {
     private String username;
     private String role;
-    private String menssage;
+    private String token;
+    private String message;
 
-    public AuthResponse(String username, String role, String menssage) {
+    public AuthResponse(String username, String role, String token, String message) {
         this.username = username;
         this.role = role;
-        this.menssage = menssage;
+        this.token = token;
+        this.message = message;
     }
 
     public String getUsername() {
@@ -28,11 +30,19 @@ public class AuthResponse {
         this.role = role;
     }
 
-    public String getMenssage() {
-        return menssage;
+    public String getToken() {
+        return token;
     }
 
-    public void setMenssage(String menssage) {
-        this.menssage = menssage;
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }

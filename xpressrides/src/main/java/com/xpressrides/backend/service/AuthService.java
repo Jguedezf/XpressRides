@@ -12,30 +12,31 @@ import org.springframework.stereotype.Service;
 import com.xpressrides.backend.dto.AuthResponse;
 import com.xpressrides.backend.dto.LoginRequest;
 import com.xpressrides.backend.dto.RegisterRequest;
-import com.xpressrides.backend.model.Chofer;
-import com.xpressrides.backend.model.Cliente;
-import com.xpressrides.backend.model.PersonalAdmin;
-import com.xpressrides.backend.model.Usuario;
-import com.xpressrides.backend.repository.ChoferRepository;
-import com.xpressrides.backend.repository.ClienteRepository;
-import com.xpressrides.backend.repository.PersonalAdminRepository;
-import com.xpressrides.backend.repository.UsuarioRepository;
+import com.xpressrides.backend.model.Driver;
+import com.xpressrides.backend.model.Customer;
+import com.xpressrides.backend.model.AdminPersonnel;
+import com.xpressrides.backend.model.User;
+import com.xpressrides.backend.repository.DriverRepository;
+import com.xpressrides.backend.repository.CustomerRepository;
+import com.xpressrides.backend.repository.AdminPersonnelRepository;
+import com.xpressrides.backend.repository.UserRepository;
+import com.xpressrides.backend.segurity.JwtService;
 
 //Servicio de autenticacion para el registro de usuarios
 @Service
 public class AuthService {
 
     @Autowired
-    private UsuarioRepository usuarioRepository;
+    private UserRepository userRepository;
 
     @Autowired
-    private ClienteRepository clienteRepository;
+    private CustomerRepository customerRepository;
 
     @Autowired
-    private ChoferRepository choferRepository;
+    private DriverRepository driverRepository;
 
     @Autowired
-    private PersonalAdminRepository personalAdminRepository;
+    private AdminPersonnelRepository adminPersonnelRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -43,67 +44,73 @@ public class AuthService {
     @Autowired
     private AuthenticationManager authenticationManager;
 
+    @Autowired
+    private JwtService jwtService;
+
     //aqui se reciben todos los datos del registro
-    public AuthService(UsuarioRepository usuarioRepository, ClienteRepository clienteRepository,
-            ChoferRepository choferRepository, PersonalAdminRepository personalAdminRepository,
-            PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager) {
-            this.usuarioRepository = usuarioRepository;
-            this.clienteRepository = clienteRepository;
-            this.choferRepository = choferRepository;
-            this.personalAdminRepository = personalAdminRepository;
+    public AuthService(UserRepository userRepository, CustomerRepository customerRepository,
+            DriverRepository driverRepository, AdminPersonnelRepository adminPersonnelRepository,
+            PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager,
+            JwtService jwtService) {
+            this.userRepository = userRepository;
+            this.customerRepository = customerRepository;
+            this.driverRepository = driverRepository;
+            this.adminPersonnelRepository = adminPersonnelRepository;
             this.passwordEncoder = passwordEncoder;
             this.authenticationManager = authenticationManager;
+            this.jwtService = jwtService;
     }
 
     // aqui se Registra el usuario directamente
     public AuthResponse register(RegisterRequest request) {
-        if (usuarioRepository.existsByUsername(request.getUsername())) {
+        if (userRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("El nombre de usuario ya está en uso");
         }
 
-        Usuario usuario = new Usuario();
-        usuario.setCi(request.getCi());
-        usuario.setName(request.getName());
-        usuario.setLastName(request.getLastName());
-        usuario.setUsername(request.getUsername());
-        usuario.setPassword(passwordEncoder.encode(request.getPassword()));
-        usuario.setEmail(request.getEmail());
-        usuario.setPhone(request.getPhone());
-        usuario.setRole(request.getRole().toLowerCase());
-        usuario.setActive(true);
-        usuario.setCreatedAt(LocalDateTime.now());
-        usuario = usuarioRepository.save(usuario);
+        User user = new User();
+        user.setCi(request.getCi());
+        user.setName(request.getName());
+        user.setLastName(request.getLastName());
+        user.setUsername(request.getUsername());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setEmail(request.getEmail());
+        user.setPhone(request.getPhone());
+        user.setRole(request.getRole().toLowerCase());
+        user.setActive(true);
+        user.setCreatedAt(LocalDateTime.now());
+        user = userRepository.save(user);
 
         //se le asigna un rol
-        switch (usuario.getRole()) {
+        switch (user.getRole()) {
             case "cliente" -> {
-                Cliente cliente = new Cliente();
-                cliente.setUserId(usuario);
-                cliente.setBalance(BigDecimal.ZERO);
-                cliente.setStudent(false);
-                cliente.setFirstTripUsed(false);
-                cliente.setCreatedAt(LocalDateTime.now());
-                clienteRepository.save(cliente);
+                Customer customer = new Customer();
+                customer.setUserId(user);
+                customer.setBalance(BigDecimal.ZERO);
+                customer.setStudent(false);
+                customer.setFirstTripUsed(false);
+                customer.setCreatedAt(LocalDateTime.now());
+                customerRepository.save(customer);
             }
             case "chofer" -> {
-                Chofer chofer = new Chofer();
-                chofer.setUsername(usuario);
-                chofer.setBalance(BigDecimal.ZERO);
-                chofer.setEnabled(false);
-                chofer.setAvailable(false);
-                chofer.setCreatedAt(LocalDateTime.now());
-                choferRepository.save(chofer);
+                Driver driver = new Driver();
+                driver.setUsername(user);
+                driver.setBalance(BigDecimal.ZERO);
+                driver.setEnabled(false);
+                driver.setAvailable(false);
+                driver.setCreatedAt(LocalDateTime.now());
+                driverRepository.save(driver);
             }
             case "admin", "personal_admin" -> {
-                PersonalAdmin admin = new PersonalAdmin();
-                admin.setUserId(usuario);
+                AdminPersonnel admin = new AdminPersonnel();
+                admin.setUserId(user);
                 admin.setCreatedAt(LocalDateTime.now());
-                personalAdminRepository.save(admin);
+                adminPersonnelRepository.save(admin);
             }
         }
 
         //devovemos el registro
-        return new AuthResponse(usuario.getUsername(), usuario.getRole(), "Registro exitoso");
+        String token = jwtService.generateToken(user.getUsername());
+        return new AuthResponse(user.getUsername(), user.getRole(), token, "Registro exitoso");
     }
 
     //Inicio de Sesion
@@ -113,9 +120,10 @@ public class AuthService {
             new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
         
         //se busca el usuario
-        Usuario usuario = usuarioRepository.findByUsername(request.getUsername())
+        User user = userRepository.findByUsername(request.getUsername())
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         //Inicia la sesion
-        return new AuthResponse(usuario.getUsername(), usuario.getRole(), "Inicio de sesión exitoso");
+        String token = jwtService.generateToken(user.getUsername());
+        return new AuthResponse(user.getUsername(), user.getRole(), token, "Inicio de sesión exitoso");
     }
 }
