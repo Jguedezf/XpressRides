@@ -1,0 +1,23 @@
+/**
+ * ============================================================
+ *  XpressRides (Decarrerita) — Sistemas de Base de Datos I
+ *  UNEG · Prof. María Raquel Herrera E. · Junio 2026
+ *  Equipo: Johanna Guédez · Eliuber González · Freddy Salazar
+ *          Manuel Jaimes · Ángel Martínez
+ * ============================================================
+ *  Módulo:      Reportes — Vistas SQL
+ *  Descripción: Repositorio de pagos por chofer — lectura
+ *               de la vista 'v_pagos_por_chofer'
+ *  Versión:     1.1.0
+ *  Fecha:       24/06/2026
+ * ============================================================
+ */
+package com.xpressrides.backend.repository;
+
+import com.xpressrides.backend.model.DriverPaymentReport;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface DriverPaymentReportRepository extends JpaRepository<DriverPaymentReport, Integer> {
+}
