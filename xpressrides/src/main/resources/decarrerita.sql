@@ -189,15 +189,19 @@ CREATE TABLE cupon_cliente (
 -- ================================================================
 
 CREATE TABLE recarga_saldo (
-  id          INT           AUTO_INCREMENT PRIMARY KEY,
-  id_cliente  INT           NOT NULL,
-  id_banco    INT           NOT NULL,
-  id_tasa     INT           NOT NULL,
-  monto_usd   DECIMAL(10,2) NOT NULL,
-  monto_ves   DECIMAL(18,2) NOT NULL,
-  referencia  VARCHAR(50)   NOT NULL UNIQUE,
-  fecha_hora  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT chk_monto_recarga CHECK (monto_usd > 0 AND monto_ves > 0),
+  id               INT               AUTO_INCREMENT PRIMARY KEY,
+  id_cliente       INT               NOT NULL,
+  id_banco         INT               NULL,
+  id_tasa          INT               NOT NULL,
+  monto_usd        DECIMAL(10,2)     NOT NULL,
+  monto_ves        DECIMAL(18,2)     NOT NULL,
+  referencia       VARCHAR(50)       NOT NULL UNIQUE,
+  fecha_hora       DATETIME          NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  moneda_pago      ENUM('VES','USD') NOT NULL DEFAULT 'VES',
+  igtf_porcentaje  DECIMAL(5,2)      NOT NULL DEFAULT 0.00,
+  igtf_monto_usd   DECIMAL(10,2)     NOT NULL DEFAULT 0.00,
+  CONSTRAINT chk_monto_recarga  CHECK (monto_usd > 0 AND monto_ves > 0),
+  CONSTRAINT chk_banco_en_ves   CHECK (moneda_pago = 'USD' OR id_banco IS NOT NULL),
   CONSTRAINT fk_recarga_cliente FOREIGN KEY (id_cliente) REFERENCES cliente(id),
   CONSTRAINT fk_recarga_banco   FOREIGN KEY (id_banco)   REFERENCES banco(id),
   CONSTRAINT fk_recarga_tasa    FOREIGN KEY (id_tasa)    REFERENCES tasa_bcv(id)
@@ -774,8 +778,8 @@ BEGIN
       CONCAT(u.nombre, ' ', u.apellido),
       u.cedula,
       'Ciudad Guayana, Venezuela',
-      0.00,
-      0.00
+      3.00,
+      ROUND(NEW.costo_cliente_usd * 0.03, 2)
     FROM cliente cl
     JOIN usuario u ON cl.id_usuario = u.id
     WHERE cl.id = NEW.id_cliente;
