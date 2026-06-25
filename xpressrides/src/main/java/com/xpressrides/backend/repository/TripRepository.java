@@ -10,6 +10,8 @@ import java.util.Optional;
 
 public interface TripRepository extends JpaRepository<Trip, Integer> {
 
+    List<Trip> findByStatusIn(List<String> statuses);
+
     @Query("SELECT AVG(t.starRating) FROM Trip t WHERE t.driver.id = :driverId AND t.status = 'completado' AND t.starRating IS NOT NULL")
     Double findAverageRatingByDriverId(@Param("driverId") Integer driverId);
 
