@@ -25,7 +25,7 @@ public class PsychEvaluationController {
 
     @PreAuthorize("hasRole('administrador') or hasRole('personal_admin')")
     @PostMapping
-    public ResponseEntity<PsychEvaluationResponse> create(@Valid @RequestBody PsychEvaluationRequest request) {
+    public ResponseEntity<PsychEvaluationResponse> create(@Valid @RequestBody PsychEvaluationRequest request){
         PsychEvaluationResponse response = psychEvaluationService.create(request);
         return ResponseEntity.ok(response);
     }

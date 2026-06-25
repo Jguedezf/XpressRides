@@ -8,7 +8,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.xpressrides.backend.dto.request.CustomerProfileRequest;
 import com.xpressrides.backend.dto.request.RatingRequest;
-import com.xpressrides.backend.dto.request.RechargeRequest;
 import com.xpressrides.backend.dto.response.CustomerProfileResponse;
 import com.xpressrides.backend.exception.BadRequestException;
 import com.xpressrides.backend.exception.ResourceNotFoundException;
