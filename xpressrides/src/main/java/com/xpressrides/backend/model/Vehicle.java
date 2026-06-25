@@ -44,7 +44,7 @@ public class Vehicle {
     @Column(name = "color")
     private String color;
 
-    @Column(name = "Activo")
+    @Column(name = "activo")
     private Boolean active;
 
     @Column(name = "creado_en")

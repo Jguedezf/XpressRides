@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-XpressridesApplication<xpressrides>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.xpressrides.backend.XpressridesApplication",
+            "projectName": "xpressrides",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}

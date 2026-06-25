@@ -3,22 +3,26 @@ package com.xpressrides.backend.service;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.xpressrides.backend.dto.AuthResponse;
-import com.xpressrides.backend.dto.LoginRequest;
-import com.xpressrides.backend.dto.RegisterRequest;
+import com.xpressrides.backend.dto.request.ChangePasswordRequest;
+import com.xpressrides.backend.dto.request.LoginRequest;
+import com.xpressrides.backend.dto.request.RefreshTokenRequest;
+import com.xpressrides.backend.dto.request.RegisterRequest;
+import com.xpressrides.backend.dto.response.AuthResponse;
 import com.xpressrides.backend.model.Driver;
 import com.xpressrides.backend.model.Customer;
 import com.xpressrides.backend.model.AdminPersonnel;
+import com.xpressrides.backend.model.Bank;
 import com.xpressrides.backend.model.User;
 import com.xpressrides.backend.repository.DriverRepository;
 import com.xpressrides.backend.repository.CustomerRepository;
 import com.xpressrides.backend.repository.AdminPersonnelRepository;
+import com.xpressrides.backend.repository.BankRepository;
 import com.xpressrides.backend.repository.UserRepository;
 import com.xpressrides.backend.segurity.JwtService;
 
@@ -26,33 +30,29 @@ import com.xpressrides.backend.segurity.JwtService;
 @Service
 public class AuthService {
 
-    @Autowired
     private UserRepository userRepository;
 
-    @Autowired
     private CustomerRepository customerRepository;
 
-    @Autowired
     private DriverRepository driverRepository;
 
-    @Autowired
     private AdminPersonnelRepository adminPersonnelRepository;
 
-    @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @Autowired
     private AuthenticationManager authenticationManager;
 
-    @Autowired
+    private BankRepository bankRepository;
+
     private JwtService jwtService;
 
     //aqui se reciben todos los datos del registro
     public AuthService(UserRepository userRepository, CustomerRepository customerRepository,
             DriverRepository driverRepository, AdminPersonnelRepository adminPersonnelRepository,
             PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager,
-            JwtService jwtService) {
+            JwtService jwtService, BankRepository bankRepository) {
             this.userRepository = userRepository;
+            this.bankRepository = bankRepository;
             this.customerRepository = customerRepository;
             this.driverRepository = driverRepository;
             this.adminPersonnelRepository = adminPersonnelRepository;
@@ -92,8 +92,17 @@ public class AuthService {
                 customerRepository.save(customer);
             }
             case "chofer" -> {
+                if (request.getBankId() == null)
+                    throw new RuntimeException("Banco requerido para choferes");
+                if (request.getAccountNumber()== null || request.getAccountNumber().isBlank()){
+                    throw new RuntimeException("numero de cuenta requerido para choferes");
+                }
+                Bank bank = bankRepository.findById(request.getBankId())
+                    .orElseThrow(()-> new RuntimeException("Banco no encontrado"));
                 Driver driver = new Driver();
                 driver.setUsername(user);
+                driver.setBank(bank);
+                driver.setAccountNumber(request.getAccountNumber());
                 driver.setBalance(BigDecimal.ZERO);
                 driver.setEnabled(false);
                 driver.setAvailable(false);
@@ -101,16 +110,19 @@ public class AuthService {
                 driverRepository.save(driver);
             }
             case "admin", "personal_admin" -> {
+                String cargo = request.getPosition() != null ? request.getPosition() : "Empleado Administrativo";
                 AdminPersonnel admin = new AdminPersonnel();
                 admin.setUserId(user);
+                admin.setPosition(cargo);
                 admin.setCreatedAt(LocalDateTime.now());
                 adminPersonnelRepository.save(admin);
             }
         }
 
         //devovemos el registro
-        String token = jwtService.generateToken(user.getUsername());
-        return new AuthResponse(user.getUsername(), user.getRole(), token, "Registro exitoso");
+        String accessToken = jwtService.generateToken(user.getUsername());
+        String refreshToken = jwtService.generateRefreshToken(user.getUsername());
+        return new AuthResponse(user.getUsername(), user.getRole(), accessToken, refreshToken, "Registro exitoso");
     }
 
     //Inicio de Sesion
@@ -123,7 +135,31 @@ public class AuthService {
         User user = userRepository.findByUsername(request.getUsername())
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         //Inicia la sesion
-        String token = jwtService.generateToken(user.getUsername());
-        return new AuthResponse(user.getUsername(), user.getRole(), token, "Inicio de sesión exitoso");
+        String accessToken = jwtService.generateToken(user.getUsername());
+        String refreshToken = jwtService.generateRefreshToken(user.getUsername());
+        return new AuthResponse(user.getUsername(), user.getRole(), accessToken, refreshToken, "Inicio de sesión exitoso");
+    }
+
+    public AuthResponse refresh(RefreshTokenRequest request) {
+        String token = request.getRefreshToken();
+        if (!jwtService.isRefreshTokenValid(token)) {
+            throw new RuntimeException("Refresh token inválido o expirado");
+        }
+        String username = jwtService.extractUsername(token);
+        String newAccess = jwtService.generateToken(username);
+        String newRefresh = jwtService.generateRefreshToken(username);
+        return new AuthResponse(username, null, newAccess, newRefresh, "Token renovado exitosamente");
+    }
+
+    public void changePassword(ChangePasswordRequest request){
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username).orElseThrow(()-> new RuntimeException("Usuario no encontrado"));
+
+        if(!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())){
+            throw new RuntimeException("La contraseña actual no es correcta");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 }

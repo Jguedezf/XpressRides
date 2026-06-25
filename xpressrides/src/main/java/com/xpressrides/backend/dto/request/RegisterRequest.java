@@ -1,7 +1,8 @@
-package com.xpressrides.backend.dto;
+package com.xpressrides.backend.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public class RegisterRequest {
@@ -30,18 +31,35 @@ public class RegisterRequest {
     private String email;
     
     @NotBlank(message = "El rol es obligatorio")
+    @Pattern(regexp = "cliente|chofer|admin|personal_admin", message = "Rol inválido")
     private String role;
 
-    public RegisterRequest(String name, String lastName, String ci, String phone, String username, String password,
-            String email, String role) {
-        this.name = name;
-        this.lastName = lastName;
-        this.ci = ci;
-        this.phone = phone;
-        this.username = username;
-        this.password = password;
-        this.email = email;
-        this.role = role;
+    //Solo para chofer
+    private Integer bankId;
+
+    //solo para chofer
+    private String accountNumber;
+
+    //solo para personal administrativo
+    private String position;
+
+    public RegisterRequest() {
+    }
+
+    public Integer getBankId() {
+        return bankId;
+    }
+
+    public void setBankId(Integer bankId) {
+        this.bankId = bankId;
+    }
+
+    public String getAccountNumber() {
+        return accountNumber;
+    }
+
+    public void setAccountNumber(String accountNumber) {
+        this.accountNumber = accountNumber;
     }
 
     public String getName() {
@@ -108,5 +126,11 @@ public class RegisterRequest {
         this.role = role;
     }
 
-    
+    public String getPosition() {
+        return position;
+    }
+
+    public void setPosition(String position) {
+        this.position = position;
+    }
 }

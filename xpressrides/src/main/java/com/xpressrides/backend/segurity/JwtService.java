@@ -16,12 +16,15 @@ public class JwtService {
 
     private final SecretKey secretKey;
     private final long expiration;
+    private final long refreshExpiration;
 
     public JwtService(
             @Value("${jwt.secret}") String secret,
-            @Value("${jwt.expiration}") long expiration) {
+            @Value("${jwt.expiration}") long expiration, 
+            @Value("${jwt.refresh-expiration}") long refreshExpiration){
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes());
         this.expiration = expiration;
+        this.refreshExpiration = refreshExpiration;
     }
 
     public String generateToken(String username) {
@@ -52,5 +55,24 @@ public class JwtService {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    public String generateRefreshToken(String username){
+        return Jwts.builder()
+                .subject(username)
+                .claim("type", "refresh")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + refreshExpiration))
+                .signWith(secretKey)
+                .compact();
+    }
+
+    public boolean isRefreshTokenValid(String token){
+        try{
+            Claims claims = getClaims(token);
+            return "refresh".equals(claims.get("type"));
+        }catch(Exception e){
+            return false;
+        }
     }
 }

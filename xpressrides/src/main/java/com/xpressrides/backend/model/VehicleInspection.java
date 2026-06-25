@@ -46,7 +46,7 @@ public class VehicleInspection {
     @Column(name = "proxima_revision", insertable = false, updatable = false)
     private LocalDate nextInspectionDate;
 
-    @Column(name = "proxima_revision", insertable = false, updatable = false)
+    @Column(name = "apto", insertable = false, updatable = false)
     private boolean fitForUse;
 
     @Column(name = "creado_en")

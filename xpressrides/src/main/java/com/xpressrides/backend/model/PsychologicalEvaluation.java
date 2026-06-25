@@ -42,7 +42,7 @@ public class PsychologicalEvaluation {
     @Column(name = "observacion")
     private String observation;
 
-    @Column(name = "aprobado")
+    @Column(name = "aprobado", insertable = false, updatable = false)
     private boolean approved;
 
     @Column(name = "creado_en")

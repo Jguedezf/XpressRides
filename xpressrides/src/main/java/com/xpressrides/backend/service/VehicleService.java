@@ -5,14 +5,22 @@ import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 
 import com.xpressrides.backend.dto.VehicleInspectionDTO;
-import com.xpressrides.backend.dto.VehicleRequest;
-import com.xpressrides.backend.dto.VehicleResponse;
+import com.xpressrides.backend.dto.request.InspectionRequest;
+import com.xpressrides.backend.dto.request.VehicleRequest;
+import com.xpressrides.backend.dto.response.InspectionResponse;
+import com.xpressrides.backend.dto.response.VehicleResponse;
+import com.xpressrides.backend.exception.BadRequestException;
+import com.xpressrides.backend.exception.ResourceNotFoundException;
+import com.xpressrides.backend.model.AdminPersonnel;
 import com.xpressrides.backend.model.Driver;
 import com.xpressrides.backend.model.Vehicle;
 import com.xpressrides.backend.model.VehicleInspection;
+import com.xpressrides.backend.repository.AdminPersonnelRepository;
 import com.xpressrides.backend.repository.DriverRepository;
 import com.xpressrides.backend.repository.VehicleInspectionRepository;
 import com.xpressrides.backend.repository.VehicleRepository;
+
+import jakarta.persistence.EntityManager;
 
 @Service
 public class VehicleService {
@@ -20,22 +28,26 @@ public class VehicleService {
     private VehicleRepository vehicleRepository;
     private DriverRepository driverRepository;
     private VehicleInspectionRepository vehicleInspectionRepository;
-    
+    private AdminPersonnelRepository adminPersonnelRepository;
+    private final EntityManager entityManager;
 
     public VehicleService(VehicleRepository vehicleRepository, DriverRepository driverRepository,
-            VehicleInspectionRepository vehicleInspectionRepository) {
+            VehicleInspectionRepository vehicleInspectionRepository, 
+            AdminPersonnelRepository adminPersonnelRepository, EntityManager entityManager) {
         this.vehicleRepository = vehicleRepository;
         this.driverRepository = driverRepository;
         this.vehicleInspectionRepository = vehicleInspectionRepository;
+        this.adminPersonnelRepository = adminPersonnelRepository;
+        this.entityManager = entityManager;
     }
 
-    public VehicleResponse registerVehicle(VehicleRequest request, String username){
+    public VehicleResponse registerVehicle(VehicleRequest request){
       
         if(vehicleRepository.existsByPlate(request.getPlate())){
-            throw new RuntimeException("Esta placa ya esta registrada");
+            throw new BadRequestException("Esta placa ya esta registrada");
         }
         
-        Driver driver= driverRepository.findById(request.getDriverId()).orElseThrow(() -> new RuntimeException("Chofer no encontrado"));
+        Driver driver= driverRepository.findById(request.getDriverId()).orElseThrow(() -> new ResourceNotFoundException("Chofer no encontrado"));
 
         Vehicle vehicle = new Vehicle();
         vehicle.setDriver(driver);
@@ -64,7 +76,7 @@ public class VehicleService {
         response.setActive(vehicle.getActive());
 
          // Última inspección (ordenada por fecha descendente, top 1)
-        VehicleInspection lastInsp = vehicleInspectionRepository.findFirstByVehicleIdOrderByInspectionDateDesc(vehicle.getId()).orElseThrow(()-> new RuntimeException("No se encontro ninguna inspeccion"));
+        VehicleInspection lastInsp = vehicleInspectionRepository.findFirstByVehicleIdOrderByInspectionDateDesc(vehicle.getId()).orElse(null);
         if (lastInsp != null) {
             VehicleInspectionDTO dto = new VehicleInspectionDTO();
             dto.setId(lastInsp.getId());
@@ -77,6 +89,36 @@ public class VehicleService {
         }
 
         return response;
+    }
+
+    private VehicleInspectionDTO mapToInspectionDTO(VehicleInspection inspection) {
+        VehicleInspectionDTO dto = new VehicleInspectionDTO();
+        dto.setId(inspection.getId());
+        dto.setInspectionDate(inspection.getInspectionDate());
+        dto.setScore(inspection.getScore());
+        dto.setObservation(inspection.getObservation());
+        dto.setFitForUse(inspection.isFitForUse());
+        dto.setNextInspectionDate(inspection.getNextInspectionDate());
+        return dto;
+    }
+
+    public VehicleInspectionDTO createInspection(InspectionRequest request) {
+        Vehicle vehicle = vehicleRepository.findById(request.getVehicleId())
+            .orElseThrow(() -> new ResourceNotFoundException("Vehículo no encontrado"));
+        AdminPersonnel admin = adminPersonnelRepository.findById(request.getAdminId())
+            .orElseThrow(() -> new ResourceNotFoundException("Admin no encontrado"));
+
+        VehicleInspection inspection = new VehicleInspection();
+        inspection.setVehicle(vehicle);
+        inspection.setAdmin(admin);
+        inspection.setScore(request.getScore());
+        inspection.setInspectionDate(request.getInspectionDate());
+        inspection.setObservation(request.getObservation());
+        inspection.setCreatedAt(LocalDateTime.now());
+
+        inspection = vehicleInspectionRepository.save(inspection);
+        entityManager.refresh(inspection);
+        return mapToInspectionDTO(inspection);
     }
 }
 

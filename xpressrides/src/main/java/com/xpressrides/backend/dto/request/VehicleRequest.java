@@ -1,4 +1,4 @@
-package com.xpressrides.backend.dto;
+package com.xpressrides.backend.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -20,7 +20,9 @@ public class VehicleRequest {
         this.color = color;
         this.driverId = driverId;
     }
-    
+
+    public VehicleRequest() {
+    }
 
     public String getPlate() {
         return plate;

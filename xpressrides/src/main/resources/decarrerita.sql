@@ -883,7 +883,7 @@ INSERT INTO zona (nombre, parroquia, latitud, longitud) VALUES
 -- Usuario administrador base (password: Admin2026!)
 INSERT INTO usuario (cedula,nombre,apellido,username,password_hash,email,telefono,rol)
 VALUES ('V00000001','Admin','XpressRides','admin',
-  '$2a$10$placeholder','admin@xpressrides.ve','0412-0000000','administrador');
+  '$2b$10$T8KVxa9l60H0x3lPf6APTuyFUVWtAPnzNNEYKfBfzNUpPGb4wA1EW','admin@xpressrides.ve','0412-0000000','administrador');
 
 INSERT INTO cupon (codigo, tipo, descuento_usd, distancia_max_km) VALUES
   ('BIENVENIDO', 'bienvenida',  0.00, 15),
