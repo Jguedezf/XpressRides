@@ -26,7 +26,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         com.xpressrides.backend.model.User user = userRepository.findByUsername(username)
             .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
 
-        SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole().toUpperCase());
+        SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole());
 
         return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(),
             user.getActive(), true, true, true,
