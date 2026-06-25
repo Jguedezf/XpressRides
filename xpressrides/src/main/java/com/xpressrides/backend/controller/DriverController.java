@@ -17,16 +17,21 @@ import com.xpressrides.backend.dto.request.EnableRequest;
 import com.xpressrides.backend.dto.request.TripStatusRequest;
 import com.xpressrides.backend.dto.response.DriverStatusResponse;
 import com.xpressrides.backend.service.DriverService;
+import com.xpressrides.backend.service.TripRejectionService;
 
 import jakarta.validation.Valid;
+import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/chofer")
 public class DriverController {
     private final DriverService driverService;
+    private final TripRejectionService tripRejectionService;
 
-    public DriverController(DriverService driverService) {
-        this.driverService = driverService;
+    public DriverController(DriverService driverService,
+                            TripRejectionService tripRejectionService) {
+        this.driverService        = driverService;
+        this.tripRejectionService = tripRejectionService;
     }
 
     @PreAuthorize("hasRole('chofer')")
@@ -85,5 +90,28 @@ public class DriverController {
         String motivo = body.getOrDefault("motivo", "Cancelado por el chofer");
         driverService.cancelTrip(authentication.getName(), id, motivo);
         return ResponseEntity.ok(Map.of("message", "Viaje cancelado"));
+    }
+
+    // PUT /api/chofer/traslados/{id}/rechazar — chofer rechaza el viaje asignado
+    @PreAuthorize("hasRole('chofer')")
+    @PutMapping("/traslados/{id}/rechazar")
+    public ResponseEntity<Map<String, Object>> rejectTrip(
+            @PathVariable Integer id,
+            Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Map<String, Object> result = tripRejectionService.rejectTrip(authentication.getName(), id);
+            response.put("success", true);
+            response.put("data", result);
+            response.put("message", "reasignado".equals(result.get("estado"))
+                ? "Viaje reasignado a otro chofer"
+                : "Viaje cancelado — no hay choferes disponibles");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("data", null);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(400).body(response);
+        }
     }
 }

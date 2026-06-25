@@ -102,6 +102,9 @@ public class Trip {
     @Column(name = "intentos_asignacion")
     private Integer assignmentAttempts;
 
+    @Column(name = "rechazos")
+    private Integer rejections = 0;
+
     @Column(name = "eta_minutos")
     private Integer etaMinutes;
 

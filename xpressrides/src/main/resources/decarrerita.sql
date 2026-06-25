@@ -246,6 +246,7 @@ CREATE TABLE traslado (
 
   -- Tiempos del viaje
   intentos_asignacion   INT           NOT NULL DEFAULT 1,
+  rechazos              INT           NOT NULL DEFAULT 0,
   eta_minutos           INT           NULL,
   fecha_solicitud       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
   fecha_aceptacion      DATETIME      NULL,
