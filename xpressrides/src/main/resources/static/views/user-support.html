@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ayuda y Soporte - XpressRides</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/css/estilos.css">
+
+    <style>
+        .faq-item {
+            border-top: 1px solid #EAEAEA;
+        }
+
+        .faq-item:first-child {
+            border-top: none;
+        }
+
+        .faq-question {
+            padding: var(--space-md) 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-size: var(--font-size-normal);
+            font-weight: 500;
+            color: var(--color-text-main);
+        }
+
+        .faq-answer {
+            display: none;
+            padding-bottom: var(--space-md);
+            font-size: var(--font-size-small);
+            color: var(--color-text-muted);
+            line-height: 1.5;
+        }
+
+        .faq-item.active .faq-answer {
+            display: block;
+        }
+
+        .faq-toggle {
+            font-weight: 700;
+            color: var(--color-primary);
+        }
+
+        .faq-item.active .faq-toggle {
+            content: "-";
+        }
+        body { background-color: var(--color-bg-card); padding-bottom: 80px; }
+
+        .top-bar {
+            background-color: var(--color-bg-main);
+            padding: var(--space-md) var(--space-lg);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .brand-logo-small { color: var(--color-primary); font-weight: 800; font-size: var(--font-size-h2); margin: 0; }
+        .brand-text { color: var(--color-secondary); }
+
+        .main-content { padding: var(--space-lg); max-width: 600px; margin: 0 auto; }
+
+        .support-card {
+            background-color: var(--color-bg-main);
+            border-radius: var(--radius-card);
+            padding: var(--space-lg);
+            margin-bottom: var(--space-md);
+            border: 1px solid #EAEAEA;
+            text-align: center;
+        }
+
+        .support-icon {
+            color: var(--color-primary);
+            margin-bottom: var(--space-sm);
+        }
+
+        .desktop-nav { display: none; }
+        @media (min-width: 768px) {
+            .desktop-nav { display: flex; gap: var(--space-lg); align-items: center; }
+            .desktop-nav a { color: var(--color-text-muted); text-decoration: none; font-weight: 600; font-size: var(--font-size-normal); }
+            .desktop-nav a:hover, .desktop-nav a.active { color: var(--color-primary); }
+            .bottom-nav { display: none !important; }
+            .main-content { padding-top: var(--space-xl); }
+        }
+    </style>
+</head>
+<body>
+
+<header class="top-bar d-flex justify-between align-center">
+    <h1 class="brand-logo-small">Xpress<span class="brand-text">Rides</span></h1>
+    <nav class="desktop-nav">
+        <a href="/views/cliente-dashboard.html">Inicio</a>
+        <a href="/views/cliente-record.html">Historial de Viajes</a>
+        <a href="/views/user-profile.html" class="active">Mi Perfil</a>
+    </nav>
+    <div class="notification-bell">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+    </div>
+</header>
+
+<main class="main-content">
+    <div class="mb-md d-flex align-center gap-sm" style="cursor:pointer; color:var(--color-secondary); font-weight:600;" onclick="window.location.href='user-profile.html'">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Volver al Perfil
+    </div>
+
+    <h2 class="h1-title mb-lg text-center">Ayuda y Soporte</h2>
+
+    <div class="support-card">
+        <div class="support-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.05 5A5 5 0 0 1 19 8.95M15.05 1A9 9 0 0 1 23 8.94m-1 7.98v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+        </div>
+        <h3 class="h2-subtitle mb-sm">¿Necesitas asistencia rápida?</h3>
+        <p class="text-normal mb-md" style="color: var(--color-text-muted);">Comunícate directamente con nuestro equipo de desarrollo y soporte técnico.</p>
+
+        <div style="background-color: #f9f9f9; padding: var(--space-md); border-radius: var(--radius-input); display: inline-block; text-align: left;">
+            <p><strong>Desarrollador:</strong> Freddy Salazar</p>
+            <p><strong>Teléfono:</strong> <a href="tel:04129474099" style="color: var(--color-accent); text-decoration: none;">0412-9474099</a></p>
+            <p><strong>Correo:</strong> <a href="mailto:freddysalazar332@gmail.com" style="color: var(--color-accent); text-decoration: none;">freddysalazar332@gmail.com</a></p>
+        </div>
+    </div>
+
+    <div class="card mt-md">
+        <h3 class="h2-subtitle mb-sm" style="font-size:16px;">
+            Preguntas Frecuentes (FAQ)
+        </h3>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>¿Cómo solicito un viaje?</span>
+                <span class="faq-toggle">+</span>
+            </div>
+
+            <div class="faq-answer">
+                Ve a la página Inicio, selecciona tu punto de origen,
+                destino y la cantidad de pasajeros. Luego presiona
+                "Solicitar viaje" para buscar un conductor disponible.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>¿Cómo recargo mi saldo?</span>
+                <span class="faq-toggle">+</span>
+            </div>
+
+            <div class="faq-answer">
+                Desde Mi Perfil pulsa el botón "Recargar Saldo". Registra
+                tu transferencia o pago móvil indicando banco, monto,
+                referencia y fecha. Próximamente también estarán
+                disponibles recargas mediante cuentas bancarias en USD.
+            </div>
+        </div>
+
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>¿Dónde veo mi factura?</span>
+                <span class="faq-toggle">+</span>
+            </div>
+
+            <div class="faq-answer">
+                Ingresa en Historial de Viajes y pulsa el botón
+                "Ver Factura" del viaje que deseas consultar.
+            </div>
+        </div>
+        <div class="faq-item">
+            <div class="faq-question">
+                <span>¿Cuántos pasajeros puedo llevar por viaje?</span>
+                <span class="faq-toggle">+</span>
+            </div>
+
+            <div class="faq-answer">
+                Actualmente cada viaje admite entre 1 y 3 pasajeros,
+                según la capacidad configurada en la plataforma.
+            </div>
+        </div>
+    </div>
+</main>
+
+<nav class="bottom-nav">
+    <!-- Barra de Navegación de Teléfono-->
+    <a href="/views/cliente-dashboard.html" class="bottom-nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        <span class="mt-xs">Inicio</span>
+    </a>
+    <a href="/views/cliente-record.html" class="bottom-nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span class="mt-xs">Historial</span>
+    </a>
+    <a href="/views/user-profile.html" class="bottom-nav-item active">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <span class="mt-xs">Perfil</span>
+    </a>
+</nav>
+
+<script>
+    document.querySelectorAll('.faq-question').forEach(question => {
+        question.addEventListener('click', () => {
+            const item = question.parentElement;
+            const icon = question.querySelector('.faq-toggle');
+
+            document.querySelectorAll('.faq-item').forEach(faq => {
+
+                if (faq !== item) {
+                    faq.classList.remove('active');
+
+                    const otherIcon =
+                        faq.querySelector('.faq-toggle');
+
+                    otherIcon.textContent = '+';
+                }
+            });
+
+            item.classList.toggle('active');
+
+            icon.textContent =
+                item.classList.contains('active')
+                    ? '−'
+                    : '+';
+        });
+    });
+</script>
+</body>
+</html>
