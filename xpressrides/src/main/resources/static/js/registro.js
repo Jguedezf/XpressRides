@@ -3,7 +3,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 1. Cargar bancos desde la BD de Johanna (CatalogController)
     await cargarBancos();
 
-    // 2. Manejar el evento de registro
+    // 2. Manejar alternancia de formulario
+    const radiosRol = document.querySelectorAll('input[name="rol"]');
+    radiosRol.forEach(radio => {
+        radio.addEventListener('change', window.toggleForm);
+    });
+
+    // 3. Manejar el evento de registro
     const registerForm = document.getElementById('register-form');
     if(registerForm) {
         registerForm.addEventListener('submit', async (e) => {
@@ -33,19 +39,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 if (isChofer) {
                     // Datos específicos del chofer
-                    endpoint = '/driver/register'; // Ruta provisional para chofer
+                    endpoint = '/auth/registro-chofer';
                     payload = {
-                        ...datosBase,
-                        bancoId: document.getElementById('banco').value,
-                        numeroCuenta: document.getElementById('cuenta').value,
-                        emergencia1Nombre: document.getElementById('emergencia1_nombre').value,
-                        emergencia1Tel: document.getElementById('emergencia1_tel').value,
-                        emergencia2Nombre: document.getElementById('emergencia2_nombre').value,
-                        emergencia2Tel: document.getElementById('emergencia2_tel').value
+                        ...datosBase
+                        // Nota: banco, cuenta y emergencias se registrarán en una fase posterior
                     };
                 } else {
                     // Datos específicos del cliente
-                    endpoint = '/auth/register-cliente'; // Asumimos esta ruta de Eliuber
+                    endpoint = '/auth/registro';
                     payload = {
                         ...datosBase,
                         esEstudiante: document.getElementById('es_estudiante').checked

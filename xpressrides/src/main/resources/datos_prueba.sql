@@ -130,7 +130,7 @@ SELECT
 INSERT INTO usuario (cedula, nombre, apellido, username, password_hash,
                      email, telefono, rol)
 VALUES ('V15234567', 'Carlos', 'Rodríguez', 'carlosr',
-        '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lHuu',
+        '$2a$10$SeAgMoDqTfHmtpDSpSmkteZTMNqT/LSyOOc7tzVkr1Mhhqge3aq5i',
         'carlos.rodriguez@test.ve', '0414-5234567', 'chofer');
 SET @id_usuario_chofer = LAST_INSERT_ID();
 
@@ -170,7 +170,7 @@ VALUES
 INSERT INTO usuario (cedula, nombre, apellido, username, password_hash,
                      email, telefono, rol)
 VALUES ('V20123456', 'Laura', 'Pérez', 'laurap',
-        '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lHuu',
+        '$2a$10$SeAgMoDqTfHmtpDSpSmkteZTMNqT/LSyOOc7tzVkr1Mhhqge3aq5i',
         'laura.perez@test.ve', '0416-1234567', 'cliente');
 SET @id_usuario_cliente = LAST_INSERT_ID();
 

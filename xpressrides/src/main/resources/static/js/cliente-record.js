@@ -22,21 +22,16 @@ async function cargarHistorial() {
     container.innerHTML = '<p class="text-center mt-md" style="color: var(--color-text-muted);">Cargando tu historial de viajes...</p>';
 
     try {
-        // 2. Consumir el endpoint que trae TODO el historial de traslados
-        const response = await fetchAPI('/reportes/historial-traslados');
-        const todosLosViajes = response.data;
-
-        // 3. Filtrar solo los viajes que pertenecen al usuario logueado
-        const viajes = todosLosViajes
-            ? todosLosViajes.filter(v => v.customerId === usuario.id)
-            : [];
+        // 2. Consumir el endpoint que trae los traslados del cliente (filtrado por JWT en el backend)
+        const response = await fetchAPI('/cliente/traslados');
+        const viajes = Array.isArray(response) ? response : (response.data || []);
 
         if (viajes.length === 0) {
             container.innerHTML = '<p class="text-center mt-md">Aún no tienes viajes registrados. ¡Solicita tu primer XpressRide!</p>';
             return;
         }
 
-        // 4. Limpiar contenedor e inyectar tarjetas dinámicas
+        // 3. Limpiar contenedor e inyectar tarjetas dinámicas
         container.innerHTML = '';
 
         viajes.forEach(viaje => {
@@ -44,15 +39,19 @@ async function cargarHistorial() {
             const esCompletado = viaje.status && viaje.status.toLowerCase() === 'completado';
             const statusClass = esCompletado ? 'status-completado' : 'status-cancelado';
 
-            // Construir info del vehículo a partir de campos individuales
-            const vehiculoInfo = [viaje.brand, viaje.vehicleModel, viaje.color]
-                .filter(Boolean)
-                .join(' ');
+            // Construir info del vehículo a partir de la entidad anidada
+            const vehiculoInfo = viaje.vehicle 
+                ? [viaje.vehicle.marca || viaje.vehicle.brand, viaje.vehicle.modelo || viaje.vehicle.model, viaje.vehicle.color].filter(Boolean).join(' ') 
+                : '';
 
             // Formatear fecha "19 jun 2026, 02:30 p.m."
             const fechaObj = new Date(viaje.requestDate);
             const opcionesFecha = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
             const fechaFormateada = fechaObj.toLocaleDateString('es-VE', opcionesFecha);
+
+            const originName = viaje.originZone ? (viaje.originZone.name || viaje.originZone.nombre) : 'Zona Origen';
+            const destName = viaje.destinationZone ? (viaje.destinationZone.name || viaje.destinationZone.nombre) : 'Zona Destino';
+            const driverName = viaje.driver && viaje.driver.user ? `${viaje.driver.user.nombre} ${viaje.driver.user.apellido}` : (viaje.driverName || '');
 
             const cardHTML = `
                 <div class="trip-card">
@@ -63,18 +62,18 @@ async function cargarHistorial() {
 
                     <div class="trip-route">
                         <div class="route-point">
-                            <span style="color: var(--color-primary);">●</span> ${viaje.originZone || 'Zona Origen'}
+                            <span style="color: var(--color-primary);">●</span> ${originName}
                         </div>
                         <div style="border-left: 2px dashed #CCC; height: 10px; margin-left: 5px;"></div>
                         <div class="route-point">
-                            <span style="color: var(--color-secondary);">📍</span> ${viaje.destinationZone || 'Zona Destino'}
+                            <span style="color: var(--color-secondary);">📍</span> ${destName}
                         </div>
                     </div>
 
-                    ${viaje.driverName ? `
+                    ${driverName ? `
                     <div class="d-flex align-center gap-sm mt-sm" style="font-size: 13px; color: var(--color-text-muted);">
-                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(viaje.driverName)}&background=E2EFDA&color=1E6B3C" class="avatar" style="width: 30px; height: 30px; border-radius: 50%;" alt="Chofer">
-                        <span>Chofer: ${viaje.driverName} • ${vehiculoInfo}</span>
+                        <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(driverName)}&background=E2EFDA&color=1E6B3C" class="avatar" style="width: 30px; height: 30px; border-radius: 50%;" alt="Chofer">
+                        <span>Chofer: ${driverName} ${vehiculoInfo ? '• ' + vehiculoInfo : ''}</span>
                     </div>
                     ` : ''}
 
