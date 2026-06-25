@@ -17,6 +17,7 @@ package com.xpressrides.backend.repository;
 import com.xpressrides.backend.model.PsychologicalEvaluation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import java.util.Optional;
 
 @Repository
 public interface PsychologicalEvaluationRepository extends JpaRepository<PsychologicalEvaluation, Integer> {
@@ -24,4 +25,6 @@ public interface PsychologicalEvaluationRepository extends JpaRepository<Psychol
     // Verifica si el chofer tiene al menos una evaluación psicológica aprobada —
     // usada por el servicio de habilitación para activar chofer.habilitado
     boolean existsByDriver_IdAndApprovedTrue(Integer driverId);
+
+    Optional<PsychologicalEvaluation> findFirstByDriver_IdOrderByEvaluationDateDesc(Integer driverId);
 }
