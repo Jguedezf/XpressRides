@@ -46,9 +46,9 @@ public class Trip {
     @JoinColumn(name = "id_zona_destino")
     private Zone destinationZone;
 
-   /* @ManyToOne
+    @ManyToOne
     @JoinColumn(name = "id_tasa")
-    private String rate;*/ 
+    private ExchangeRate rate;
 
     @ManyToOne
     @JoinColumn(name = "id_cupon_cliente")

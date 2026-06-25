@@ -43,6 +43,9 @@ public class RegisterRequest {
     //solo para personal administrativo
     private String position;
 
+    // solo para clientes — indica si es estudiante universitario
+    private Boolean isStudent;
+
     public RegisterRequest() {
     }
 
@@ -132,5 +135,13 @@ public class RegisterRequest {
 
     public void setPosition(String position) {
         this.position = position;
+    }
+
+    public Boolean getIsStudent() {
+        return isStudent;
+    }
+
+    public void setIsStudent(Boolean isStudent) {
+        this.isStudent = isStudent;
     }
 }

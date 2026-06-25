@@ -15,7 +15,7 @@ import com.xpressrides.backend.service.TripService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/traslado")
+@RequestMapping("/api")
 public class TripController {
 
     private TripService tripService;
@@ -24,8 +24,10 @@ public class TripController {
         this.tripService = tripService;
     }
 
+    // POST /api/traslado/solicitar  — URL canónica
+    // POST /api/solicitar-viaje     — alias para compatibilidad con el frontend de Freddy
     @PreAuthorize("hasRole('cliente')") //solo clientes
-    @PostMapping("/solicitar")
+    @PostMapping({"/traslado/solicitar", "/solicitar-viaje"})
     public ResponseEntity<TripResponse> solicitarTraslado(
             @Valid @RequestBody TripRequest request,
             Authentication authentication) {

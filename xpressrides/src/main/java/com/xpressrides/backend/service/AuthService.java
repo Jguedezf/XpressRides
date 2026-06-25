@@ -86,7 +86,7 @@ public class AuthService {
                 Customer customer = new Customer();
                 customer.setUserId(user);
                 customer.setBalance(BigDecimal.ZERO);
-                customer.setStudent(false);
+                customer.setStudent(Boolean.TRUE.equals(request.getIsStudent()));
                 customer.setFirstTripUsed(false);
                 customer.setCreatedAt(LocalDateTime.now());
                 customerRepository.save(customer);

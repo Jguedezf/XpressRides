@@ -17,10 +17,13 @@ import com.xpressrides.backend.model.Vehicle;
 import com.xpressrides.backend.model.VehicleInspection;
 import com.xpressrides.backend.repository.AdminPersonnelRepository;
 import com.xpressrides.backend.repository.DriverRepository;
+import com.xpressrides.backend.repository.PsychologicalEvaluationRepository;
 import com.xpressrides.backend.repository.VehicleInspectionRepository;
 import com.xpressrides.backend.repository.VehicleRepository;
 
 import jakarta.persistence.EntityManager;
+
+import java.util.Optional;
 
 @Service
 public class VehicleService {
@@ -30,15 +33,18 @@ public class VehicleService {
     private VehicleInspectionRepository vehicleInspectionRepository;
     private AdminPersonnelRepository adminPersonnelRepository;
     private final EntityManager entityManager;
+    private PsychologicalEvaluationRepository psychEvalRepository;
 
     public VehicleService(VehicleRepository vehicleRepository, DriverRepository driverRepository,
-            VehicleInspectionRepository vehicleInspectionRepository, 
-            AdminPersonnelRepository adminPersonnelRepository, EntityManager entityManager) {
+            VehicleInspectionRepository vehicleInspectionRepository,
+            AdminPersonnelRepository adminPersonnelRepository, EntityManager entityManager,
+            PsychologicalEvaluationRepository psychEvalRepository) {
         this.vehicleRepository = vehicleRepository;
         this.driverRepository = driverRepository;
         this.vehicleInspectionRepository = vehicleInspectionRepository;
         this.adminPersonnelRepository = adminPersonnelRepository;
         this.entityManager = entityManager;
+        this.psychEvalRepository = psychEvalRepository;
     }
 
     public VehicleResponse registerVehicle(VehicleRequest request){
@@ -76,7 +82,7 @@ public class VehicleService {
         response.setActive(vehicle.getActive());
 
          // Última inspección (ordenada por fecha descendente, top 1)
-        VehicleInspection lastInsp = vehicleInspectionRepository.findFirstByVehicleIdOrderByInspectionDateDesc(vehicle.getId()).orElse(null);
+        VehicleInspection lastInsp = vehicleInspectionRepository.findFirstByVehicle_IdOrderByInspectionDateDesc(vehicle.getId()).orElse(null);
         if (lastInsp != null) {
             VehicleInspectionDTO dto = new VehicleInspectionDTO();
             dto.setId(lastInsp.getId());
@@ -89,6 +95,24 @@ public class VehicleService {
         }
 
         return response;
+    }
+
+    private void checkAndEnableDriver(Integer driverId) {
+        Driver driver = driverRepository.findById(driverId).orElseThrow();
+
+        boolean hasApprovedEval = psychEvalRepository.existsByDriver_IdAndApprovedTrue(driverId);
+        if (!hasApprovedEval) return;
+
+        Optional<Vehicle> vehicle = vehicleRepository.findByDriver_Id(driverId);
+        if (vehicle.isEmpty()) return;
+
+        Optional<VehicleInspection> latestInspection =
+                vehicleInspectionRepository.findFirstByVehicle_IdOrderByInspectionDateDesc(vehicle.get().getId());
+
+        if (latestInspection.isEmpty() || !latestInspection.get().isFitForUse()) return;
+
+        driver.setEnabled(true);
+        driverRepository.save(driver);
     }
 
     private VehicleInspectionDTO mapToInspectionDTO(VehicleInspection inspection) {
@@ -118,6 +142,7 @@ public class VehicleService {
 
         inspection = vehicleInspectionRepository.save(inspection);
         entityManager.refresh(inspection);
+        checkAndEnableDriver(vehicle.getDriver().getId());
         return mapToInspectionDTO(inspection);
     }
 }

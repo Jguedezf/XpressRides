@@ -1,14 +1,24 @@
 package com.xpressrides.backend.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
 public class TripRequest {
+    @JsonAlias("zonaOrigenId")
     @NotNull Integer idZoneOrigin;
+
+    @JsonAlias("zonaDestinoId")
     @NotNull Integer idZoneDestiny;
+
+    @JsonAlias("cantPasajeros")
     @NotNull @Min(1) @Max(3) private Integer passengerCount;
+
+    @JsonAlias("codigoCupon")
     private Integer customerCouponId;
+
+    public TripRequest() {}
 
     public TripRequest(@NotNull Integer idZoneOrigin, @NotNull Integer idZoneDestiny,
             @NotNull @Min(1) @Max(3) Integer passengerCount, Integer customerCouponId) {

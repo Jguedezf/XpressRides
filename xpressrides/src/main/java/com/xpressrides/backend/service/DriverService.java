@@ -1,6 +1,7 @@
 package com.xpressrides.backend.service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -73,7 +74,7 @@ public class DriverService {
         VehicleInspection lastInsp = null;
         if (vehicle != null) {
             lastInsp = vehicleInspectionRepository
-                .findFirstByVehicleIdOrderByInspectionDateDesc(vehicle.getId()).orElse(null);
+                .findFirstByVehicle_IdOrderByInspectionDateDesc(vehicle.getId()).orElse(null);
         }
         response.setVehicleInspection(buildInspectionStatus(lastInsp));
 
@@ -102,10 +103,11 @@ public class DriverService {
         String current = trip.getStatus();
 
         boolean validTransition = switch (current) {
-            case "solicitado" -> "aceptado".equals(newStatus);
-            case "aceptado" -> "en_camino".equals(newStatus);
-            case "en_camino" -> "en_progreso".equals(newStatus);
-            case "en_progreso" -> "completado".equals(newStatus);
+            case "solicitado"   -> "aceptado".equals(newStatus);
+            case "aceptado"     -> "en_camino".equals(newStatus);
+            case "en_camino"    -> "chofer_llego".equals(newStatus);
+            case "chofer_llego" -> "en_progreso".equals(newStatus);
+            case "en_progreso"  -> "completado".equals(newStatus);
             default -> false;
         };
 
@@ -114,6 +116,18 @@ public class DriverService {
         }
 
         trip.setStatus(newStatus);
+
+        if ("aceptado".equals(newStatus))    trip.setAcceptanceDate(LocalDateTime.now());
+        if ("en_progreso".equals(newStatus)) trip.setStartDate(LocalDateTime.now());
+        if ("completado".equals(newStatus)) {
+            LocalDateTime now = LocalDateTime.now();
+            trip.setEndDate(now);
+            if (trip.getStartDate() != null) {
+                long minutes = java.time.Duration.between(trip.getStartDate(), now).toMinutes();
+                trip.setDurationMinutes((int) minutes);
+            }
+        }
+
         tripRepository.save(trip);
     }
 

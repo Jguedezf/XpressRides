@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 
 @RestController
-@RequestMapping("/api/vehicle")
+@RequestMapping("/api/vehiculo")
 public class VehicleController {
 
     private final VehicleService vehicleService;
@@ -27,13 +27,15 @@ public class VehicleController {
         this.vehicleService = vehicleService;
     }
 
+    // POST /api/vehiculo/registrar — chofer registra su vehículo
     @PreAuthorize("hasRole('chofer')")
-    @PostMapping("/register")
+    @PostMapping("/registrar")
     public ResponseEntity<VehicleResponse> register(@Valid @RequestBody VehicleRequest request) {
         VehicleResponse response = vehicleService.registerVehicle(request);
-       return ResponseEntity.ok(response);
+        return ResponseEntity.ok(response);
     }
-    
+
+    // POST /api/vehiculo/revision — admin registra revisión vehicular
     @PreAuthorize("hasRole('administrador') or hasRole('personal_admin')")
     @PostMapping("/revision")
     public ResponseEntity<VehicleInspectionDTO> revision(@RequestBody InspectionRequest request) {

@@ -1,9 +1,11 @@
 package com.xpressrides.backend.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public class LoginRequest {
+    @JsonAlias("correo")
     @NotBlank(message = "El usuario es obligatorio")
     private String username;
     @NotBlank(message = "La contraseña es obligatoria")

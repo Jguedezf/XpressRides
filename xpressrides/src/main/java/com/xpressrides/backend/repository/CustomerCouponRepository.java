@@ -6,4 +6,5 @@ import java.util.List;
 
 public interface CustomerCouponRepository extends JpaRepository<CustomerCoupon, Integer> {
     List<CustomerCoupon> findByCustomer_IdAndUsedFalse(Integer customerId);
+    boolean existsByCoupon_IdAndCustomer_Id(Integer couponId, Integer customerId);
 }
