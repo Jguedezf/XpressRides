@@ -106,36 +106,101 @@
         <form id="form-recarga">
 
             <div class="input-group">
-                <label for="banco" class="input-label">Banco de Origen</label>
-                <select id="banco" class="input-field" required>
-                    <option value="">Selecciona tu banco...</option>
-                    <option value="1">Banco de Venezuela</option>
-                    <option value="2">Banesco</option>
-                    <option value="3">Mercantil</option>
-                    <option value="4">Provincial</option>
+                <label for="tipo_recarga" class="input-label">Tipo de Recarga</label>
+                <select id="tipo_recarga" class="input-field" required>
+                    <option value="ves">Transferencia / Pago Móvil (Bs.)</option>
+                    <option value="usd">Transferencia desde Cuenta en USD</option>
                 </select>
             </div>
 
-            <div class="d-flex gap-sm">
-                <div class="input-group" style="flex: 1;">
-                    <label for="monto_ves" class="input-label">Monto (Bs.)</label>
-                    <input type="number" id="monto_ves" class="input-field" placeholder="Ej. 1000" step="0.01" min="10" required>
+            <div id="ves-fields" style="display:none;">
+                <div class="input-group">
+                    <label for="banco" class="input-label">Banco de Origen</label>
+                    <select id="banco" class="input-field" required>
+                        <option value="">Selecciona tu banco...</option>
+                        <option value="1">Banco de Venezuela</option>
+                        <option value="2">Banesco</option>
+                        <option value="3">Mercantil</option>
+                        <option value="4">Provincial</option>
+                    </select>
                 </div>
-                <div class="input-group" style="flex: 1;">
-                    <label for="monto_usd" class="input-label">Equivalente (USD)</label>
-                    <!-- Campo de solo lectura, se calcula por JS -->
-                    <input type="text" id="monto_usd" class="input-field" placeholder="$ 0.00" style="background-color: #F5F5F5; color: var(--color-success); font-weight: 700;" readonly>
+
+                <div class="d-flex gap-sm">
+                    <div class="input-group" style="flex: 1;">
+                        <label for="monto_ves" class="input-label">Monto (Bs.)</label>
+                        <input type="number" id="monto_ves" class="input-field" placeholder="Ej. 1000" step="0.01" min="10" required>
+                    </div>
+                    <div class="input-group" style="flex: 1;">
+                        <label for="monto_usd" class="input-label">Equivalente (USD)</label>
+                        <!-- Campo de solo lectura, se calcula por JS -->
+                        <input type="text" id="monto_usd" class="input-field" placeholder="$ 0.00" style="background-color: #F5F5F5; color: var(--color-success); font-weight: 700;" readonly>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="referencia" class="input-label">Número de Referencia</label>
+                    <input type="text" id="referencia" class="input-field" placeholder="Ej. 123456890" maxlength="20" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="fecha" class="input-label">Fecha de la Transferencia</label>
+                    <input type="date" id="fecha" class="input-field" required>
                 </div>
             </div>
 
-            <div class="input-group">
-                <label for="referencia" class="input-label">Número de Referencia</label>
-                <input type="text" id="referencia" class="input-field" placeholder="Ej. 123456890" maxlength="20" required>
-            </div>
+            <div id="usd-fields" style="display:none;">
 
-            <div class="input-group">
-                <label for="fecha" class="input-label">Fecha de la Transferencia</label>
-                <input type="date" id="fecha" class="input-field" required>
+                <div class="input-group">
+                    <label class="input-label">Banco de Origen</label>
+                    <label>
+                        <select class="input-field">
+                            <option>Selecciona tu banco...</option>
+                            <option>Banco de Venezuela</option>
+                            <option>Banesco</option>
+                            <option>Mercantil</option>
+                            <option>Provincial</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Monto Transferido (USD)</label>
+                    <label>
+                        <input type="number"
+                               class="input-field"
+                               placeholder="Ej. 20.00"
+                               step="0.01">
+                    </label>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Últimos 4 dígitos de la cuenta origen</label>
+                    <label>
+                        <input type="text"
+                               class="input-field"
+                               placeholder="Ej. 7513"
+                               maxlength="4">
+                    </label>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Número de Referencia</label>
+                    <label>
+                        <input type="text"
+                               class="input-field"
+                               placeholder="Ej. 123456890"
+                               maxlength="20">
+                    </label>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Fecha de la Transferencia</label>
+                    <label>
+                        <input type="date"
+                               class="input-field">
+                    </label>
+                </div>
+
             </div>
 
             <button type="submit" class="btn-primary mt-sm" id="btn-submit">Confirmar Recarga</button>
@@ -196,6 +261,29 @@
             }, 2500);
         }, 1500);
     });
+</script>
+
+<script>
+    const tipoRecarga = document.getElementById('tipo_recarga');
+    const vesFields = document.getElementById('ves-fields');
+    const usdFields = document.getElementById('usd-fields');
+
+    function actualizarFormulario() {
+
+        if (tipoRecarga.value === 'usd') {
+            usdFields.style.display = 'block';
+            vesFields.style.display = 'none';
+        } else {
+            usdFields.style.display = 'none';
+            vesFields.style.display = 'block';
+        }
+
+    }
+
+    tipoRecarga.addEventListener('change', actualizarFormulario);
+
+    // Mostrar el formulario correcto al cargar la página
+    actualizarFormulario();
 </script>
 </body>
 </html>
