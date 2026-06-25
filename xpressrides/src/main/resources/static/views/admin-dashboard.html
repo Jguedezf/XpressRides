@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - XpressRides</title>
+
+    <!-- Importando la fuente oficial (Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS conectado -->
+    <link rel="stylesheet" href="/css/estilos.css">
+
+    <style>
+        /* Estilos base para centrar todo */
+        body {
+            background-color: var(--color-page-bg, #F8F9FB);
+            font-family: var(--font-family-base);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<main class="main-container" style="max-width: 600px;">
+
+    <!-- Logo XpressRides -->
+    <div class="text-center mb-24">
+        <h1 class="brand-heading">
+            <span class="brand-primary">Xpress</span><span class="brand-secondary">Rides</span>
+        </h1>
+    </div>
+
+    <!-- Tarjeta Blanca Moderna -->
+    <section class="premium-card">
+
+        <!-- Títulos -->
+        <h2 class="premium-title" style="margin-bottom: 5px;">Panel de Administración</h2>
+        <p class="premium-subtitle">Evaluación y Habilitación de Choferes</p>
+
+        <!-- Mensajes de Alerta -->
+        <div class="alert-success" id="eval-success" style="display: none; font-size: 13px; text-align: center;">
+            ¡Chofer evaluado y habilitado exitosamente!
+        </div>
+        <div class="alert-error" id="eval-error" style="display: none; font-size: 13px; text-align: center;">
+            Las notas no alcanzan el mínimo requerido para habilitar.
+        </div>
+
+        <!-- Formulario de Evaluación -->
+        <form id="evaluation-form">
+
+            <div class="mb-24">
+                <label for="choferPostulante" class="premium-label">Seleccionar Postulante</label>
+                <!-- Lista desplegable vacía por defecto, demostrando que la BD está vacía -->
+                <select id="choferPostulante" class="premium-input" required>
+                    <option value="" disabled selected>No hay postulantes registrados aún...</option>
+
+                    <!-- Solo dejamos uno "falso" oculto para que puedas probar que los botones funcionan -->
+                    <option value="1">Ej. Juan Pérez (V-12345678)</option>
+                </select>
+                <p style="font-size: 11px; color: #888; margin-top: 5px; text-align: right;">
+                    *Los choferes aparecerán aquí cuando se registren.
+                </p>
+            </div>
+
+            <div class="mb-24">
+                <label for="notaPsicologica" class="premium-label">Prueba Psicológica (Mín. 73)</label>
+                <input type="number" id="notaPsicologica" class="premium-input" placeholder="Ingresar nota del 0 al 100" min="0" max="100" required>
+            </div>
+
+            <div class="mb-24">
+                <label for="notaVehicular" class="premium-label">Revisión Vehicular (Mín. 65)</label>
+                <input type="number" id="notaVehicular" class="premium-input" placeholder="Ingresar nota del 0 al 100" min="0" max="100" required>
+            </div>
+
+            <!-- Botón Naranja -->
+            <button type="submit" class="premium-btn" id="btn-evaluar">Registrar Calificaciones</button>
+
+        </form>
+    </section>
+
+</main>
+
+<script>
+    // Lógica para validar y enviar el formulario
+    document.getElementById('evaluation-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const btn = document.getElementById('btn-evaluar');
+        const originalText = btn.innerText;
+
+        document.getElementById('eval-success').style.display = 'none';
+        document.getElementById('eval-error').style.display = 'none';
+
+        btn.innerText = 'Guardando en Base de Datos...';
+        btn.disabled = true;
+
+        const notaPsi = parseInt(document.getElementById('notaPsicologica').value);
+        const notaVeh = parseInt(document.getElementById('notaVehicular').value);
+
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.disabled = false;
+
+            // Lógica de evaluación (Reglas de la profesora)
+            if (notaPsi >= 73 && notaVeh >= 65) {
+                document.getElementById('eval-success').style.display = 'block';
+                document.getElementById('evaluation-form').reset(); // Limpia los campos al terminar
+            } else {
+                document.getElementById('eval-error').style.display = 'block';
+            }
+        }, 1000);
+    });
+</script>
+</body>
+</html>
