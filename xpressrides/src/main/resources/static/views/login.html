@@ -93,35 +93,7 @@
 
 </main>
 
-<!-- Script Temporal Hito 1.2 -->
-<script>
-    document.getElementById('login-form').addEventListener('submit', function(e) {
-        e.preventDefault(); // Evitamos que la página recargue
-
-        const btn = document.getElementById('btn-submit');
-        const originalText = btn.innerText;
-
-        // Efecto visual de carga
-        btn.innerText = 'Iniciando...';
-        btn.disabled = true;
-
-        // Simulamos un retraso de red de 1 segundo
-        setTimeout(() => {
-            btn.innerText = originalText;
-            btn.disabled = false;
-
-            // Prueba visual: Si escribes 'error', salta la alerta roja
-            const userVal = document.getElementById('username').value.trim().toLowerCase();
-            if (userVal === 'error') {
-                document.getElementById('login-error').style.display = 'block';
-            } else {
-                document.getElementById('login-error').style.display = 'none';
-                // Redirección simulada (comentada por ahora)
-                window.location.href = "/views/cliente-dashboard.html";
-                console.log("¡Formulario procesado! Listo para conectar con Java.");
-            }
-        }, 1000);
-    });
-</script>
+<script src="/js/api.js"></script>
+<script src="/js/login.js"></script>
 </body>
 </html>

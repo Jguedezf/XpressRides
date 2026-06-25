@@ -185,72 +185,8 @@
 
 <!-- Scripts de Leaflet y Lógica -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script>
-    const map = L.map('map', {
-        zoomControl: false
-    }).setView([8.2996, -62.7118], 13);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-        attribution: '© OpenStreetMap'
-    }).addTo(map);
-
-    const marcadorCliente = L.marker([8.2996, -62.7118]).addTo(map)
-        .bindPopup("Estás aquí")
-        .openPopup();
-
-    document.addEventListener("DOMContentLoaded", () => {
-        cargarZonas();
-    });
-
-    function cargarZonas() {
-        const zonasMock = [
-            { id: 1, nombre: "Alta Vista", sector: "Puerto Ordaz" },
-            { id: 2, nombre: "Unare", sector: "Puerto Ordaz" },
-            { id: 3, nombre: "Centro de San Félix", sector: "San Félix" },
-            { id: 4, nombre: "UNEG Villa Asia", sector: "Puerto Ordaz" },
-            { id: 5, nombre: "Castillito", sector: "Puerto Ordaz" }
-        ];
-
-        const selectOrigen = document.getElementById('origen');
-        const selectDestino = document.getElementById('destino');
-
-        selectOrigen.innerHTML = '<option value="">Seleccione origen...</option>';
-        selectDestino.innerHTML = '<option value="">Seleccione destino...</option>';
-
-        zonasMock.forEach(zona => {
-            const optionHtml = `<option value="${zona.id}">${zona.nombre} (${zona.sector})</option>`;
-            selectOrigen.innerHTML += optionHtml;
-            selectDestino.innerHTML += optionHtml;
-        });
-    }
-
-    document.getElementById('form-solicitar-viaje').addEventListener('submit', function(e) {
-        e.preventDefault();
-
-        const btn = document.getElementById('btn-solicitar');
-        const origen = document.getElementById('origen').value;
-        const destino = document.getElementById('destino').value;
-
-        if(origen === destino) {
-            alert("El origen y el destino no pueden ser iguales.");
-            return;
-        }
-
-        btn.innerText = 'Buscando chofer...';
-        btn.disabled = true;
-        btn.style.backgroundColor = 'var(--color-success)';
-
-        setTimeout(() => {
-            btn.innerText = '¡Chofer encontrado!';
-            console.log("Viaje solicitado con éxito. Redirigiendo...");
-        }, 2000);
-    });
-
-    function abrirNotificaciones() {
-        console.log("Abrir modal/página de notificaciones");
-        document.getElementById('badge-count').style.display = 'none';
-    }
-</script>
+<script src="/js/api.js"></script>
+<script src="/js/notifications.js"></script>
+<script src="/js/dashboard.js"></script>
 </body>
 </html>

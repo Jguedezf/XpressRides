@@ -58,7 +58,10 @@
 </div>
 
 <script>
-    // Redirigir al login después de 2 segundos simulando la limpieza de sesión
+    // Limpiar sesión del usuario
+    localStorage.removeItem('xpressUsuario');
+
+    // Redirigir al login después de 2 segundos
     setTimeout(() => {
         window.location.href = '/views/login.html';
     }, 2000);

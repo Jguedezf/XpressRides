@@ -120,11 +120,12 @@
         <a href="/views/user-profile.html" class="active">Mi Perfil</a>
     </nav>
 
-    <div class="notification-bell">
+    <div class="notification-bell" onclick="abrirNotificaciones()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
         </svg>
+        <span class="notification-badge" id="badge-count" style="display:none;"></span>
     </div>
 </header>
 
@@ -133,12 +134,15 @@
 
     <!-- Tarjeta de Identidad -->
     <div class="profile-header">
-        <div class="profile-avatar">FS</div> <!-- Iniciales hardcodeadas -->
+        <!-- El ID perfil-avatar se llenará con JS -->
+        <div class="profile-avatar" id="profile-avatar">--</div>
         <div>
-            <h2 class="h2-subtitle" style="margin-bottom: 2px;">Freddy Salazar</h2>
+            <!-- El ID profile-name se llenará con JS -->
+            <h2 class="h2-subtitle" style="margin-bottom: 2px;" id="profile-name">Cargando...</h2>
             <div class="d-flex align-center gap-xs">
-                <span class="badge-green">Estudiante UNEG</span>
-                <span class="text-small">5.00 ★</span>
+                <!-- El ID profile-badge se mostrará si es estudiante -->
+                <span class="badge-green" id="profile-badge" style="display: none;"></span>
+                <span class="text-small" id="profile-rating">5.00 ★</span>
             </div>
         </div>
     </div>
@@ -146,11 +150,11 @@
     <!-- Billetera Xpress -->
     <div class="wallet-card">
         <div class="wallet-label">Saldo Disponible (USD)</div>
-        <div class="wallet-amount">$65.00</div>
+        <!-- El ID wallet-amount se llenará desde la base de datos -->
+        <div class="wallet-amount" id="wallet-amount">Cargando...</div>
 
         <div class="d-flex gap-sm">
-            <!-- Botón de recarga usando enlace directo -->
-            <button class="btn-primary" style="background-color: white; color: var(--color-secondary); padding: 8px 16px; border-radius: 20px; font-size: 14px;" onclick="window.location.href='user-recharge.html'">
+            <button class="btn-primary" style="background-color: white; color: var(--color-secondary); padding: 8px 16px; border-radius: 20px; font-size: 14px;" onclick="window.location.href='/views/cliente-recharge.html'">
                 + Recargar Saldo
             </button>
         </div>
@@ -194,10 +198,10 @@
     </a>
 </nav>
 
-<script>
-    function abrirRecarga() {
-        alert("Aquí abriremos el modal o redirigiremos a la vista de Recarga de Saldo (Pago Móvil/Transferencia) que desarrollará el equipo.");
-    }
-</script>
+<!-- Scripts lógicos que conectan con Spring Boot -->
+<script src="/js/api.js"></script>
+<script src="/js/notifications.js"></script>
+<script src="/js/user-profile.js"></script>
+
 </body>
 </html>
