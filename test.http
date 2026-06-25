@@ -1,0 +1,8 @@
+POST http://localhost:8080/api/tasa-bcv
+Content-Type: application/json
+
+{
+  "fechaVigencia": "2026-06-22",
+  "tasaVes": 612.43,
+  "registradoPor": 1
+}

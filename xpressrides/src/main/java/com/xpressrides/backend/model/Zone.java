@@ -1,0 +1,48 @@
+/**
+ * ============================================================
+ *  XpressRides (Decarrerita) — Sistemas de Base de Datos I
+ *  UNEG · Prof. María Raquel Herrera E. · Junio 2026
+ *  Equipo: Johanna Guédez · Eliuber González · Freddy Salazar
+ *          Manuel Jaimes · Ángel Martínez
+ * ============================================================
+ *  Módulo:      Catálogos Base
+ *  Descripción: Entidad que representa la tabla 'zona' —
+ *               catálogo de zonas geográficas de Ciudad Guayana
+ *  Versión:     1.1.0
+ *  Fecha:       24/06/2026
+ * ============================================================
+ */
+package com.xpressrides.backend.model;
+
+import jakarta.persistence.*;
+import lombok.Data;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Data
+@Entity
+@Table(name = "zona")
+public class Zone {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(name = "nombre", nullable = false, unique = true, length = 80)
+    private String name;
+
+    @Column(name = "parroquia", nullable = false, length = 80)
+    private String parish;
+
+    @Column(name = "latitud", nullable = false, precision = 10, scale = 7)
+    private BigDecimal latitude;
+
+    @Column(name = "longitud", nullable = false, precision = 10, scale = 7)
+    private BigDecimal longitude;
+
+    @Column(name = "activo", nullable = false)
+    private Boolean active;
+
+    @Column(name = "creado_en", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+}
