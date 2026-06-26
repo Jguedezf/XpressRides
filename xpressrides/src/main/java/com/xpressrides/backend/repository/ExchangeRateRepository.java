@@ -24,6 +24,6 @@ import java.util.Optional;
 public interface ExchangeRateRepository extends JpaRepository<ExchangeRate, Integer> {
 
     // Obtiene la tasa vigente más reciente — igual que la vista v_tasa_vigente
-    @Query("SELECT t FROM ExchangeRate t WHERE t.effectiveDate <= CURRENT_DATE ORDER BY t.effectiveDate DESC")
+    @Query(value = "SELECT * FROM tasa_bcv WHERE fecha_vigencia <= CURDATE() ORDER BY fecha_vigencia DESC LIMIT 1", nativeQuery = true)
     Optional<ExchangeRate> findCurrentRate();
 }
