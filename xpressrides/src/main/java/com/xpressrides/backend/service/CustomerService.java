@@ -19,9 +19,11 @@ import com.xpressrides.backend.model.CustomerCoupon;
 import com.xpressrides.backend.model.Driver;
 import com.xpressrides.backend.model.Trip;
 import com.xpressrides.backend.model.User;
+import com.xpressrides.backend.model.TopUp;
 import com.xpressrides.backend.model.Vehicle;
 import com.xpressrides.backend.repository.CustomerCouponRepository;
 import com.xpressrides.backend.repository.CustomerRepository;
+import com.xpressrides.backend.repository.TopUpRepository;
 import com.xpressrides.backend.repository.TripRepository;
 import com.xpressrides.backend.repository.UserRepository;
 
@@ -32,15 +34,18 @@ public class CustomerService {
     private final UserRepository userRepository;
     private final TripRepository tripRepository;
     private final CustomerCouponRepository customerCouponRepository;
+    private final TopUpRepository topUpRepository;
 
     public CustomerService(CustomerRepository customerRepository,
                            UserRepository userRepository,
                            TripRepository tripRepository,
-                           CustomerCouponRepository customerCouponRepository) {
+                           CustomerCouponRepository customerCouponRepository,
+                           TopUpRepository topUpRepository) {
         this.customerRepository = customerRepository;
         this.userRepository = userRepository;
         this.tripRepository = tripRepository;
         this.customerCouponRepository = customerCouponRepository;
+        this.topUpRepository = topUpRepository;
     }
 
     public CustomerProfileResponse getProfile(String username) {
@@ -113,6 +118,12 @@ public class CustomerService {
         trip.setCancelledBy("cliente");
         trip.setCancellationReason(reason);
         tripRepository.save(trip);
+    }
+
+    public List<TopUp> getTopUps(String username) {
+        Customer customer = customerRepository.findByUserId_Username(username)
+            .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
+        return topUpRepository.findByCustomerIdOrderByDateTimeDesc(customer.getId());
     }
 
     public List<CustomerCoupon> getCoupons(String username) {

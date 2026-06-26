@@ -48,10 +48,14 @@ public class InvoiceService {
         dto.setClienteNombre((String) row[6]);
         dto.setClienteCedula((String) row[7]);
         dto.setClienteDireccion((String) row[8]);
+        dto.setChoferNombre((String) row[9]);
+        dto.setZonaOrigen((String) row[10]);
+        dto.setZonaDestino((String) row[11]);
+        dto.setDistanciaKm(new BigDecimal(row[12].toString()));
 
-        BigDecimal costoUsd     = new BigDecimal(row[9].toString());
-        BigDecimal tasaVes      = new BigDecimal(row[10].toString());
-        BigDecimal montoIgtfUsd = new BigDecimal(row[11].toString());
+        BigDecimal costoUsd     = new BigDecimal(row[13].toString());
+        BigDecimal tasaVes      = new BigDecimal(row[14].toString());
+        BigDecimal montoIgtfUsd = new BigDecimal(row[15].toString());
 
         BigDecimal totalUsd = costoUsd.add(montoIgtfUsd)
                 .setScale(2, RoundingMode.HALF_UP);
