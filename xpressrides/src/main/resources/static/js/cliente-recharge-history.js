@@ -32,7 +32,7 @@ async function cargarHistorialRecargas(usuario) {
 
         // Cargar recargas del cliente
         const response = await fetchAPI(`/cliente/recargas`);
-        const recargas = response.data || [];
+        const recargas = Array.isArray(response) ? response : (response.data || []);
 
         if (recargas.length === 0) {
             container.innerHTML = `
