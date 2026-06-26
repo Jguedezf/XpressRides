@@ -31,3 +31,13 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Archivos internos de Claude Code (no son parte del entregable) ###
+CLAUDE.md
+CLAUDE*.md
+INSTRUCCIONES_*.md
+ESPECIFICACION_*.md
+INFORME_SESION*.md
+PROMPT_INICIO_SESION*.txt
+CONSULTA_*.txt
+commit_*.txt
