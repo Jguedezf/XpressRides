@@ -418,6 +418,17 @@ sp_solicitar_traslado: BEGIN
     LEAVE sp_solicitar_traslado;
   END IF;
 
+  -- Validar que el cliente no tenga un viaje activo
+  IF EXISTS (
+    SELECT 1 FROM traslado
+     WHERE id_cliente = p_id_cliente
+       AND estado IN ('solicitado','aceptado','en_camino','chofer_llego','en_progreso')
+  ) THEN
+    SET p_mensaje = 'ERROR: Ya tienes un viaje activo en curso.';
+    SET p_id_traslado = NULL;
+    LEAVE sp_solicitar_traslado;
+  END IF;
+
   -- Coordenadas de las zonas
   SELECT latitud, longitud INTO v_lat1, v_lon1
     FROM zona WHERE id = p_id_zona_origen;
