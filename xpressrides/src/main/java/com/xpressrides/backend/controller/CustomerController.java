@@ -78,6 +78,12 @@ public class CustomerController {
     }
 
     @PreAuthorize("hasRole('cliente')")
+    @GetMapping("/recargas")
+    public ResponseEntity<?> getTopUps(Authentication authentication) {
+        return ResponseEntity.ok(customerService.getTopUps(authentication.getName()));
+    }
+
+    @PreAuthorize("hasRole('cliente')")
     @GetMapping("/cupones")
     public ResponseEntity<?> getCoupons(Authentication authentication) {
         return ResponseEntity.ok(customerService.getCoupons(authentication.getName()));
