@@ -1,5 +1,6 @@
 package com.xpressrides.backend.controller;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
@@ -80,5 +81,24 @@ public class CustomerController {
     @GetMapping("/cupones")
     public ResponseEntity<?> getCoupons(Authentication authentication) {
         return ResponseEntity.ok(customerService.getCoupons(authentication.getName()));
+    }
+
+    // GET /api/cliente/viaje-activo — datos del viaje en curso con chofer y vehículo
+    @PreAuthorize("hasRole('cliente')")
+    @GetMapping("/viaje-activo")
+    public ResponseEntity<?> getActiveTrip(Authentication authentication) {
+        HashMap<String, Object> response = new HashMap<>();
+        try {
+            Map<String, Object> data = customerService.getActiveTrip(authentication.getName());
+            response.put("success", true);
+            response.put("data", data);
+            response.put("message", data != null ? "Viaje activo encontrado" : "Sin viaje activo");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("data", null);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 }

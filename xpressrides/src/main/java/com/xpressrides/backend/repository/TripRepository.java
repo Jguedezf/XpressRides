@@ -22,4 +22,8 @@ public interface TripRepository extends JpaRepository<Trip, Integer> {
     List<Trip> findByDriver_Username_UsernameOrderByRequestDateDesc(String username);
 
     Optional<Trip> findByIdAndDriver_Username_Username(Integer id, String username);
+
+    // Busca el viaje activo más reciente de un cliente dado una lista de estados
+    Optional<Trip> findFirstByCustomer_IdAndStatusInOrderByRequestDateDesc(
+            Integer customerId, List<String> statuses);
 }

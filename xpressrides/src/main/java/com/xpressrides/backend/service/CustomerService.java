@@ -1,7 +1,10 @@
 package com.xpressrides.backend.service;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,8 +16,10 @@ import com.xpressrides.backend.exception.BadRequestException;
 import com.xpressrides.backend.exception.ResourceNotFoundException;
 import com.xpressrides.backend.model.Customer;
 import com.xpressrides.backend.model.CustomerCoupon;
+import com.xpressrides.backend.model.Driver;
 import com.xpressrides.backend.model.Trip;
 import com.xpressrides.backend.model.User;
+import com.xpressrides.backend.model.Vehicle;
 import com.xpressrides.backend.repository.CustomerCouponRepository;
 import com.xpressrides.backend.repository.CustomerRepository;
 import com.xpressrides.backend.repository.TripRepository;
@@ -114,6 +119,48 @@ public class CustomerService {
         Customer customer = customerRepository.findByUserId_Username(username)
             .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
         return customerCouponRepository.findByCustomer_IdAndUsedFalse(customer.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getActiveTrip(String username) {
+        Customer customer = customerRepository.findByUserId_Username(username)
+            .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
+
+        List<String> activeStatuses = List.of(
+            "solicitado", "aceptado", "en_camino", "chofer_llego", "en_progreso"
+        );
+        Optional<Trip> tripOpt = tripRepository
+            .findFirstByCustomer_IdAndStatusInOrderByRequestDateDesc(
+                customer.getId(), activeStatuses);
+
+        if (tripOpt.isEmpty()) {
+            return null;
+        }
+
+        Trip trip = tripOpt.get();
+        Driver driver = trip.getDriver();
+        User driverUser = driver.getUsername();
+        Vehicle vehicle = trip.getVehicle();
+
+        Map<String, Object> choferData = new HashMap<>();
+        choferData.put("nombre", driverUser.getName() + " " + driverUser.getLastName());
+        choferData.put("vehiculo", vehicle.getBrand() + " " + vehicle.getModel() + " " + vehicle.getYear());
+        choferData.put("placa", vehicle.getPlate());
+        choferData.put("color", vehicle.getColor());
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("idTraslado", trip.getId());
+        data.put("estado", trip.getStatus());
+        data.put("origen", trip.getOriginZone().getName());
+        data.put("destino", trip.getDestinationZone().getName());
+        data.put("costoEstimadoUsd", trip.getCustomerCostUsd());
+        data.put("costoEstimadoVes", trip.getCustomerCostVes());
+        data.put("chofer", choferData);
+        data.put("tiempoEstimadoLlegadaMinutos", trip.getEtaMinutes() != null ? trip.getEtaMinutes() : 8);
+        data.put("fechaSolicitud", trip.getRequestDate());
+        data.put("fechaAceptacion", trip.getAcceptanceDate());
+
+        return data;
     }
 
     private CustomerProfileResponse mapToProfileResponse(Customer customer) {
