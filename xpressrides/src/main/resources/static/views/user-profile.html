@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mi Perfil - XpressRides</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/css/estilos.css">
+
+    <style>
+        body {
+            background-color: var(--color-bg-card);
+            padding-bottom: 80px;
+        }
+
+        .top-bar {
+            background-color: var(--color-bg-main);
+            padding: var(--space-md) var(--space-lg);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .brand-logo-small { color: var(--color-primary); font-weight: 800; font-size: var(--font-size-h2); margin: 0; }
+        .brand-text { color: var(--color-secondary); }
+
+        .main-content {
+            padding: var(--space-lg);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* Cabecera del Perfil */
+        .profile-header {
+            background-color: var(--color-bg-main);
+            border-radius: var(--radius-card);
+            padding: var(--space-lg);
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            margin-bottom: var(--space-md);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .profile-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background-color: var(--color-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        /* Tarjeta de Saldo Destacada */
+        .wallet-card {
+            background: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-accent) 100%);
+            border-radius: var(--radius-card);
+            padding: var(--space-lg);
+            color: white;
+            margin-bottom: var(--space-lg);
+            box-shadow: 0 4px 15px rgba(31, 78, 121, 0.3);
+        }
+
+        .wallet-label { font-size: var(--font-size-small); opacity: 0.9; margin-bottom: 5px; }
+        .wallet-amount { font-size: 36px; font-weight: 800; margin-bottom: var(--space-md); }
+
+        /* Opciones de Menú */
+        .menu-list {
+            background-color: var(--color-bg-main);
+            border-radius: var(--radius-card);
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .menu-item {
+            padding: var(--space-md);
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            border-bottom: 1px solid #F0F0F0;
+            color: var(--color-text-main);
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+
+        .menu-item:hover { background-color: #FAFAFA; }
+        .menu-item:last-child { border-bottom: none; }
+
+        .menu-item.danger { color: var(--color-error); }
+
+        .desktop-nav { display: none; }
+        @media (min-width: 768px) {
+            .desktop-nav { display: flex; gap: var(--space-lg); align-items: center; }
+            .desktop-nav a { color: var(--color-text-muted); text-decoration: none; font-weight: 600; font-size: var(--font-size-normal); }
+            .desktop-nav a:hover, .desktop-nav a.active { color: var(--color-primary); }
+            .bottom-nav { display: none !important; }
+            .main-content { padding-top: var(--space-xl); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- BARRA SUPERIOR -->
+<header class="top-bar d-flex justify-between align-center">
+    <h1 class="brand-logo-small">Xpress<span class="brand-text">Rides</span></h1>
+
+    <nav class="desktop-nav">
+        <a href="/views/cliente-dashboard.html">Inicio</a>
+        <a href="/views/cliente-record.html">Historial de Viajes</a>
+        <a href="/views/user-profile.html" class="active">Mi Perfil</a>
+    </nav>
+
+    <div class="notification-bell" onclick="abrirNotificaciones()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <span class="notification-badge" id="badge-count" style="display:none;"></span>
+    </div>
+</header>
+
+<!-- CONTENIDO PRINCIPAL -->
+<main class="main-content">
+
+    <!-- Tarjeta de Identidad -->
+    <div class="profile-header">
+        <!-- El ID perfil-avatar se llenará con JS -->
+        <div class="profile-avatar" id="profile-avatar">--</div>
+        <div>
+            <!-- El ID profile-name se llenará con JS -->
+            <h2 class="h2-subtitle" style="margin-bottom: 2px;" id="profile-name">Cargando...</h2>
+            <div class="d-flex align-center gap-xs">
+                <!-- El ID profile-badge se mostrará si es estudiante -->
+                <span class="badge-green" id="profile-badge" style="display: none;"></span>
+                <span class="text-small" id="profile-rating">5.00 ★</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Billetera Xpress -->
+    <div class="wallet-card">
+        <div class="wallet-label">Saldo Disponible (USD)</div>
+        <!-- El ID wallet-amount se llenará desde la base de datos -->
+        <div class="wallet-amount" id="wallet-amount">Cargando...</div>
+
+        <div class="d-flex gap-sm">
+            <button class="btn-primary" style="background-color: white; color: var(--color-secondary); padding: 8px 16px; border-radius: 20px; font-size: 14px;" onclick="window.location.href='/views/cliente-recharge.html'">
+                + Recargar Saldo
+            </button>
+        </div>
+    </div>
+
+    <!-- Menú de Opciones -->
+    <h3 class="text-small mb-sm" style="font-weight: 600; padding-left: 8px;">Opciones de Cuenta</h3>
+    <div class="menu-list">
+        <a href="/views/user-personal-data.html" class="menu-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            Datos Personales
+        </a>
+        <a href="/views/cliente-recharge-history.html" class="menu-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Historial de Recargas
+        </a>
+        <a href="/views/user-support.html" class="menu-item">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            Ayuda y Soporte
+        </a>
+        <a href="/views/user-logout.html" class="menu-item danger">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            Cerrar Sesión
+        </a>
+    </div>
+</main>
+
+<!-- NAVEGACIÓN INFERIOR MÓVIL -->
+<nav class="bottom-nav">
+    <a href="/views/cliente-dashboard.html" class="bottom-nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        <span class="mt-xs">Inicio</span>
+    </a>
+    <a href="/views/cliente-record.html" class="bottom-nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span class="mt-xs">Historial</span>
+    </a>
+    <a href="/views/user-profile.html" class="bottom-nav-item active">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <span class="mt-xs">Perfil</span>
+    </a>
+</nav>
+
+<!-- Scripts lógicos que conectan con Spring Boot -->
+<script src="/js/api.js"></script>
+<script src="/js/notifications.js"></script>
+<script src="/js/user-profile.js"></script>
+
+</body>
+</html>

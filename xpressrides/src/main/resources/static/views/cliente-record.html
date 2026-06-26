@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Historial - XpressRides</title>
+
+    <!-- Fuente oficial del sistema (Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Hoja de estilos global XpressRides -->
+    <link rel="stylesheet" href="/css/estilos.css">
+
+    <style>
+        body {
+            background-color: var(--color-bg-card); /* Fondo gris claro general */
+            padding-bottom: 80px; /* Espacio para la barra inferior en móviles */
+        }
+
+        /* Barra Superior */
+        .top-bar {
+            background-color: var(--color-bg-main);
+            padding: var(--space-md) var(--space-lg);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .brand-logo-small {
+            color: var(--color-primary);
+            font-weight: 800;
+            font-size: var(--font-size-h2);
+            margin: 0;
+        }
+
+        .brand-text { color: var(--color-secondary); }
+
+        /* Contenedor Principal */
+        .main-content {
+            padding: var(--space-lg);
+            max-width: 600px; /* Ancho máximo para no verse estirado en PC */
+            margin: 0 auto;
+        }
+
+        /* Tarjeta de Viaje en el Historial */
+        .trip-card {
+            background-color: var(--color-bg-main);
+            border-radius: var(--radius-card);
+            padding: var(--space-md);
+            margin-bottom: var(--space-md);
+            border: 1px solid #EAEAEA;
+            transition: transform 0.2s ease;
+        }
+
+        .trip-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+
+        .trip-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-sm);
+            padding-bottom: var(--space-xs);
+            border-bottom: 1px solid #F0F0F0;
+        }
+
+        .trip-date {
+            font-size: var(--font-size-small);
+            color: var(--color-text-muted);
+            font-weight: 600;
+        }
+
+        .trip-status {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .status-completado { background-color: var(--color-success-bg); color: var(--color-success); }
+        .status-cancelado { background-color: var(--color-error-bg); color: var(--color-error); }
+
+        .trip-route {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-bottom: var(--space-sm);
+        }
+
+        .route-point {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            font-size: var(--font-size-normal);
+            color: var(--color-text-main);
+            font-weight: 500;
+        }
+
+        .trip-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: var(--space-sm);
+        }
+
+        .trip-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--color-secondary);
+        }
+
+        /* Navegación de Escritorio */
+        .desktop-nav { display: none; }
+
+        @media (min-width: 768px) {
+            .desktop-nav {
+                display: flex;
+                gap: var(--space-lg);
+                align-items: center;
+            }
+            .desktop-nav a {
+                color: var(--color-text-muted);
+                text-decoration: none;
+                font-weight: 600;
+                font-size: var(--font-size-normal);
+            }
+            .desktop-nav a:hover, .desktop-nav a.active { color: var(--color-primary); }
+            .bottom-nav { display: none !important; }
+            .main-content { padding-top: var(--space-xl); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- BARRA SUPERIOR -->
+<header class="top-bar d-flex justify-between align-center">
+    <h1 class="brand-logo-small">Xpress<span class="brand-text">Rides</span></h1>
+
+    <nav class="desktop-nav">
+        <a href="/views/cliente-dashboard.html">Inicio</a>
+        <a href="/views/cliente-record.html" class="active">Historial de Viajes</a>
+        <a href="/views/user-profile.html">Mi Perfil</a>
+    </nav>
+
+    <div class="notification-bell" onclick="abrirNotificaciones()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <span class="notification-badge" id="badge-count" style="display:none;"></span>
+    </div>
+</header>
+
+<!-- CONTENIDO PRINCIPAL -->
+<main class="main-content">
+    <h1 class="h1-title mb-lg text-center">Tus Viajes</h1>
+
+    <!-- Contenedor donde JS inyectará el historial dinámicamente -->
+    <div id="historial-container">
+        <!-- El mensaje de carga será reemplazado por las tarjetas desde js/cliente-record.js -->
+        <p class="text-center mt-md" style="color: var(--color-text-muted);">Cargando tu historial de viajes...</p>
+    </div>
+</main>
+
+
+<!-- NAVEGACIÓN INFERIOR MÓVIL -->
+<nav class="bottom-nav">
+    <a href="/views/cliente-dashboard.html" class="bottom-nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        <span class="mt-xs">Inicio</span>
+    </a>
+    <a href="/views/cliente-record.html" class="bottom-nav-item active">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span class="mt-xs">Historial</span>
+    </a>
+    <a href="/views/user-profile.html" class="bottom-nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <span class="mt-xs">Perfil</span>
+    </a>
+</nav>
+
+<script src="/js/api.js"></script>
+<script src="/js/notifications.js"></script>
+<script src="/js/cliente-record.js"></script>
+</body>
+</html>

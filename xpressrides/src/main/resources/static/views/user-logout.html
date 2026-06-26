@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cerrando Sesión - XpressRides</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/css/estilos.css">
+
+    <style>
+        body {
+            background-color: var(--color-bg-card);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .logout-box {
+            background-color: var(--color-bg-main);
+            padding: var(--space-xl);
+            border-radius: var(--radius-card);
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 350px;
+            width: 90%;
+        }
+
+        .brand-logo { color: var(--color-primary); font-weight: 800; font-size: var(--font-size-highlight); margin-bottom: var(--space-md); }
+        .brand-text { color: var(--color-secondary); }
+
+        /* Animación sencilla de carga */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(197, 90, 17, 0.2);
+            border-left-color: var(--color-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto var(--space-md);
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+<div class="logout-box">
+    <h1 class="brand-logo">Xpress<span class="brand-text">Rides</span></h1>
+    <div class="spinner"></div>
+    <h2 class="h2-subtitle mb-sm" style="color: var(--color-secondary);">Cerrando tu sesión...</h2>
+    <p class="text-small" style="color: var(--color-text-muted);">Esperamos verte pronto.</p>
+</div>
+
+<script>
+    // Limpiar sesión del usuario
+    localStorage.removeItem('xpressUsuario');
+
+    // Redirigir al login después de 2 segundos
+    setTimeout(() => {
+        window.location.href = '/views/login.html';
+    }, 2000);
+</script>
+</body>
+</html>
