@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await cargarZonas();
     inicializarMapa();
     configurarFormularioViaje();
+    iniciarPollingViajeActivo();
 });
 
 // ─── Variables globales del módulo ───────────────────────
@@ -381,4 +382,80 @@ function mostrarMensajeTemporal(texto, tipo) {
         div.style.opacity = '0';
         setTimeout(() => div.remove(), 300);
     }, 4000);
+}
+
+// ─── Polling de Viaje Activo ───────────────────────────────
+let viajeActivoInterval = null;
+let viajeEstadoPrevio = null;
+
+function iniciarPollingViajeActivo() {
+    // Primera llamada inmediata
+    consultarViajeActivo();
+    
+    // Polling cada 5 segundos
+    viajeActivoInterval = setInterval(consultarViajeActivo, 5000);
+}
+
+async function consultarViajeActivo() {
+    try {
+        const response = await fetchAPI('/cliente/viaje-activo');
+        const data = response.data;
+
+        if (data) {
+            viajeEstadoPrevio = data;
+            mostrarTarjetaViajeActivo(data);
+        } else {
+            // Si data es null pero antes teníamos un viaje activo, significa que finalizó (completado/cancelado)
+            if (viajeEstadoPrevio) {
+                ocultarTarjetaViajeActivo();
+                window.location.href = '/views/cliente-record.html';
+            } else {
+                ocultarTarjetaViajeActivo();
+            }
+        }
+    } catch (error) {
+        console.error('Error al consultar viaje activo:', error);
+    }
+}
+
+function mostrarTarjetaViajeActivo(data) {
+    let card = document.getElementById('viaje-activo-card');
+    if (!card) {
+        card = document.createElement('div');
+        card.id = 'viaje-activo-card';
+        card.style.cssText = `
+            position: fixed; bottom: 20px; right: 20px; z-index: 2000;
+            background: #fff; border-radius: 12px; padding: 20px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15); width: 320px;
+            border-left: 5px solid var(--color-primary);
+        `;
+        document.body.appendChild(card);
+    }
+
+    card.style.display = 'block';
+    
+    const estadoFormateado = data.estado.replace('_', ' ').toUpperCase();
+    const tiempoLlegadaHTML = data.tiempoEstimadoLlegadaMinutos 
+        ? `<p style="margin:8px 0 0 0; font-size:14px; font-weight:bold; color:var(--color-accent);">Llegada en ~${data.tiempoEstimadoLlegadaMinutos} min</p>` 
+        : '';
+        
+    const choferHTML = data.chofer ? `
+        <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
+        <p style="margin:4px 0; font-size:14px;"><strong>Chofer:</strong> ${data.chofer.nombre}</p>
+        <p style="margin:4px 0; font-size:14px;"><strong>Vehículo:</strong> ${data.chofer.vehiculo} (${data.chofer.color})</p>
+        <p style="margin:4px 0; font-size:14px;"><strong>Placa:</strong> ${data.chofer.placa}</p>
+    ` : '';
+
+    card.innerHTML = `
+        <h3 style="margin:0 0 10px 0; color:var(--color-primary); font-size:16px;">Viaje en curso: ${estadoFormateado}</h3>
+        <p style="margin:4px 0; font-size:14px;"><strong>Origen:</strong> ${data.origen}</p>
+        <p style="margin:4px 0; font-size:14px;"><strong>Destino:</strong> ${data.destino}</p>
+        ${choferHTML}
+        ${tiempoLlegadaHTML}
+    `;
+}
+
+function ocultarTarjetaViajeActivo() {
+    const card = document.getElementById('viaje-activo-card');
+    if (card) card.style.display = 'none';
 }
