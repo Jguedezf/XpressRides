@@ -189,8 +189,10 @@ window.verFactura = async function (trasladoId) {
                         </tr>
                         ${f.descuentoUsd > 0 ? `
                         <tr>
-                            <td style="padding:6px 0; color:#1E6B3C; font-weight:600;">Descuento USD</td>
-                            <td style="padding:6px 0; text-align:right; color:#1E6B3C; font-weight:600;">-$${Number(f.descuentoUsd).toFixed(2)}</td>
+                            <td style="padding:6px 0; color:#1E6B3C; font-weight:600;">Descuento (USD / Bs)</td>
+                            <td style="padding:6px 0; text-align:right; color:#1E6B3C; font-weight:600;">
+                                -$${Number(f.descuentoUsd).toFixed(2)} / -Bs ${f.descuentoVes != null ? Number(f.descuentoVes).toFixed(2) : '0.00'}
+                            </td>
                         </tr>
                         ` : ''}
                         <tr>
