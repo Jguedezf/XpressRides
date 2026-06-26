@@ -177,6 +177,13 @@ SET @id_usuario_cliente = LAST_INSERT_ID();
 INSERT INTO cliente (id_usuario, saldo_usd, es_estudiante, primer_viaje_usado)
 VALUES (@id_usuario_cliente, 20.00, 1, 0);
 
+-- ----------------------------------------------------------------
+-- TASA BCV — necesaria para calcular tarifa y mostrar precio en VES
+-- ----------------------------------------------------------------
+INSERT INTO tasa_bcv (fecha_vigencia, tasa_ves, registrado_por) VALUES ('2026-06-22', 620.00, @id_admin);
+INSERT INTO tasa_bcv (fecha_vigencia, tasa_ves, registrado_por) VALUES ('2026-06-25', 621.52, @id_admin);
+INSERT INTO tasa_bcv (fecha_vigencia, tasa_ves, registrado_por) VALUES ('2026-06-26', 622.21, @id_admin);
+
 COMMIT;
 
 -- Restaurar el modo seguro de Workbench
