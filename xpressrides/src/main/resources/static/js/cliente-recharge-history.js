@@ -31,7 +31,7 @@ async function cargarHistorialRecargas(usuario) {
         }
 
         // Cargar recargas del cliente
-        const response = await fetchAPI(`/recargas/cliente/${usuario.clienteId || usuario.id}`);
+        const response = await fetchAPI(`/recargas/cliente/${usuario.id}`);
         const recargas = response.data || [];
 
         if (recargas.length === 0) {

@@ -154,17 +154,6 @@ window.abrirNotificaciones = function () {
     `;
 
     document.body.insertAdjacentHTML('beforeend', panelHTML);
-
-    // Marcar todas como leídas en background
-    if (notificaciones.length > 0) {
-        Promise.all(notificaciones.map(n => 
-            fetchAPI(`/notificaciones/${n.id}/leer`, { method: 'PUT' })
-                .catch(e => console.warn('No se pudo marcar como leída:', e.message))
-        )).then(() => {
-            window._xpressNotificaciones = [];
-            actualizarBadge(0);
-        });
-    }
 };
 
 // Estilos de animación para el panel
