@@ -41,3 +41,6 @@ INFORME_SESION*.md
 PROMPT_INICIO_SESION*.txt
 CONSULTA_*.txt
 commit_*.txt
+
+### Archivos de Configuración ###
+application.properties
