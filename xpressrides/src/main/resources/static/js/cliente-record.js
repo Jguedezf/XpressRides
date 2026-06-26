@@ -163,6 +163,22 @@ window.verFactura = async function (trasladoId) {
                             <td style="padding:6px 0; color:var(--color-text-muted);">Dirección</td>
                             <td style="padding:6px 0; text-align:right;">${f.clienteDireccion || '—'}</td>
                         </tr>
+                        <tr>
+                            <td style="padding:6px 0; color:var(--color-text-muted);">Chofer</td>
+                            <td style="padding:6px 0; text-align:right;">${f.choferNombre || '—'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:6px 0; color:var(--color-text-muted);">Origen</td>
+                            <td style="padding:6px 0; text-align:right;">${f.zonaOrigen || '—'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:6px 0; color:var(--color-text-muted);">Destino</td>
+                            <td style="padding:6px 0; text-align:right;">${f.zonaDestino || '—'}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding:6px 0; color:var(--color-text-muted);">Distancia (Km)</td>
+                            <td style="padding:6px 0; text-align:right;">${f.distanciaKm != null ? Number(f.distanciaKm).toFixed(2) : '—'}</td>
+                        </tr>
                         <tr style="border-top:1px solid #eee;">
                             <td style="padding:8px 0; color:var(--color-text-muted);">Costo USD</td>
                             <td style="padding:8px 0; text-align:right; font-weight:600;">$${f.costoUsd != null ? Number(f.costoUsd).toFixed(2) : '0.00'}</td>

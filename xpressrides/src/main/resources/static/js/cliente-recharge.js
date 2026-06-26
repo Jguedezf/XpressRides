@@ -20,7 +20,7 @@ async function cargarDatosIniciales() {
         // 1. Obtener Tasa BCV vigente (ExchangeRateController)
         const responseTasa = await fetchAPI('/tasa-bcv/vigente');
         const tasaData = responseTasa.data;
-        tasaBcvActual = tasaData.rateVesToUsd || tasaData.tasaVes || 1;
+        tasaBcvActual = tasaData.rateVesToUsd || tasaData.tasaVes || tasaData.rateVes || 1;
         exchangeRateId = tasaData.id || null;
         document.getElementById('tasa-bcv-display').innerText = `Bs. ${Number(tasaBcvActual).toFixed(2)}`;
 

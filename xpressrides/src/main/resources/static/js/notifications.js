@@ -35,8 +35,9 @@ async function cargarNotificaciones(usuario) {
         // Guardamos en variable global para que el panel las use
         window._xpressNotificaciones = misNotificaciones;
 
-        // Actualizar el badge visual
-        actualizarBadge(misNotificaciones.length);
+        // Actualizar el badge visual con las no leídas
+        const pendientes = misNotificaciones.filter(n => !n.read).length;
+        actualizarBadge(pendientes);
 
     } catch (error) {
         // Si fallan ambos (backend apagado, etc.), mostramos 0 silenciosamente
@@ -113,8 +114,12 @@ window.abrirNotificaciones = function () {
             else if (n.type === 'pago') icono = '💰';
             else if (n.type === 'sistema') icono = '⚙️';
 
+            // Estilo visual de leída o no leída
+            const bg = n.read ? '#fafafa' : '#fff';
+            const opacity = n.read ? '0.6' : '1';
+
             listaHTML += `
-                <div style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; display: flex; gap: 10px; align-items: flex-start;">
+                <div style="padding: 12px 16px; border-bottom: 1px solid #f0f0f0; display: flex; gap: 10px; align-items: flex-start; background: ${bg}; opacity: ${opacity}; transition: opacity 0.3s;">
                     <span style="font-size: 18px; flex-shrink: 0;">${icono}</span>
                     <div style="flex: 1; min-width: 0;">
                         <p style="margin: 0 0 4px 0; font-size: 14px; color: #333; line-height: 1.4;">${n.message || 'Sin mensaje'}</p>
@@ -143,7 +148,7 @@ window.abrirNotificaciones = function () {
                 <div style="padding: 14px 16px; background: linear-gradient(135deg, #1F4E79 0%, #C55A11 100%);
                     color: white; font-weight: 700; font-size: 15px; display: flex; justify-content: space-between; align-items: center;">
                     <span>Notificaciones</span>
-                    <span style="font-size: 12px; opacity: 0.9;">${notificaciones.length} pendiente${notificaciones.length !== 1 ? 's' : ''}</span>
+                    <span style="font-size: 12px; opacity: 0.9;">${notificaciones.filter(n => !n.read).length} pendiente${notificaciones.filter(n => !n.read).length !== 1 ? 's' : ''}</span>
                 </div>
 
                 <div style="max-height: 360px; overflow-y: auto;">
@@ -154,6 +159,31 @@ window.abrirNotificaciones = function () {
     `;
 
     document.body.insertAdjacentHTML('beforeend', panelHTML);
+
+    // Marcar las no leídas como leídas en background
+    const noLeidas = notificaciones.filter(n => !n.read);
+    if (noLeidas.length > 0) {
+        Promise.all(noLeidas.map(n =>
+            fetchAPI(`/notificaciones/${n.id}/leer`, { method: 'PUT' })
+                .then(() => { n.read = true; })
+                .catch(e => console.warn('No se pudo marcar como leída:', e.message))
+        )).then(() => {
+            actualizarBadge(0);
+            
+            // Actualizar el DOM de las notificaciones inmediatamente a leídas si siguen abiertas
+            const panel = document.getElementById('panel-notificaciones');
+            if (panel) {
+                const countSpan = panel.querySelector('span:last-child');
+                if (countSpan) countSpan.textContent = '0 pendientes';
+                
+                const notifDivs = panel.querySelectorAll('div[style*="border-bottom"]');
+                notifDivs.forEach(div => {
+                    div.style.background = '#fafafa';
+                    div.style.opacity = '0.6';
+                });
+            }
+        });
+    }
 };
 
 // Estilos de animación para el panel
