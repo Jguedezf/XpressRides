@@ -49,16 +49,11 @@ function poblarDatos(usuario) {
     }
 }
 
-/**
- * Maneja el submit del formulario.
- * Como no existe endpoint PUT para actualizar datos,
- * guardamos en localStorage y mostramos feedback visual.
- */
 function configurarFormulario() {
     const form = document.getElementById('form-datos');
     if (!form) return;
 
-    form.addEventListener('submit', (e) => {
+    form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const btn = document.getElementById('btn-update');
@@ -69,22 +64,43 @@ function configurarFormulario() {
         const inputs = form.querySelectorAll('.input-field');
         const usuario = getUsuario() || {};
 
-        if (inputs[2]) usuario.correo = inputs[2].value;
-        if (inputs[3]) usuario.telefono = inputs[3].value;
+        const nuevoCorreo = inputs[2] ? inputs[2].value : usuario.correo;
+        const nuevoTelefono = inputs[3] ? inputs[3].value : usuario.telefono;
 
-        // Actualizar localStorage
-        localStorage.setItem('xpressUsuario', JSON.stringify(usuario));
+        try {
+            // Enviar petición PUT al servidor
+            await fetchAPI('/cliente/perfil', {
+                method: 'PUT',
+                body: JSON.stringify({
+                    name: usuario.nombre,
+                    lastName: usuario.apellido,
+                    email: nuevoCorreo,
+                    phone: nuevoTelefono,
+                    isStudent: usuario.esEstudiante || false
+                })
+            });
 
-        // Feedback visual
-        setTimeout(() => {
+            // Si es exitoso, actualizar localStorage
+            usuario.correo = nuevoCorreo;
+            usuario.telefono = nuevoTelefono;
+            localStorage.setItem('xpressUsuario', JSON.stringify(usuario));
+
+            // Feedback visual de éxito
             btn.innerText = '¡Datos Actualizados!';
             btn.style.backgroundColor = 'var(--color-success)';
 
+        } catch (error) {
+            console.error('Error actualizando perfil:', error);
+            // Feedback visual de error
+            btn.innerText = 'Error al guardar';
+            btn.style.backgroundColor = 'var(--color-error)';
+            alert(error.message || 'No se pudieron actualizar los datos.');
+        } finally {
             setTimeout(() => {
                 btn.innerText = 'Actualizar Datos';
                 btn.disabled = false;
                 btn.style.backgroundColor = 'var(--color-primary)';
             }, 2000);
-        }, 600);
+        }
     });
 }

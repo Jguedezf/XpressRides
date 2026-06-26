@@ -68,16 +68,22 @@ function configurarFormulario() {
         if (tipoRecarga.value === 'usd') {
             usdFields.style.display = 'block';
             vesFields.style.display = 'none';
+            document.getElementById('banco').required = false;
+            document.getElementById('monto_ves').required = false;
+            document.getElementById('monto_usd_directo').required = true;
         } else {
             usdFields.style.display = 'none';
             vesFields.style.display = 'block';
+            document.getElementById('banco').required = true;
+            document.getElementById('monto_ves').required = true;
+            document.getElementById('monto_usd_directo').required = false;
         }
     });
 
-    // C. Cálculo dinámico de USD a medida que el cliente escribe
+    // C. Cálculo dinámico de USD a medida que el cliente escribe en VES
     document.getElementById('monto_ves').addEventListener('input', function(e) {
         const bolivares = parseFloat(e.target.value);
-        const usdField = document.getElementById('monto_usd');
+        const usdField = document.getElementById('monto_usd_equivalente');
 
         if (bolivares > 0 && tasaBcvActual > 0) {
             const dolares = bolivares / tasaBcvActual;
@@ -103,16 +109,26 @@ function configurarFormulario() {
         btnSubmit.disabled = true;
 
         try {
-            const montoVes = parseFloat(document.getElementById('monto_ves').value);
-            const montoUsd = tasaBcvActual > 0 ? montoVes / tasaBcvActual : 0;
+            let montoVes = 0;
+            let montoUsd = 0;
+            let bankId = null;
+
+            if (tipoRecarga.value === 'ves') {
+                montoVes = parseFloat(document.getElementById('monto_ves').value);
+                montoUsd = tasaBcvActual > 0 ? montoVes / tasaBcvActual : 0;
+                bankId = parseInt(document.getElementById('banco').value);
+            } else {
+                montoUsd = parseFloat(document.getElementById('monto_usd_directo').value);
+                montoVes = montoUsd * tasaBcvActual;
+            }
 
             // Payload mapeado al modelo TopUp del backend (campos en inglés)
             const payload = {
                 customerId: usuario.id,
-                bankId: parseInt(document.getElementById('banco').value),
+                bankId: bankId,
                 exchangeRateId: exchangeRateId,
                 amountUsd: parseFloat(montoUsd.toFixed(2)),
-                amountVes: montoVes,
+                amountVes: parseFloat(montoVes.toFixed(2)),
                 reference: document.getElementById('referencia').value,
                 dateTime: document.getElementById('fecha').value + 'T00:00:00',
                 paymentCurrency: tipoRecarga.value.toUpperCase() // 'VES' o 'USD'

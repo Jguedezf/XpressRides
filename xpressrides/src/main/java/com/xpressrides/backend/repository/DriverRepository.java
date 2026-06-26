@@ -18,10 +18,13 @@ import com.xpressrides.backend.model.Driver;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface DriverRepository extends JpaRepository<Driver, Integer> {
 
     // Busca choferes habilitados y disponibles para asignación de traslado
     List<Driver> findByEnabledTrueAndAvailableTrue();
+
+    Optional<Driver> findByUsername_Username(String username);
 }

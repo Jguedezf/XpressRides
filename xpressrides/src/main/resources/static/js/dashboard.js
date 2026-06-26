@@ -183,43 +183,157 @@ function configurarFormularioViaje() {
             return;
         }
 
-        // Feedback visual: deshabilitar botón
+        // Fase 1: Calcular tarifa
         const btnSolicitar = document.getElementById('btn-solicitar');
         const textoOriginal = btnSolicitar.textContent;
         btnSolicitar.disabled = true;
-        btnSolicitar.textContent = 'Buscando chofer...';
+        btnSolicitar.textContent = 'Calculando tarifa...';
 
         try {
-            const payload = {
-                clienteId: usuario.id,
-                zonaOrigenId: parseInt(origen),
-                zonaDestinoId: parseInt(destino),
-                cantPasajeros: pasajeros,
-                codigoCupon: null // Por ahora sin cupón
+            const payloadTarifa = {
+                idZoneOrigin: parseInt(origen),
+                idZoneDestiny: parseInt(destino),
+                passengerCount: pasajeros
             };
 
-            const response = await fetchAPI('/solicitar-viaje', {
+            const responseTarifa = await fetchAPI('/traslados/calcular-tarifa', {
                 method: 'POST',
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payloadTarifa)
             });
 
-            // Éxito — mostrar datos del viaje
+            const tarifa = responseTarifa.data;
+
+            // Mostrar el modal de confirmación
+            mostrarPreviewTarifa(tarifa, parseInt(origen), parseInt(destino), pasajeros, textoOriginal, btnSolicitar, form);
+            
+        } catch (error) {
+            console.error('Error calculando tarifa:', error);
+            mostrarMensajeTemporal(
+                error.message || 'No se pudo calcular la tarifa. Intenta de nuevo.',
+                'error'
+            );
+            btnSolicitar.disabled = false;
+            btnSolicitar.textContent = textoOriginal;
+        }
+    });
+}
+
+function mostrarPreviewTarifa(tarifa, origenId, destinoId, pasajeros, textoOriginalBtn, btnSolicitar, form) {
+    const origenNombre = document.getElementById('origen').options[document.getElementById('origen').selectedIndex].text;
+    const destinoNombre = document.getElementById('destino').options[document.getElementById('destino').selectedIndex].text;
+
+    // Construir el modal
+    const modalHTML = `
+        <div id="modal-tarifa" style="
+            position: fixed; inset: 0; z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.5);">
+            <div style="
+                background: #fff; border-radius: 12px; padding: 28px 32px;
+                max-width: 480px; width: 90%; box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+                position: relative; font-family: inherit;">
+                
+                <h3 style="margin:0 0 16px 0; color: var(--color-primary);">Confirmar Viaje</h3>
+                
+                <div style="margin-bottom: 16px; font-size: 14px;">
+                    <p style="margin: 4px 0;"><strong>Origen:</strong> ${origenNombre}</p>
+                    <p style="margin: 4px 0;"><strong>Destino:</strong> ${destinoNombre}</p>
+                    <p style="margin: 4px 0;"><strong>Pasajeros:</strong> ${pasajeros}</p>
+                </div>
+
+                <table style="width:100%; border-collapse:collapse; font-size:14px; margin-bottom: 20px;">
+                    <tr>
+                        <td style="padding:6px 0; color:var(--color-text-muted);">Tarifa Base</td>
+                        <td style="padding:6px 0; text-align:right;">$${tarifa.tarifaBase.toFixed(2)}</td>
+                    </tr>
+                    ${tarifa.costoDistancia > 0 ? `
+                    <tr>
+                        <td style="padding:6px 0; color:var(--color-text-muted);">Distancia (${tarifa.distanciaKm} km)</td>
+                        <td style="padding:6px 0; text-align:right;">$${tarifa.costoDistancia.toFixed(2)}</td>
+                    </tr>` : ''}
+                    ${tarifa.recargoHoraPico > 0 ? `
+                    <tr>
+                        <td style="padding:6px 0; color:var(--color-text-muted);">Hora Pico</td>
+                        <td style="padding:6px 0; text-align:right;">+$${tarifa.recargoHoraPico.toFixed(2)}</td>
+                    </tr>` : ''}
+                    ${tarifa.recargoNocturnoFinSemana > 0 ? `
+                    <tr>
+                        <td style="padding:6px 0; color:var(--color-text-muted);">Nocturno/FDS</td>
+                        <td style="padding:6px 0; text-align:right;">+$${tarifa.recargoNocturnoFinSemana.toFixed(2)}</td>
+                    </tr>` : ''}
+                    ${tarifa.descuentoAplicado > 0 ? `
+                    <tr>
+                        <td style="padding:6px 0; color:var(--color-success); font-weight:bold;">
+                            Descuento ${tarifa.primerViajeGratis ? '(1er Viaje)' : (tarifa.descuentoEstudiantil ? '(Estudiante)' : '')}
+                        </td>
+                        <td style="padding:6px 0; text-align:right; color:var(--color-success); font-weight:bold;">
+                            -$${tarifa.descuentoAplicado.toFixed(2)}
+                        </td>
+                    </tr>` : ''}
+                    <tr style="border-top:2px solid var(--color-primary);">
+                        <td style="padding:10px 0; font-weight:700;">Costo Final USD</td>
+                        <td style="padding:10px 0; text-align:right; font-weight:700; color:var(--color-primary);">
+                            $${tarifa.costoFinalUsd.toFixed(2)}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:6px 0; font-weight:600;">Costo Final Bs</td>
+                        <td style="padding:6px 0; text-align:right; font-weight:600;">
+                            Bs ${tarifa.costoFinalVes.toFixed(2)}
+                        </td>
+                    </tr>
+                </table>
+
+                <div style="display: flex; gap: 10px;">
+                    <button id="btn-cancelar-viaje" class="btn-secondary" style="flex:1;">Cancelar</button>
+                    <button id="btn-confirmar-viaje" class="btn-primary" style="flex:1;">Confirmar y Solicitar</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    const modal = document.getElementById('modal-tarifa');
+    
+    document.getElementById('btn-cancelar-viaje').addEventListener('click', () => {
+        modal.remove();
+        btnSolicitar.disabled = false;
+        btnSolicitar.textContent = textoOriginalBtn;
+    });
+
+    document.getElementById('btn-confirmar-viaje').addEventListener('click', async () => {
+        const btnConfirmar = document.getElementById('btn-confirmar-viaje');
+        btnConfirmar.disabled = true;
+        btnConfirmar.textContent = 'Solicitando...';
+        
+        try {
+            const payloadViaje = {
+                idZoneOrigin: origenId,
+                idZoneDestiny: destinoId,
+                passengerCount: pasajeros,
+                customerCouponId: null
+            };
+
+            const response = await fetchAPI('/traslado/solicitar', {
+                method: 'POST',
+                body: JSON.stringify(payloadViaje)
+            });
+
             const data = response.data || {};
             let mensaje = '🚗 ¡Viaje solicitado exitosamente!';
             if (data.choferNombre) {
                 mensaje += ` Tu chofer ${data.choferNombre} va en camino.`;
             }
-            if (data.costoUsd) {
-                mensaje += ` Costo: $${Number(data.costoUsd).toFixed(2)} USD.`;
-            }
 
             mostrarMensajeTemporal(mensaje, 'info');
 
-            // Resetear formulario
+            // Resetear
             form.reset();
             document.getElementById('origen').selectedIndex = 0;
             document.getElementById('destino').selectedIndex = 0;
-
+            resaltarRuta();
+            
         } catch (error) {
             console.error('Error solicitando viaje:', error);
             mostrarMensajeTemporal(
@@ -227,8 +341,9 @@ function configurarFormularioViaje() {
                 'error'
             );
         } finally {
+            modal.remove();
             btnSolicitar.disabled = false;
-            btnSolicitar.textContent = textoOriginal;
+            btnSolicitar.textContent = textoOriginalBtn;
         }
     });
 }

@@ -35,7 +35,7 @@ public class CatalogController {
         this.catalogService = catalogService;
     }
 
-    // GET /api/zones — retorna todas las zonas activas
+    // GET /api/zonas — retorna todas las zonas activas
     @GetMapping("/zonas")
     public ResponseEntity<Map<String, Object>> listarZonas() {
         List<Zone> zones = catalogService.listarZonasActivas();
@@ -46,7 +46,7 @@ public class CatalogController {
         return ResponseEntity.ok(response);
     }
 
-    // GET /api/zones/all — retorna todas las zonas sin filtro (admin)
+    // GET /api/zonas/todas — retorna todas las zonas sin filtro (admin)
     @GetMapping("/zonas/todas")
     public ResponseEntity<Map<String, Object>> listarTodasLasZonas() {
         List<Zone> zones = catalogService.listarTodasLasZonas();
@@ -57,7 +57,7 @@ public class CatalogController {
         return ResponseEntity.ok(response);
     }
 
-    // GET /api/banks — retorna todos los bancos activos
+    // GET /api/bancos — retorna todos los bancos activos
     @GetMapping("/bancos")
     public ResponseEntity<Map<String, Object>> listarBancos() {
         List<Bank> banks = catalogService.listarBancosActivos();
@@ -68,7 +68,7 @@ public class CatalogController {
         return ResponseEntity.ok(response);
     }
 
-    // GET /api/banks/all — retorna todos los bancos sin filtro (admin)
+    // GET /api/bancos/todos — retorna todos los bancos sin filtro (admin)
     @GetMapping("/bancos/todos")
     public ResponseEntity<Map<String, Object>> listarTodosLosBancos() {
         List<Bank> banks = catalogService.listarTodosLosBancos();

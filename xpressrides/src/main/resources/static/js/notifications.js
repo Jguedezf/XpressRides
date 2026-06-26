@@ -20,11 +20,17 @@ document.addEventListener('DOMContentLoaded', async () => {
  */
 async function cargarNotificaciones(usuario) {
     try {
-        const response = await fetchAPI('/reportes/notificaciones');
-        const todas = response.data || [];
-
-        // Filtramos por el ID del usuario logueado
-        const misNotificaciones = todas.filter(n => n.userId === usuario.id);
+        // Intentar primero el endpoint seguro (si existe) que filtra por JWT
+        let misNotificaciones = [];
+        try {
+            const responseSeguro = await fetchAPI('/notificaciones');
+            misNotificaciones = Array.isArray(responseSeguro) ? responseSeguro : (responseSeguro.data || []);
+        } catch (errorSeguro) {
+            // Fallback: usar el endpoint público y filtrar del lado del cliente
+            const response = await fetchAPI('/reportes/notificaciones');
+            const todas = response.data || [];
+            misNotificaciones = todas.filter(n => n.userId === usuario.id);
+        }
 
         // Guardamos en variable global para que el panel las use
         window._xpressNotificaciones = misNotificaciones;
@@ -33,7 +39,7 @@ async function cargarNotificaciones(usuario) {
         actualizarBadge(misNotificaciones.length);
 
     } catch (error) {
-        // Si falla (backend apagado, etc.), mostramos 0 silenciosamente
+        // Si fallan ambos (backend apagado, etc.), mostramos 0 silenciosamente
         console.warn('No se pudieron cargar las notificaciones:', error.message);
         window._xpressNotificaciones = [];
         actualizarBadge(0);

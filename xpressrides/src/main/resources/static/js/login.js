@@ -19,24 +19,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnSubmit.disabled = true;
                 btnSubmit.innerText = 'Cargando...';
 
-                const response = await fetchAPI('/auth/login', {
+                const response = await fetchAPI('/auth/iniciar-sesion', {
                     method: 'POST',
-                    body: JSON.stringify({ correo, password })
+                    body: JSON.stringify({ username: correo, password })
                 });
 
-                // Guardamos la sesión
-                localStorage.setItem('xpressUsuario', JSON.stringify(response.data));
+                // Guardamos la sesión (response ya tiene data)
+                const userData = response.data;
+                localStorage.setItem('xpressUsuario', JSON.stringify(userData));
 
                 // Redirección basada en el rol del usuario
-                const rol = (response.data.rol || '').toLowerCase();
-                if (rol === 'admin') {
-                    // TODO: crear admin-dashboard.html — por ahora usa el de cliente
-                    window.location.href = '/views/cliente-dashboard.html';
+                const rol = (userData.rol || userData.role || '').toLowerCase();
+                if (rol === 'admin' || rol === 'administrador' || rol === 'personal_admin') {
+                    window.location.href = '/views/admin-dashboard.html';
                 } else if (rol === 'chofer') {
-                    // TODO: crear chofer-dashboard.html — por ahora usa el de cliente
-                    window.location.href = '/views/cliente-dashboard.html';
+                    window.location.href = '/views/chofer-dashboard.html';
                 } else {
-                    // Cliente u otro rol por defecto
                     window.location.href = '/views/cliente-dashboard.html';
                 }
 

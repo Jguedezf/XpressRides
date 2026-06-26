@@ -58,11 +58,23 @@ async function fetchAPI(endpoint, options = {}) {
 
         const response = await fetch(`${API_BASE_URL}${endpoint}`, fetchOptions);
 
-        // Parseamos la respuesta como JSON
+        // Si el HTTP status indica error, extraemos el mensaje del body
+        if (!response.ok) {
+            let errorMsg = `Error HTTP ${response.status}`;
+            try {
+                const errorBody = await response.json();
+                errorMsg = errorBody.message || errorMsg;
+            } catch (e) { /* body no era JSON */ }
+            throw new Error(errorMsg);
+        }
+
+        // Si es 204 No Content, retornamos null
+        if (response.status === 204) return null;
+
         const result = await response.json();
 
-        // Validamos la estructura estándar { success, data, message }
-        if (!result.success) {
+        // Si la respuesta tiene `success` explícito en false, es un error lógico
+        if (result.hasOwnProperty('success') && !result.success) {
             throw new Error(result.message || 'Ocurrió un error en la operación.');
         }
 
