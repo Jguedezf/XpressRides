@@ -187,6 +187,12 @@ window.verFactura = async function (trasladoId) {
                             <td style="padding:6px 0; color:var(--color-text-muted);">Tasa BCV (Bs)</td>
                             <td style="padding:6px 0; text-align:right;">${f.tasaVes != null ? Number(f.tasaVes).toFixed(2) : '—'}</td>
                         </tr>
+                        ${f.descuentoUsd > 0 ? `
+                        <tr>
+                            <td style="padding:6px 0; color:#1E6B3C; font-weight:600;">Descuento USD</td>
+                            <td style="padding:6px 0; text-align:right; color:#1E6B3C; font-weight:600;">-$${Number(f.descuentoUsd).toFixed(2)}</td>
+                        </tr>
+                        ` : ''}
                         <tr>
                             <td style="padding:6px 0; color:var(--color-text-muted);">IGTF USD</td>
                             <td style="padding:6px 0; text-align:right;">$${f.montoIgtfUsd != null ? Number(f.montoIgtfUsd).toFixed(2) : '0.00'}</td>

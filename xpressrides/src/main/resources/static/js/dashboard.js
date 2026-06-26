@@ -336,10 +336,15 @@ function mostrarPreviewTarifa(tarifa, origenId, destinoId, pasajeros, textoOrigi
             
         } catch (error) {
             console.error('Error solicitando viaje:', error);
-            mostrarMensajeTemporal(
-                error.message || 'No se pudo solicitar el viaje. Intenta de nuevo.',
-                'error'
-            );
+            
+            let errMsg = error.message || 'No se pudo solicitar el viaje. Intenta de nuevo.';
+            if (errMsg.includes('viaje activo en curso')) {
+                errMsg = '⚠️ Ya tienes un viaje activo en curso. Por favor, finalízalo antes de solicitar otro.';
+            }
+            // Limpiar "ERROR: " del mensaje si viene del backend
+            errMsg = errMsg.replace(/^ERROR:\s*/i, '');
+
+            mostrarMensajeTemporal(errMsg, 'error');
         } finally {
             modal.remove();
             btnSolicitar.disabled = false;
