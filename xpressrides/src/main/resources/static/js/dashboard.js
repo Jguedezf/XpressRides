@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     await cargarZonas();
     inicializarMapa();
     configurarFormularioViaje();
-    iniciarPollingViajeActivo();
 });
 
 // ─── Variables globales del módulo ───────────────────────
