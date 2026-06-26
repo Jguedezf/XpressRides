@@ -407,7 +407,9 @@ sp_solicitar_traslado: BEGIN
   DECLARE v_id_vehiculo    INT;
   DECLARE v_id_zona_chofer INT;
   DECLARE v_radio          DECIMAL(5,1);
-  DECLARE v_id_zona_dest   INT;
+  DECLARE v_id_zona_dest    INT;
+  DECLARE v_desc_estudiante DECIMAL(8,2)  DEFAULT 0.00;
+  DECLARE v_tarifa_original DECIMAL(10,2) DEFAULT 0.00;
 
   -- Validar pasajeros
   IF p_nro_pasajeros < 1 OR p_nro_pasajeros > 3 THEN
@@ -446,20 +448,22 @@ sp_solicitar_traslado: BEGIN
   ELSEIF v_hora >= 17 AND v_hora < 19 THEN SET v_factor = 1.25;
   END IF;
   SET v_tarifa = v_tarifa * v_factor;
+  SET v_tarifa_original = v_tarifa;
 
   -- Tipo de cliente
   SELECT es_estudiante, primer_viaje_usado
     INTO v_es_est, v_primer
     FROM cliente WHERE id = p_id_cliente;
 
-  -- Descuento estudiantil (zona destino = sede universitaria)
+  -- Descuento estudiantil (zona origen O destino = sede universitaria)
   IF v_es_est = 1 THEN
     SELECT id INTO v_id_zona_dest FROM zona
-     WHERE id = p_id_zona_destino
+     WHERE id IN (p_id_zona_origen, p_id_zona_destino)
        AND nombre IN ('UNEG Sede Atlántico','UNEG Sede Villa Asia','UNEXPO')
      LIMIT 1;
     IF v_id_zona_dest IS NOT NULL THEN
-      SET v_tarifa = v_tarifa * 0.70;
+      SET v_desc_estudiante = ROUND(v_tarifa * 0.30, 2);
+      SET v_tarifa          = ROUND(v_tarifa * 0.70, 2);
     END IF;
   END IF;
 
@@ -510,9 +514,10 @@ sp_solicitar_traslado: BEGIN
     LEAVE sp_solicitar_traslado;
   END IF;
 
-  -- Distribución 70/30
-  SET v_monto_ch  = ROUND(v_tarifa * 0.70, 2);
-  SET v_monto_emp = ROUND((v_tarifa * 0.30) - IFNULL(v_descuento,0), 2);
+  -- Distribución 70/30 sobre tarifa original (antes del descuento estudiantil)
+  -- El chofer siempre recibe 70% de la tarifa sin descuento; la empresa absorbe el descuento
+  SET v_monto_ch  = ROUND(v_tarifa_original * 0.70, 2);
+  SET v_monto_emp = ROUND((v_tarifa_original * 0.30) - v_desc_estudiante - IFNULL(v_descuento,0), 2);
   SET v_costo_ves = ROUND(v_costo_cli * v_tasa_ves, 2);
 
   -- Asignación por proximidad (radio 5 → 10 → 15 km)
@@ -563,7 +568,7 @@ sp_solicitar_traslado: BEGIN
     p_id_cliente, v_id_chofer, v_id_vehiculo,
     p_id_zona_origen, p_id_zona_destino, v_id_tasa, p_id_cupon_cliente,
     p_nro_pasajeros, v_dist_km, v_tarifa,
-    v_recargo, v_factor, IFNULL(v_descuento,0),
+    v_recargo, v_factor, v_desc_estudiante + IFNULL(v_descuento,0),
     v_costo_cli, v_monto_ch, v_monto_emp,
     v_costo_ves, 'solicitado',
     CEILING(fn_distancia_km(

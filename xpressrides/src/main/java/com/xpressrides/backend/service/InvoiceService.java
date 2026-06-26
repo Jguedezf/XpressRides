@@ -52,10 +52,14 @@ public class InvoiceService {
         dto.setZonaOrigen((String) row[10]);
         dto.setZonaDestino((String) row[11]);
         dto.setDistanciaKm(new BigDecimal(row[12].toString()));
+        BigDecimal descuentoUsd = new BigDecimal(row[13].toString());
+        dto.setDescuentoUsd(descuentoUsd);
 
-        BigDecimal costoUsd     = new BigDecimal(row[13].toString());
-        BigDecimal tasaVes      = new BigDecimal(row[14].toString());
-        BigDecimal montoIgtfUsd = new BigDecimal(row[15].toString());
+        BigDecimal costoUsd     = new BigDecimal(row[14].toString());
+        BigDecimal tasaVes      = new BigDecimal(row[15].toString());
+        BigDecimal montoIgtfUsd = new BigDecimal(row[16].toString());
+
+        dto.setDescuentoVes(descuentoUsd.multiply(tasaVes).setScale(2, RoundingMode.HALF_UP));
 
         BigDecimal totalUsd = costoUsd.add(montoIgtfUsd)
                 .setScale(2, RoundingMode.HALF_UP);

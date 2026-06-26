@@ -17,6 +17,7 @@ package com.xpressrides.backend.controller;
 import com.xpressrides.backend.model.*;
 import com.xpressrides.backend.service.ReportService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
@@ -25,6 +26,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/reportes")
 @CrossOrigin(origins = "*")
+@PreAuthorize("hasAnyRole('administrador', 'personal_admin')")
 public class ReportController {
 
     private final ReportService reportService;

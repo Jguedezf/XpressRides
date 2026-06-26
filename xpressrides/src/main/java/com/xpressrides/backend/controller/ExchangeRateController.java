@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api")
@@ -68,8 +69,7 @@ public class ExchangeRateController {
     }
 
     // POST /api/exchange-rate — registra una nueva tasa BCV
-    // Solo personal_admin puede usar este endpoint
-    // La seguridad por rol la agrega Eliuber cuando tenga el login listo
+    @PreAuthorize("hasAnyRole('administrador', 'personal_admin')")
     @PostMapping("/tasa-bcv")
     public ResponseEntity<Map<String, Object>> registerRate(
             @Valid @RequestBody ExchangeRate exchangeRate) {

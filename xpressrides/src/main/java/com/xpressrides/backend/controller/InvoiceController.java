@@ -17,6 +17,7 @@ package com.xpressrides.backend.controller;
 import com.xpressrides.backend.dto.InvoiceResponseDTO;
 import com.xpressrides.backend.service.InvoiceService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,6 +34,7 @@ public class InvoiceController {
     }
 
     // GET /api/facturas/{trasladoId} — detalle de factura para el frontend
+    @PreAuthorize("hasAnyRole('cliente', 'administrador', 'personal_admin')")
     @GetMapping("/facturas/{trasladoId}")
     public ResponseEntity<Map<String, Object>> getInvoice(
             @PathVariable Integer trasladoId) {

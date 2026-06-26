@@ -40,6 +40,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Integer> {
               zo.nombre          AS zonaOrigen,
               zd.nombre          AS zonaDestino,
               t.distancia_km     AS distanciaKm,
+              t.descuento_usd    AS descuentoUsd,
               t.costo_cliente_usd AS costoUsd,
               tb.tasa_ves        AS tasaVes,
               f.igtf_monto_usd   AS montoIgtfUsd

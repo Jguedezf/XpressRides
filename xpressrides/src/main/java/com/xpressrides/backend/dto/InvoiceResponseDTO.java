@@ -33,6 +33,8 @@ public class InvoiceResponseDTO {
     private String     zonaOrigen;
     private String     zonaDestino;
     private BigDecimal distanciaKm;
+    private BigDecimal descuentoUsd;
+    private BigDecimal descuentoVes;
     private BigDecimal costoUsd;
     private BigDecimal tasaVes;
     private BigDecimal montoIgtfUsd;

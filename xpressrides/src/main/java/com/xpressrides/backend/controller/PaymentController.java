@@ -19,6 +19,7 @@ import com.xpressrides.backend.model.TopUp;
 import com.xpressrides.backend.service.PaymentService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +38,7 @@ public class PaymentController {
     }
 
     // POST /api/top-ups — cliente recarga su saldo
+    @PreAuthorize("hasRole('cliente')")
     @PostMapping("/recargas")
     public ResponseEntity<Map<String, Object>> registerTopUp(
             @Valid @RequestBody TopUp topUp) {
@@ -55,7 +57,8 @@ public class PaymentController {
         }
     }
 
-    // GET /api/top-ups/client/{id} — historial de recargas de un cliente
+    // GET /api/top-ups/client/{id} — historial de recargas de un cliente (uso admin)
+    @PreAuthorize("hasAnyRole('administrador', 'personal_admin')")
     @GetMapping("/recargas/cliente/{id}")
     public ResponseEntity<Map<String, Object>> getTopUpHistory(
             @PathVariable Integer id) {
@@ -68,6 +71,7 @@ public class PaymentController {
     }
 
     // POST /api/driver-payments — personal admin registra pago a chofer
+    @PreAuthorize("hasRole('personal_admin')")
     @PostMapping("/pagos-chofer")
     public ResponseEntity<Map<String, Object>> registerDriverPayment(
             @Valid @RequestBody DriverPayment payment) {
@@ -87,6 +91,7 @@ public class PaymentController {
     }
 
     // GET /api/driver-payments/driver/{id} — historial de pagos de un chofer
+    @PreAuthorize("hasAnyRole('administrador', 'personal_admin')")
     @GetMapping("/pagos-chofer/chofer/{id}")
     public ResponseEntity<Map<String, Object>> getDriverPaymentHistory(
             @PathVariable Integer id) {
