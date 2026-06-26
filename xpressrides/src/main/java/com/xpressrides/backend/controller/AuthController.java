@@ -180,6 +180,9 @@ public class AuthController {
         data.put("username", user.getUsername());
         data.put("nombre", user.getName());
         data.put("apellido", user.getLastName());
+        data.put("cedula", user.getCi());
+        data.put("correo", user.getEmail());
+        data.put("telefono", user.getPhone());
         data.put("rol", user.getRole());
         data.put("token", auth.getAccesToken());
         data.put("refreshToken", auth.getRefreshToken());
