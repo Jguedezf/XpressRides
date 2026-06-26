@@ -173,13 +173,15 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    // Construye el objeto data que el frontend almacena en localStorage
     private Map<String, Object> buildUserData(User user, AuthResponse auth) {
         Map<String, Object> data = new HashMap<>();
         data.put("id", user.getId());
         data.put("username", user.getUsername());
         data.put("nombre", user.getName());
         data.put("apellido", user.getLastName());
+        data.put("cedula", user.getCi());
+        data.put("correo", user.getEmail());
+        data.put("telefono", user.getPhone());
         data.put("rol", user.getRole());
         data.put("token", auth.getAccesToken());
         data.put("refreshToken", auth.getRefreshToken());
