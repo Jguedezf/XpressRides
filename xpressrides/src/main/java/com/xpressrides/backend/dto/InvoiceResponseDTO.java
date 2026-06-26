@@ -29,6 +29,10 @@ public class InvoiceResponseDTO {
     private String     clienteNombre;
     private String     clienteCedula;
     private String     clienteDireccion;
+    private String     choferNombre;
+    private String     zonaOrigen;
+    private String     zonaDestino;
+    private BigDecimal distanciaKm;
     private BigDecimal costoUsd;
     private BigDecimal tasaVes;
     private BigDecimal montoIgtfUsd;
