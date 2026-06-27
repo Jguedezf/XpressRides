@@ -20,29 +20,11 @@ document.addEventListener('DOMContentLoaded', async () => {
  */
 async function cargarNotificaciones(usuario) {
     try {
-        // Intentar primero el endpoint seguro (si existe) que filtra por JWT
-        let misNotificaciones = [];
-        try {
-            const responseSeguro = await fetchAPI('/notificaciones');
-            misNotificaciones = Array.isArray(responseSeguro) ? responseSeguro : (responseSeguro.data || []);
-        } catch (errorSeguro) {
-            // Fallback: usar el endpoint público y filtrar del lado del cliente
-            const response = await fetchAPI('/reportes/notificaciones');
-            const todas = response.data || [];
-            misNotificaciones = todas.filter(n => n.userId === usuario.id);
-        }
-
-        // Guardamos en variable global para que el panel las use
-        window._xpressNotificaciones = misNotificaciones;
-
-        // Actualizar el badge visual con las no leídas
-        const pendientes = misNotificaciones.filter(n => !n.read).length;
-        actualizarBadge(pendientes);
-
+        const response = await fetchAPI('/notificaciones/no-leidas/count');
+        const count = response.noLeidas || 0;
+        actualizarBadge(count);
     } catch (error) {
-        // Si fallan ambos (backend apagado, etc.), mostramos 0 silenciosamente
-        console.warn('No se pudieron cargar las notificaciones:', error.message);
-        window._xpressNotificaciones = [];
+        console.warn('No se pudo cargar el conteo de notificaciones:', error.message);
         actualizarBadge(0);
     }
 }
@@ -83,7 +65,7 @@ function configurarCampanita() {
  * Función global — abre/cierra el panel de notificaciones.
  * Se llama desde onclick="abrirNotificaciones()" en los HTML.
  */
-window.abrirNotificaciones = function () {
+window.abrirNotificaciones = async function () {
     // Si ya existe el panel, lo cerramos (toggle)
     const existente = document.getElementById('panel-notificaciones');
     if (existente) {
@@ -91,7 +73,13 @@ window.abrirNotificaciones = function () {
         return;
     }
 
-    const notificaciones = window._xpressNotificaciones || [];
+    let notificaciones = [];
+    try {
+        const responseSeguro = await fetchAPI('/notificaciones');
+        notificaciones = Array.isArray(responseSeguro) ? responseSeguro : (responseSeguro.data || []);
+    } catch (error) {
+        console.warn('No se pudieron cargar las notificaciones:', error.message);
+    }
 
     // Construir contenido de la lista
     let listaHTML = '';

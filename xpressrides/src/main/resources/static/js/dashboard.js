@@ -8,7 +8,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     await cargarZonas();
     inicializarMapa();
     configurarFormularioViaje();
+    configurarCalculadora();
 });
+
+function configurarCalculadora() {
+    const inputUsd = document.getElementById('conv-usd');
+    const spanVes = document.getElementById('conv-ves');
+    if (!inputUsd || !spanVes) return;
+
+    let debounceTimer;
+    inputUsd.addEventListener('input', (e) => {
+        clearTimeout(debounceTimer);
+        const monto = parseFloat(e.target.value);
+        if (!monto || monto <= 0) {
+            spanVes.textContent = 'Bs 0.00';
+            return;
+        }
+
+        debounceTimer = setTimeout(async () => {
+            try {
+                const response = await fetchAPI(`/tasa-bcv/convertir?monto=${monto}&moneda=USD`);
+                if (response && response.ves) {
+                    spanVes.textContent = `Bs ${response.ves.toFixed(2)}`;
+                } else if (response && response.data && response.data.ves) {
+                    spanVes.textContent = `Bs ${response.data.ves.toFixed(2)}`;
+                }
+            } catch (err) {
+                console.error('Error calculando conversión:', err);
+                spanVes.textContent = 'Error';
+            }
+        }, 500);
+    });
+}
 
 // ─── Variables globales del módulo ───────────────────────
 let mapaLeaflet = null;
@@ -457,6 +488,35 @@ function mostrarTarjetaViajeActivo(data) {
         ${choferHTML}
         ${tiempoLlegadaHTML}
     `;
+
+    const puedeCancelar = (data.estado === 'solicitado' || data.estado === 'aceptado');
+    if (puedeCancelar) {
+        const btnCancelar = document.createElement('button');
+        btnCancelar.className = 'btn-secondary';
+        btnCancelar.style.cssText = 'width:100%; margin-top:10px; border-color:var(--color-error); color:var(--color-error);';
+        btnCancelar.textContent = 'Cancelar Viaje';
+        btnCancelar.onclick = async () => {
+            if (confirm('¿Estás seguro de que deseas cancelar este viaje?')) {
+                btnCancelar.disabled = true;
+                btnCancelar.textContent = 'Cancelando...';
+                try {
+                    await fetchAPI(`/cliente/traslados/${data.idTraslado}/cancelar`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ motivo: 'Cancelado por el cliente' })
+                    });
+                    mostrarMensajeTemporal('Viaje cancelado', 'info');
+                    ocultarTarjetaViajeActivo();
+                    window.location.href = '/views/cliente-record.html';
+                } catch (error) {
+                    console.error('Error al cancelar viaje:', error);
+                    mostrarMensajeTemporal(error.message || 'Error al cancelar', 'error');
+                    btnCancelar.disabled = false;
+                    btnCancelar.textContent = 'Cancelar Viaje';
+                }
+            }
+        };
+        card.appendChild(btnCancelar);
+    }
 }
 
 function ocultarTarjetaViajeActivo() {

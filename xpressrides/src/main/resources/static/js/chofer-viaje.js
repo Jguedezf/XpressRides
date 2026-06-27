@@ -93,7 +93,7 @@ function ocultarPaneles() {
 }
 
 function renderizarEstado(viaje) {
-    const { estado, origen, destino } = viaje;
+    const { estado, origen, destino, tiempoEstimadoLlegadaMinutos, duracionEstimadaMinutos } = viaje;
 
     // Poblar datos del viaje en la notificación
     document.getElementById('push-origen').textContent = origen;
@@ -107,6 +107,9 @@ function renderizarEstado(viaje) {
     document.getElementById('btn-llegue').classList.add('hidden');
     document.getElementById('btn-completado').classList.add('hidden');
 
+    const btnCancelar = document.getElementById('btn-cancelar');
+    if (btnCancelar) btnCancelar.classList.add('hidden');
+
     switch (estado) {
         case 'solicitado':
             document.getElementById('push-notification').classList.remove('hidden');
@@ -115,6 +118,7 @@ function renderizarEstado(viaje) {
         case 'aceptado':
             document.getElementById('state-buttons').classList.remove('hidden');
             document.getElementById('btn-en-camino').classList.remove('hidden');
+            if (btnCancelar) btnCancelar.classList.remove('hidden');
             mostrarMensaje(`Viaje aceptado — dirígete a ${origen}`);
             break;
 
@@ -124,7 +128,8 @@ function renderizarEstado(viaje) {
             btnLlegue.textContent = 'Llegué al origen';
             btnLlegue.dataset.accion = 'chofer_llego';
             btnLlegue.classList.remove('hidden');
-            mostrarMensaje('En camino al origen');
+            if (btnCancelar) btnCancelar.classList.remove('hidden');
+            mostrarMensaje(`En camino al origen${tiempoEstimadoLlegadaMinutos ? ' (~' + tiempoEstimadoLlegadaMinutos + ' min)' : ''}`);
             break;
 
         case 'chofer_llego':
@@ -133,13 +138,14 @@ function renderizarEstado(viaje) {
             btnIniciar.textContent = 'Iniciar viaje';
             btnIniciar.dataset.accion = 'en_progreso';
             btnIniciar.classList.remove('hidden');
+            if (btnCancelar) btnCancelar.classList.remove('hidden');
             mostrarMensaje('Esperando que el cliente aborde');
             break;
 
         case 'en_progreso':
             document.getElementById('state-buttons').classList.remove('hidden');
             document.getElementById('btn-completado').classList.remove('hidden');
-            mostrarMensaje(`En progreso → ${destino}`);
+            mostrarMensaje(`En progreso → ${destino}${duracionEstimadaMinutos ? ' (~' + duracionEstimadaMinutos + ' min)' : ''}`);
             break;
     }
 }
@@ -157,6 +163,11 @@ function configurarBotonesEstado() {
         const accion = document.getElementById('btn-llegue').dataset.accion || 'chofer_llego';
         cambiarEstado(accion);
     });
+
+    const btnCancelar = document.getElementById('btn-cancelar');
+    if (btnCancelar) {
+        btnCancelar.addEventListener('click', cancelarViajeActivo);
+    }
 }
 
 async function cambiarEstado(nuevoEstado) {
@@ -186,6 +197,22 @@ async function rechazarViaje() {
         mostrarMensaje('Viaje rechazado');
     } catch (error) {
         mostrarMensaje('Error: ' + error.message);
+    }
+}
+
+async function cancelarViajeActivo() {
+    if (!viajeActual) return;
+    if (confirm('¿Estás seguro de que deseas cancelar este viaje?')) {
+        try {
+            await fetchAPI(`/chofer/traslados/${viajeActual.idTraslado}/cancelar`, {
+                method: 'PUT',
+                body: JSON.stringify({ motivo: 'Cancelado por el chofer' })
+            });
+            ocultarPaneles();
+            mostrarMensaje('Viaje cancelado');
+        } catch (error) {
+            mostrarMensaje('Error al cancelar: ' + error.message);
+        }
     }
 }
 
