@@ -1,6 +1,7 @@
 package com.xpressrides.backend.service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,12 +18,15 @@ import com.xpressrides.backend.exception.ResourceNotFoundException;
 import com.xpressrides.backend.model.Customer;
 import com.xpressrides.backend.model.CustomerCoupon;
 import com.xpressrides.backend.model.Driver;
+import com.xpressrides.backend.model.Notification;
 import com.xpressrides.backend.model.Trip;
 import com.xpressrides.backend.model.User;
 import com.xpressrides.backend.model.TopUp;
 import com.xpressrides.backend.model.Vehicle;
 import com.xpressrides.backend.repository.CustomerCouponRepository;
 import com.xpressrides.backend.repository.CustomerRepository;
+import com.xpressrides.backend.repository.DriverRepository;
+import com.xpressrides.backend.repository.NotificationRepository;
 import com.xpressrides.backend.repository.TopUpRepository;
 import com.xpressrides.backend.repository.TripRepository;
 import com.xpressrides.backend.repository.UserRepository;
@@ -35,17 +39,23 @@ public class CustomerService {
     private final TripRepository tripRepository;
     private final CustomerCouponRepository customerCouponRepository;
     private final TopUpRepository topUpRepository;
+    private final DriverRepository driverRepository;
+    private final NotificationRepository notificationRepository;
 
     public CustomerService(CustomerRepository customerRepository,
                            UserRepository userRepository,
                            TripRepository tripRepository,
                            CustomerCouponRepository customerCouponRepository,
-                           TopUpRepository topUpRepository) {
-        this.customerRepository = customerRepository;
-        this.userRepository = userRepository;
-        this.tripRepository = tripRepository;
+                           TopUpRepository topUpRepository,
+                           DriverRepository driverRepository,
+                           NotificationRepository notificationRepository) {
+        this.customerRepository      = customerRepository;
+        this.userRepository          = userRepository;
+        this.tripRepository          = tripRepository;
         this.customerCouponRepository = customerCouponRepository;
-        this.topUpRepository = topUpRepository;
+        this.topUpRepository         = topUpRepository;
+        this.driverRepository        = driverRepository;
+        this.notificationRepository  = notificationRepository;
     }
 
     public CustomerProfileResponse getProfile(String username) {
@@ -118,6 +128,21 @@ public class CustomerService {
         trip.setCancelledBy("cliente");
         trip.setCancellationReason(reason);
         tripRepository.save(trip);
+
+        if (trip.getDriver() != null) {
+            Driver driver = trip.getDriver();
+            driver.setAvailable(true);
+            driverRepository.save(driver);
+
+            Notification notif = new Notification();
+            notif.setUser(driver.getUsername());
+            notif.setTrip(trip);
+            notif.setType("viaje_cancelado");
+            notif.setMessage("El cliente canceló el viaje. Estás disponible para nuevos traslados.");
+            notif.setRead(false);
+            notif.setDateTime(LocalDateTime.now());
+            notificationRepository.save(notif);
+        }
     }
 
     public List<TopUp> getTopUps(String username) {

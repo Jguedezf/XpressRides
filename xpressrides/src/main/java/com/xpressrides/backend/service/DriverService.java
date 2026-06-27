@@ -18,6 +18,7 @@ import com.xpressrides.backend.exception.BadRequestException;
 import com.xpressrides.backend.exception.ResourceNotFoundException;
 import com.xpressrides.backend.model.Customer;
 import com.xpressrides.backend.model.Driver;
+import com.xpressrides.backend.model.Notification;
 import com.xpressrides.backend.model.EmergencyContact;
 import com.xpressrides.backend.model.PsychologicalEvaluation;
 import com.xpressrides.backend.model.Trip;
@@ -26,6 +27,7 @@ import com.xpressrides.backend.model.Vehicle;
 import com.xpressrides.backend.model.VehicleInspection;
 import com.xpressrides.backend.repository.DriverRepository;
 import com.xpressrides.backend.repository.EmergencyContactRepository;
+import com.xpressrides.backend.repository.NotificationRepository;
 import com.xpressrides.backend.repository.PsychologicalEvaluationRepository;
 import com.xpressrides.backend.repository.TripRepository;
 import com.xpressrides.backend.repository.VehicleInspectionRepository;
@@ -39,19 +41,22 @@ public class DriverService {
     private final VehicleInspectionRepository vehicleInspectionRepository;
     private final TripRepository tripRepository;
     private final EmergencyContactRepository emergencyContactRepository;
+    private final NotificationRepository notificationRepository;
 
     public DriverService(DriverRepository driverRepository,
             PsychologicalEvaluationRepository psychEvalRepository,
             VehicleRepository vehicleRepository,
             VehicleInspectionRepository vehicleInspectionRepository,
             TripRepository tripRepository,
-            EmergencyContactRepository emergencyContactRepository) {
-        this.driverRepository = driverRepository;
-        this.psychEvalRepository = psychEvalRepository;
-        this.vehicleRepository = vehicleRepository;
+            EmergencyContactRepository emergencyContactRepository,
+            NotificationRepository notificationRepository) {
+        this.driverRepository            = driverRepository;
+        this.psychEvalRepository         = psychEvalRepository;
+        this.vehicleRepository           = vehicleRepository;
         this.vehicleInspectionRepository = vehicleInspectionRepository;
-        this.tripRepository = tripRepository;
-        this.emergencyContactRepository = emergencyContactRepository;
+        this.tripRepository              = tripRepository;
+        this.emergencyContactRepository  = emergencyContactRepository;
+        this.notificationRepository      = notificationRepository;
     }
 
     public void toggleAvailability(String username, boolean available) {
@@ -165,6 +170,20 @@ public class DriverService {
         trip.setCancelledBy("chofer");
         trip.setCancellationReason(motivo);
         tripRepository.save(trip);
+
+        driverRepository.findByUsername_Username(username).ifPresent(driver -> {
+            driver.setAvailable(true);
+            driverRepository.save(driver);
+        });
+
+        Notification notif = new Notification();
+        notif.setUser(trip.getCustomer().getUserId());
+        notif.setTrip(trip);
+        notif.setType("viaje_cancelado");
+        notif.setMessage("Tu chofer canceló el viaje. Por favor solicita un nuevo traslado.");
+        notif.setRead(false);
+        notif.setDateTime(LocalDateTime.now());
+        notificationRepository.save(notif);
     }
 
     public Map<String, Object> getProfile(String username) {
