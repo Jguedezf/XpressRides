@@ -9,68 +9,50 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-    <!-- Ruta relativa temporal para poder ver el diseño en local -->
+    <!-- Ruta lista para Spring Boot -->
     <link rel="stylesheet" href="/css/estilos.css">
 
     <style>
         body {
-            background-color: var(--color-bg-card);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: var(--font-family-base);
-            margin: 0;
-            flex-direction: column;
+            background-color: var(--color-bg-card); min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-family-base); margin: 0; flex-direction: column;
         }
-
+        .brand-logo-img { max-width: 260px; width: 100%; height: auto; display: block; margin: 0 auto; }
         .ticket-fiscal {
-            background-color: var(--color-bg-main);
-            color: var(--color-text-main);
-            padding: var(--space-md);
-            border: 1px dashed var(--color-border-muted);
+            background-color: var(--color-bg-main); color: var(--color-text-main);
+            padding: var(--space-md); border: 1px dashed var(--color-border-muted);
             border-radius: var(--radius-input);
         }
-
         .ticket-divider {
             border-top: 1px dashed var(--color-border-muted);
-            margin-top: var(--space-sm);
-            margin-bottom: var(--space-sm);
+            margin-top: var(--space-sm); margin-bottom: var(--space-sm);
         }
-
-        .brand-heading {
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            margin-bottom: var(--space-lg);
-        }
-        .brand-primary { color: var(--color-primary); }
-        .brand-secondary { color: var(--color-secondary); }
     </style>
 </head>
 <body>
 
 <!-- PANTALLA DE FONDO -->
 <div class="text-center">
-    <!-- Logo XpressRides -->
-    <h1 class="brand-heading">
-        <span class="brand-primary">Xpress</span><span class="brand-secondary">Rides</span>
-    </h1>
-
+    <div class="mb-24">
+        <img src="/img/logo.png" alt="XpressRides Logo" class="brand-logo-img">
+    </div>
     <h2 class="h2-subtitle">¡Tu viaje ha finalizado!</h2>
-    <p class="text-normal text-small mb-md">Aquí tienes los detalles de tu pago.</p>
-    <button class="btn-primary" onclick="abrirFactura()">Ver mi recibo</button>
+    <p class="text-normal text-small mb-md">Simulador: ID del Traslado #1054</p>
+
+    <!-- Botón que llama a la función JS pidiendo la factura 1054 -->
+    <button class="btn-primary" onclick="cargarYMostrarFactura(1054)" id="btn-ver-factura">Generar y Ver Recibo</button>
+    <div class="alert-error mt-md" id="error-factura" style="display: none;"></div>
 </div>
 
 <!-- ========================================== -->
-<!-- MODAL DE LA FACTURA -->
+<!-- MODAL DE LA FACTURA (Plantilla Vacía) -->
 <!-- ========================================== -->
 <div class="modal-overlay" id="modalFactura" style="display: none;">
     <div class="modal-content" style="max-width: 400px;">
 
         <h2 class="h2-subtitle text-center" style="color: var(--color-secondary);">Comprobante de Viaje</h2>
 
-        <!-- Contenedor del Ticket -->
         <div class="ticket-fiscal text-monospace text-normal">
 
             <div class="text-center mb-sm">
@@ -82,13 +64,13 @@
             <div class="d-flex justify-between mb-sm">
                 <div>
                     Factura<br>
-                    Nro: 30803524<br>
-                    Fecha: 19/06/2026<br>
-                    Tasa BCV: Bs. 607.39
+                    Nro: <span id="fact-nro">Cargando...</span><br>
+                    Fecha: <span id="fact-fecha">---</span><br>
+                    Tasa BCV: Bs. <span id="fact-tasa">---</span>
                 </div>
                 <div style="text-align: right;">
-                    CONTROL: 00-3524<br>
-                    Serie: D<br>
+                    CONTROL: <span id="fact-control">---</span><br>
+                    Serie: <span id="fact-serie">---</span><br>
                     Inmediata<br>
                     USD ($)
                 </div>
@@ -97,41 +79,37 @@
             <div class="ticket-divider"></div>
 
             <div class="mb-sm">
-                Cliente: Dayana Guédez<br>
-                RIF/CI: V-14089810<br>
-                Dirección: Calle 3, Caroní
+                Cliente: <span id="fact-cliente">---</span><br>
+                RIF/CI: <span id="fact-cedula">---</span><br>
+                Dir: <span id="fact-dir">---</span>
             </div>
 
             <div class="ticket-divider"></div>
 
             <div class="d-flex justify-between">
                 <span>Traslado Urbano (1x)</span>
-                <span>$3.51</span>
+                <span>$<span id="fact-costo">0.00</span></span>
             </div>
 
             <div class="ticket-divider"></div>
 
             <div class="d-flex justify-between">
-                <span>Base Exenta:</span>
-                <span>$3.51</span>
-            </div>
-            <div class="d-flex justify-between">
-                <span>Subtotal:</span>
-                <span>$3.51</span>
+                <span>Subtotal / Base Exenta:</span>
+                <span>$<span id="fact-subtotal">0.00</span></span>
             </div>
             <div class="d-flex justify-between">
                 <span>IGTF (3% Divisas):</span>
-                <span>$0.11</span>
+                <span>$<span id="fact-igtf">0.00</span></span>
             </div>
 
             <div class="ticket-divider"></div>
 
             <div class="d-flex justify-between text-highlight" style="font-size: 16px;">
                 <span>TOTAL A PAGAR:</span>
-                <span>$3.62</span>
+                <span>$<span id="fact-total-usd">0.00</span></span>
             </div>
             <div class="text-small" style="text-align: right; color: var(--color-text-main);">
-                (Bs. 2.195,90)
+                (Bs. <span id="fact-total-ves">0,00</span>)
             </div>
 
             <div class="ticket-divider"></div>
@@ -147,15 +125,9 @@
     </div>
 </div>
 
-<script>
-    function abrirFactura() {
-        document.getElementById('modalFactura').style.display = 'flex';
-    }
-
-    function cerrarFactura() {
-        document.getElementById('modalFactura').style.display = 'none';
-    }
-</script>
+<!-- IMPORTACIÓN DE SCRIPTS  -->
+<script src="/js/api.js"></script>
+<script src="/js/factura-modal.js"></script>
 
 </body>
 </html>
