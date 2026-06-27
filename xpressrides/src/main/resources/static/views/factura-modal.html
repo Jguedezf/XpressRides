@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprobante de Viaje - XpressRides</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Ruta lista para Spring Boot -->
+    <link rel="stylesheet" href="/css/estilos.css">
+
+    <style>
+        body {
+            background-color: var(--color-bg-card); min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-family-base); margin: 0; flex-direction: column;
+        }
+        .brand-logo-img { max-width: 260px; width: 100%; height: auto; display: block; margin: 0 auto; }
+        .ticket-fiscal {
+            background-color: var(--color-bg-main); color: var(--color-text-main);
+            padding: var(--space-md); border: 1px dashed var(--color-border-muted);
+            border-radius: var(--radius-input);
+        }
+        .ticket-divider {
+            border-top: 1px dashed var(--color-border-muted);
+            margin-top: var(--space-sm); margin-bottom: var(--space-sm);
+        }
+    </style>
+</head>
+<body>
+
+<!-- PANTALLA DE FONDO -->
+<div class="text-center">
+    <div class="mb-24">
+        <img src="/img/logo.png" alt="XpressRides Logo" class="brand-logo-img">
+    </div>
+    <h2 class="h2-subtitle">¡Tu viaje ha finalizado!</h2>
+    <p class="text-normal text-small mb-md">Simulador: ID del Traslado #1054</p>
+
+    <!-- Botón que llama a la función JS pidiendo la factura 1054 -->
+    <button class="btn-primary" onclick="cargarYMostrarFactura(1054)" id="btn-ver-factura">Generar y Ver Recibo</button>
+    <div class="alert-error mt-md" id="error-factura" style="display: none;"></div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL DE LA FACTURA (Plantilla Vacía) -->
+<!-- ========================================== -->
+<div class="modal-overlay" id="modalFactura" style="display: none;">
+    <div class="modal-content" style="max-width: 400px;">
+
+        <h2 class="h2-subtitle text-center" style="color: var(--color-secondary);">Comprobante de Viaje</h2>
+
+        <div class="ticket-fiscal text-monospace text-normal">
+
+            <div class="text-center mb-sm">
+                <strong>XpressRides, C.A.</strong><br>
+                RIF: J-50301732-5<br>
+                Domicilio Fiscal: Ciudad Guayana
+            </div>
+
+            <div class="d-flex justify-between mb-sm">
+                <div>
+                    Factura<br>
+                    Nro: <span id="fact-nro">Cargando...</span><br>
+                    Fecha: <span id="fact-fecha">---</span><br>
+                    Tasa BCV: Bs. <span id="fact-tasa">---</span>
+                </div>
+                <div style="text-align: right;">
+                    CONTROL: <span id="fact-control">---</span><br>
+                    Serie: <span id="fact-serie">---</span><br>
+                    Inmediata<br>
+                    USD ($)
+                </div>
+            </div>
+
+            <div class="ticket-divider"></div>
+
+            <div class="mb-sm">
+                Cliente: <span id="fact-cliente">---</span><br>
+                RIF/CI: <span id="fact-cedula">---</span><br>
+                Dir: <span id="fact-dir">---</span>
+            </div>
+
+            <div class="ticket-divider"></div>
+
+            <div class="d-flex justify-between">
+                <span>Traslado Urbano (1x)</span>
+                <span>$<span id="fact-costo">0.00</span></span>
+            </div>
+
+            <div class="ticket-divider"></div>
+
+            <div class="d-flex justify-between">
+                <span>Subtotal / Base Exenta:</span>
+                <span>$<span id="fact-subtotal">0.00</span></span>
+            </div>
+            <div class="d-flex justify-between">
+                <span>IGTF (3% Divisas):</span>
+                <span>$<span id="fact-igtf">0.00</span></span>
+            </div>
+
+            <div class="ticket-divider"></div>
+
+            <div class="d-flex justify-between text-highlight" style="font-size: 16px;">
+                <span>TOTAL A PAGAR:</span>
+                <span>$<span id="fact-total-usd">0.00</span></span>
+            </div>
+            <div class="text-small" style="text-align: right; color: var(--color-text-main);">
+                (Bs. <span id="fact-total-ves">0,00</span>)
+            </div>
+
+            <div class="ticket-divider"></div>
+
+            <div class="text-small" style="color: var(--color-text-muted); text-align: justify;">
+                * Expresado en Bolívares con equivalencia en divisas a la tasa BCV.<br>
+                * IGTF del 3% aplica para pagos en divisas.
+            </div>
+
+        </div>
+
+        <button class="btn-secondary mt-md" onclick="cerrarFactura()">Cerrar</button>
+    </div>
+</div>
+
+<!-- IMPORTACIÓN DE SCRIPTS  -->
+<script src="/js/api.js"></script>
+<script src="/js/factura-modal.js"></script>
+
+</body>
+</html>
