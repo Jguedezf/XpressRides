@@ -77,11 +77,10 @@ function configurarToggle() {
             console.warn('Error actualizando localStorage:', e);
         }
 
-        // Enviar cambio al backend (endpoint existente o futuro)
-        // fetchAPI('/chofer/disponibilidad', {
-        //     method: 'PATCH',
-        //     body: JSON.stringify({ disponible })
-        // }).catch(err => console.warn('Error actualizando disponibilidad:', err));
+        fetchAPI('/chofer/disponibilidad', {
+            method: 'PUT',
+            body: JSON.stringify({ available: disponible })
+        }).catch(err => console.warn('Error actualizando disponibilidad:', err));
     });
 }
 
