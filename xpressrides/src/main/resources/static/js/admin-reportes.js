@@ -28,12 +28,12 @@ async function cargarPagosPendientes() {
         deudas.forEach(deuda => {
             tbodyPagos.innerHTML += `
                 <tr>
-                    <td>${deuda.choferNombre} (V-${deuda.choferCedula})</td>
-                    <td>${deuda.viajesPendientes} viajes</td>
-                    <td style="font-weight: bold;">$ ${deuda.montoPendiente.toFixed(2)}</td>
+                    <td>${deuda.driverName}</td>
+                    <td>${deuda.pendingTrips} viajes</td>
+                    <td style="font-weight: bold;">$ ${Number(deuda.pendingTotalUsd).toFixed(2)}</td>
                     <td><span style="background-color: #FCE4D6; color: #C00000; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">PENDIENTE</span></td>
                     <td>
-                        <button class="premium-btn btn-sm" onclick="registrarPago(event, ${deuda.choferId})">Registrar Pago</button>
+                        <button class="premium-btn btn-sm" onclick="registrarPago(event, ${deuda.driverId})">Registrar Pago</button>
                     </td>
                 </tr>
             `;
