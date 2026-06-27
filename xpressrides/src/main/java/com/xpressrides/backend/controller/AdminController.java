@@ -3,6 +3,7 @@ package com.xpressrides.backend.controller;
 import com.xpressrides.backend.service.AdminService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,6 +19,24 @@ public class AdminController {
 
     public AdminController(AdminService adminService) {
         this.adminService = adminService;
+    }
+
+    // GET /api/admin/perfil — datos personales del admin o personal_admin autenticado
+    @PreAuthorize("hasRole('administrador') or hasRole('personal_admin')")
+    @GetMapping("/perfil")
+    public ResponseEntity<Map<String, Object>> getProfile(Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            response.put("success", true);
+            response.put("data", adminService.getProfile(authentication.getName()));
+            response.put("message", "OK");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("data", null);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
     }
 
     // GET /api/admin/choferes — lista todos los choferes con su estado operativo

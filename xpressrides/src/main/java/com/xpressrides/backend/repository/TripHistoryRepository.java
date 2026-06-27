@@ -17,7 +17,12 @@ package com.xpressrides.backend.repository;
 import com.xpressrides.backend.model.TripHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Repository
 public interface TripHistoryRepository extends JpaRepository<TripHistory, Integer> {
+
+    List<TripHistory> findByRequestDateBetweenOrderByRequestDateDesc(
+            LocalDateTime desde, LocalDateTime hasta);
 }

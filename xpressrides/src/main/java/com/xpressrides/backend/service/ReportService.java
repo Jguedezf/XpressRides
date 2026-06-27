@@ -17,6 +17,7 @@ package com.xpressrides.backend.service;
 import com.xpressrides.backend.model.*;
 import com.xpressrides.backend.repository.*;
 import org.springframework.stereotype.Service;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -48,13 +49,18 @@ public class ReportService {
         this.pendingNotificationRepository = pendingNotificationRepository;
     }
 
-    // Historial completo de traslados
-    public List<TripHistory> getTripHistory() {
+    // Historial de traslados, con filtro de fechas opcional
+    public List<TripHistory> getTripHistory(LocalDate desde, LocalDate hasta) {
+        if (desde != null && hasta != null)
+            return tripHistoryRepository.findByRequestDateBetweenOrderByRequestDateDesc(
+                    desde.atStartOfDay(), hasta.atTime(23, 59, 59));
         return tripHistoryRepository.findAll();
     }
 
-    // Ganancias diarias de la empresa
-    public List<CompanyEarnings> getCompanyEarnings() {
+    // Ganancias de la empresa, con filtro de fechas opcional
+    public List<CompanyEarnings> getCompanyEarnings(LocalDate desde, LocalDate hasta) {
+        if (desde != null && hasta != null)
+            return companyEarningsRepository.findByDateBetweenOrderByDateDesc(desde, hasta);
         return companyEarningsRepository.findAll();
     }
 

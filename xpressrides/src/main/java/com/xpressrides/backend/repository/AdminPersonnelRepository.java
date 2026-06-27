@@ -17,7 +17,10 @@ package com.xpressrides.backend.repository;
 import com.xpressrides.backend.model.AdminPersonnel;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import java.util.Optional;
 
 @Repository
 public interface AdminPersonnelRepository extends JpaRepository<AdminPersonnel, Integer> {
+
+    Optional<AdminPersonnel> findByUserId_Username(String username);
 }

@@ -1,11 +1,18 @@
 package com.xpressrides.backend.service;
 
+import com.xpressrides.backend.model.AdminPersonnel;
 import com.xpressrides.backend.model.Customer;
 import com.xpressrides.backend.model.Driver;
 import com.xpressrides.backend.model.Trip;
+import com.xpressrides.backend.model.User;
+import com.xpressrides.backend.repository.AdminPersonnelRepository;
 import com.xpressrides.backend.repository.CustomerRepository;
 import com.xpressrides.backend.repository.DriverRepository;
 import com.xpressrides.backend.repository.TripRepository;
+import com.xpressrides.backend.repository.UserRepository;
+import com.xpressrides.backend.exception.ResourceNotFoundException;
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -19,13 +26,19 @@ public class AdminService {
     private final DriverRepository driverRepository;
     private final CustomerRepository customerRepository;
     private final TripRepository tripRepository;
+    private final UserRepository userRepository;
+    private final AdminPersonnelRepository adminPersonnelRepository;
 
     public AdminService(DriverRepository driverRepository,
                         CustomerRepository customerRepository,
-                        TripRepository tripRepository) {
-        this.driverRepository   = driverRepository;
-        this.customerRepository = customerRepository;
-        this.tripRepository     = tripRepository;
+                        TripRepository tripRepository,
+                        UserRepository userRepository,
+                        AdminPersonnelRepository adminPersonnelRepository) {
+        this.driverRepository        = driverRepository;
+        this.customerRepository      = customerRepository;
+        this.tripRepository          = tripRepository;
+        this.userRepository          = userRepository;
+        this.adminPersonnelRepository = adminPersonnelRepository;
     }
 
     // Retorna todos los choferes con su estado operativo
@@ -58,6 +71,27 @@ public class AdminService {
             item.put("primerViajeUsado", c.isFirstTripUsed());
             return item;
         }).collect(Collectors.toList());
+    }
+
+    // Perfil del usuario autenticado (admin o personal_admin)
+    public Map<String, Object> getProfile(String username) {
+        User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        Map<String, Object> profile = new HashMap<>();
+        profile.put("nombre", user.getName());
+        profile.put("apellido", user.getLastName());
+        profile.put("cedula", user.getCi());
+        profile.put("username", user.getUsername());
+        profile.put("email", user.getEmail());
+        profile.put("telefono", user.getPhone());
+        profile.put("rol", user.getRole());
+
+        if ("personal_admin".equals(user.getRole())) {
+            adminPersonnelRepository.findByUserId_Username(username)
+                .ifPresent(ap -> profile.put("cargo", ap.getPosition()));
+        }
+        return profile;
     }
 
     // Retorna traslados en estados activos (no finalizados)

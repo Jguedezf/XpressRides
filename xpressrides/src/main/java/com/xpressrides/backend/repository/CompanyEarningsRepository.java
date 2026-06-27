@@ -18,7 +18,10 @@ import com.xpressrides.backend.model.CompanyEarnings;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
+import java.util.List;
 
 @Repository
 public interface CompanyEarningsRepository extends JpaRepository<CompanyEarnings, LocalDate> {
+
+    List<CompanyEarnings> findByDateBetweenOrderByDateDesc(LocalDate desde, LocalDate hasta);
 }

@@ -18,9 +18,11 @@ import com.xpressrides.backend.model.DriverPayment;
 import com.xpressrides.backend.model.TopUp;
 import com.xpressrides.backend.service.PaymentService;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -90,12 +92,14 @@ public class PaymentController {
         }
     }
 
-    // GET /api/driver-payments/driver/{id} — historial de pagos de un chofer
+    // GET /api/pagos-chofer/chofer/{id}?desde=&hasta= (fechas opcionales, formato YYYY-MM-DD)
     @PreAuthorize("hasAnyRole('administrador', 'personal_admin')")
     @GetMapping("/pagos-chofer/chofer/{id}")
     public ResponseEntity<Map<String, Object>> getDriverPaymentHistory(
-            @PathVariable Integer id) {
-        List<DriverPayment> pagos = paymentService.getDriverPaymentHistory(id);
+            @PathVariable Integer id,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        List<DriverPayment> pagos = paymentService.getDriverPaymentHistory(id, desde, hasta);
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("data", pagos);

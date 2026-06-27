@@ -17,6 +17,7 @@ package com.xpressrides.backend.repository;
 import com.xpressrides.backend.model.DriverPayment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -24,4 +25,8 @@ public interface DriverPaymentRepository extends JpaRepository<DriverPayment, In
 
     // Buscar todos los pagos realizados a un chofer específico
     List<DriverPayment> findByDriver_IdOrderByDateTimeDesc(Integer driverId);
+
+    // Pagos a un chofer en un rango de fechas
+    List<DriverPayment> findByDriver_IdAndDateTimeBetweenOrderByDateTimeDesc(
+            Integer driverId, LocalDateTime desde, LocalDateTime hasta);
 }

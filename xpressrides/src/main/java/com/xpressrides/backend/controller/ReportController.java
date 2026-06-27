@@ -16,9 +16,11 @@ package com.xpressrides.backend.controller;
 
 import com.xpressrides.backend.model.*;
 import com.xpressrides.backend.service.ReportService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,10 +38,12 @@ public class ReportController {
         this.reportService = reportService;
     }
 
-    // GET /api/reports/trip-history
+    // GET /api/reportes/historial-traslados?desde=&hasta= (fechas opcionales, formato YYYY-MM-DD)
     @GetMapping("/historial-traslados")
-    public ResponseEntity<Map<String, Object>> getTripHistory() {
-        List<TripHistory> data = reportService.getTripHistory();
+    public ResponseEntity<Map<String, Object>> getTripHistory(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        List<TripHistory> data = reportService.getTripHistory(desde, hasta);
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("data", data);
@@ -47,10 +51,12 @@ public class ReportController {
         return ResponseEntity.ok(response);
     }
 
-    // GET /api/reports/earnings
+    // GET /api/reportes/ganancias?desde=&hasta= (fechas opcionales, formato YYYY-MM-DD)
     @GetMapping("/ganancias")
-    public ResponseEntity<Map<String, Object>> getCompanyEarnings() {
-        List<CompanyEarnings> data = reportService.getCompanyEarnings();
+    public ResponseEntity<Map<String, Object>> getCompanyEarnings(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        List<CompanyEarnings> data = reportService.getCompanyEarnings(desde, hasta);
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("data", data);

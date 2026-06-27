@@ -22,6 +22,8 @@ import com.xpressrides.backend.repository.TopUpRepository;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -68,8 +70,14 @@ public class PaymentService {
         return driverPaymentRepository.save(payment);
     }
 
-    // Retorna el historial de pagos de un chofer específico
-    public List<DriverPayment> getDriverPaymentHistory(Integer driverId) {
+    // Retorna el historial de pagos de un chofer, con filtro de fechas opcional
+    public List<DriverPayment> getDriverPaymentHistory(Integer driverId, LocalDate desde, LocalDate hasta) {
+        if (desde != null && hasta != null) {
+            LocalDateTime desdeDateTime = desde.atStartOfDay();
+            LocalDateTime hastaDateTime = hasta.atTime(23, 59, 59);
+            return driverPaymentRepository.findByDriver_IdAndDateTimeBetweenOrderByDateTimeDesc(
+                    driverId, desdeDateTime, hastaDateTime);
+        }
         return driverPaymentRepository.findByDriver_IdOrderByDateTimeDesc(driverId);
     }
 }
