@@ -69,7 +69,7 @@ function configurarFormulario() {
 
         try {
             // Enviar petición PUT al servidor
-            await fetchAPI('../cliente/perfil', {
+            await fetchAPI('/cliente/perfil', {
                 method: 'PUT',
                 body: JSON.stringify({
                     name: usuario.nombre,

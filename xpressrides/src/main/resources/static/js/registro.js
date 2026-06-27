@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function cargarBancos() {
     try {
-        const response = await fetchAPI('../bancos');
+        const response = await fetchAPI('/bancos');
         const bancos = response.data;
         const selectBanco = document.getElementById('banco');
 
