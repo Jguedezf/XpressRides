@@ -2,7 +2,11 @@ package com.xpressrides.backend.service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,12 +16,16 @@ import com.xpressrides.backend.dto.VehicleInspectionStatus;
 import com.xpressrides.backend.dto.response.DriverStatusResponse;
 import com.xpressrides.backend.exception.BadRequestException;
 import com.xpressrides.backend.exception.ResourceNotFoundException;
+import com.xpressrides.backend.model.Customer;
 import com.xpressrides.backend.model.Driver;
+import com.xpressrides.backend.model.EmergencyContact;
 import com.xpressrides.backend.model.PsychologicalEvaluation;
 import com.xpressrides.backend.model.Trip;
+import com.xpressrides.backend.model.User;
 import com.xpressrides.backend.model.Vehicle;
 import com.xpressrides.backend.model.VehicleInspection;
 import com.xpressrides.backend.repository.DriverRepository;
+import com.xpressrides.backend.repository.EmergencyContactRepository;
 import com.xpressrides.backend.repository.PsychologicalEvaluationRepository;
 import com.xpressrides.backend.repository.TripRepository;
 import com.xpressrides.backend.repository.VehicleInspectionRepository;
@@ -30,17 +38,20 @@ public class DriverService {
     private final VehicleRepository vehicleRepository;
     private final VehicleInspectionRepository vehicleInspectionRepository;
     private final TripRepository tripRepository;
+    private final EmergencyContactRepository emergencyContactRepository;
 
     public DriverService(DriverRepository driverRepository,
             PsychologicalEvaluationRepository psychEvalRepository,
             VehicleRepository vehicleRepository,
             VehicleInspectionRepository vehicleInspectionRepository,
-            TripRepository tripRepository) {
+            TripRepository tripRepository,
+            EmergencyContactRepository emergencyContactRepository) {
         this.driverRepository = driverRepository;
         this.psychEvalRepository = psychEvalRepository;
         this.vehicleRepository = vehicleRepository;
         this.vehicleInspectionRepository = vehicleInspectionRepository;
         this.tripRepository = tripRepository;
+        this.emergencyContactRepository = emergencyContactRepository;
     }
 
     public void toggleAvailability(String username, boolean available) {
@@ -86,8 +97,18 @@ public class DriverService {
         return response;
     }
 
-    public List<Trip> getTrips(String username) {
+    public List<Trip> getTrips(String username, LocalDate desde, LocalDate hasta) {
+        if (desde != null && hasta != null) {
+            return tripRepository
+                .findByDriver_Username_UsernameAndRequestDateBetweenOrderByRequestDateDesc(
+                    username, desde.atStartOfDay(), hasta.atTime(23, 59, 59));
+        }
         return tripRepository.findByDriver_Username_UsernameOrderByRequestDateDesc(username);
+    }
+
+    public List<Trip> getCancelledTrips(String username) {
+        return tripRepository.findByDriver_Username_UsernameAndStatusOrderByRequestDateDesc(
+                username, "cancelado");
     }
 
     public Trip getTripDetail(String username, Integer tripId) {
@@ -144,6 +165,68 @@ public class DriverService {
         trip.setCancelledBy("chofer");
         trip.setCancellationReason(motivo);
         tripRepository.save(trip);
+    }
+
+    public Map<String, Object> getProfile(String username) {
+        Driver driver = driverRepository.findByUsername_Username(username)
+            .orElseThrow(() -> new ResourceNotFoundException("Chofer no encontrado"));
+        User user = driver.getUsername();
+        List<EmergencyContact> contacts = emergencyContactRepository.findByDriver_Id(driver.getId());
+
+        List<Map<String, Object>> contactList = contacts.stream().map(c -> {
+            Map<String, Object> cm = new HashMap<>();
+            cm.put("nombre", c.getName());
+            cm.put("telefono", c.getPhone());
+            cm.put("parentesco", c.getRelationship());
+            return cm;
+        }).collect(Collectors.toList());
+
+        Map<String, Object> profile = new HashMap<>();
+        profile.put("id", driver.getId());
+        profile.put("nombre", user.getName());
+        profile.put("apellido", user.getLastName());
+        profile.put("cedula", user.getCi());
+        profile.put("username", user.getUsername());
+        profile.put("email", user.getEmail());
+        profile.put("telefono", user.getPhone());
+        profile.put("banco", driver.getBank() != null ? driver.getBank().getName() : null);
+        profile.put("numeroCuenta", driver.getAccountNumber());
+        profile.put("saldoAcumuladoUsd", driver.getBalance());
+        profile.put("habilitado", driver.isEnabled());
+        profile.put("disponible", driver.isAvailable());
+        profile.put("contactosEmergencia", contactList);
+        return profile;
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> getActiveTrip(String username) {
+        List<String> activeStatuses = List.of("aceptado", "chofer_llego", "en_progreso");
+        Optional<Trip> tripOpt = tripRepository
+            .findFirstByDriver_Username_UsernameAndStatusInOrderByRequestDateDesc(
+                username, activeStatuses);
+
+        if (tripOpt.isEmpty()) return null;
+
+        Trip trip = tripOpt.get();
+        Customer customer = trip.getCustomer();
+        User clientUser = customer.getUserId();
+
+        Map<String, Object> clienteData = new HashMap<>();
+        clienteData.put("nombre", clientUser.getName() + " " + clientUser.getLastName());
+        clienteData.put("telefono", clientUser.getPhone());
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("idTraslado", trip.getId());
+        data.put("estado", trip.getStatus());
+        data.put("cliente", clienteData);
+        data.put("origen", trip.getOriginZone().getName());
+        data.put("destino", trip.getDestinationZone().getName());
+        data.put("costoUsd", trip.getCustomerCostUsd());
+        data.put("distanciaKm", trip.getDistanceKm());
+        data.put("nroPasajeros", trip.getPassengerCount());
+        data.put("fechaSolicitud", trip.getRequestDate());
+
+        return data;
     }
 
     private PsychEvaluationStatus buildPsychStatus(PsychologicalEvaluation eval) {

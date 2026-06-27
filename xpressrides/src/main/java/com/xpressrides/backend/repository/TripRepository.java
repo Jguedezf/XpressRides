@@ -5,6 +5,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.xpressrides.backend.model.Trip;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,4 +27,16 @@ public interface TripRepository extends JpaRepository<Trip, Integer> {
     // Busca el viaje activo más reciente de un cliente dado una lista de estados
     Optional<Trip> findFirstByCustomer_IdAndStatusInOrderByRequestDateDesc(
             Integer customerId, List<String> statuses);
+
+    // Busca el viaje activo más reciente de un chofer dado una lista de estados
+    Optional<Trip> findFirstByDriver_Username_UsernameAndStatusInOrderByRequestDateDesc(
+            String username, List<String> statuses);
+
+    // Historial del chofer filtrado por rango de fechas
+    List<Trip> findByDriver_Username_UsernameAndRequestDateBetweenOrderByRequestDateDesc(
+            String username, LocalDateTime desde, LocalDateTime hasta);
+
+    // Traslados del chofer filtrados por estado (usado para cancelados)
+    List<Trip> findByDriver_Username_UsernameAndStatusOrderByRequestDateDesc(
+            String username, String status);
 }

@@ -1,7 +1,9 @@
 package com.xpressrides.backend.controller;
 
+import java.time.LocalDate;
 import java.util.Map;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.xpressrides.backend.dto.request.AvailabilityRequest;
@@ -60,9 +63,36 @@ public class DriverController {
     }
 
     @PreAuthorize("hasRole('chofer')")
+    @GetMapping("/perfil")
+    public ResponseEntity<?> getProfile(Authentication authentication) {
+        HashMap<String, Object> response = new HashMap<>();
+        try {
+            Map<String, Object> data = driverService.getProfile(authentication.getName());
+            response.put("success", true);
+            response.put("data", data);
+            response.put("message", "OK");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("data", null);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @PreAuthorize("hasRole('chofer')")
     @GetMapping("/traslados")
-    public ResponseEntity<?> getTrips(Authentication authentication) {
-        return ResponseEntity.ok(driverService.getTrips(authentication.getName()));
+    public ResponseEntity<?> getTrips(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            Authentication authentication) {
+        return ResponseEntity.ok(driverService.getTrips(authentication.getName(), desde, hasta));
+    }
+
+    @PreAuthorize("hasRole('chofer')")
+    @GetMapping("/traslados/cancelados")
+    public ResponseEntity<?> getCancelledTrips(Authentication authentication) {
+        return ResponseEntity.ok(driverService.getCancelledTrips(authentication.getName()));
     }
 
     @PreAuthorize("hasRole('chofer')")
@@ -90,6 +120,25 @@ public class DriverController {
         String motivo = body.getOrDefault("motivo", "Cancelado por el chofer");
         driverService.cancelTrip(authentication.getName(), id, motivo);
         return ResponseEntity.ok(Map.of("message", "Viaje cancelado"));
+    }
+
+    // GET /api/chofer/viaje-activo — viaje en curso del chofer (aceptado, chofer_llego, en_progreso)
+    @PreAuthorize("hasRole('chofer')")
+    @GetMapping("/viaje-activo")
+    public ResponseEntity<?> getActiveTrip(Authentication authentication) {
+        HashMap<String, Object> response = new HashMap<>();
+        try {
+            Map<String, Object> data = driverService.getActiveTrip(authentication.getName());
+            response.put("success", true);
+            response.put("data", data);
+            response.put("message", data != null ? "Viaje activo encontrado" : "Sin viaje activo");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("data", null);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 
     // PUT /api/chofer/traslados/{id}/rechazar — chofer rechaza el viaje asignado
