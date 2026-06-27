@@ -18,6 +18,7 @@ import com.xpressrides.backend.dto.request.UserUpdateRequest;
 import com.xpressrides.backend.model.User;
 import com.xpressrides.backend.service.UserService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -33,7 +34,8 @@ public class UserController {
         this.userService = userService;
     }
 
-    // PUT /api/users/{id} — actualiza los datos del perfil de un usuario
+    // PUT /api/users/{id} — actualiza los datos del perfil de un usuario (solo admin)
+    @PreAuthorize("hasRole('administrador')")
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> updateUser(
             @PathVariable Integer id,

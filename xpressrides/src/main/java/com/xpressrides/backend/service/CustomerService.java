@@ -150,14 +150,17 @@ public class CustomerService {
 
         Trip trip = tripOpt.get();
         Driver driver = trip.getDriver();
-        User driverUser = driver.getUsername();
-        Vehicle vehicle = trip.getVehicle();
 
-        Map<String, Object> choferData = new HashMap<>();
-        choferData.put("nombre", driverUser.getName() + " " + driverUser.getLastName());
-        choferData.put("vehiculo", vehicle.getBrand() + " " + vehicle.getModel() + " " + vehicle.getYear());
-        choferData.put("placa", vehicle.getPlate());
-        choferData.put("color", vehicle.getColor());
+        Map<String, Object> choferData = null;
+        if (driver != null) {
+            User driverUser = driver.getUsername();
+            Vehicle vehicle = trip.getVehicle();
+            choferData = new HashMap<>();
+            choferData.put("nombre", driverUser.getName() + " " + driverUser.getLastName());
+            choferData.put("vehiculo", vehicle.getBrand() + " " + vehicle.getModel() + " " + vehicle.getYear());
+            choferData.put("placa", vehicle.getPlate());
+            choferData.put("color", vehicle.getColor());
+        }
 
         Map<String, Object> data = new HashMap<>();
         data.put("idTraslado", trip.getId());

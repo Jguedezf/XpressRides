@@ -19,6 +19,7 @@ import com.xpressrides.backend.model.*;
 import com.xpressrides.backend.service.DriverRegistrationService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,7 +36,8 @@ public class DriverRegistrationController {
         this.driverRegistrationService = driverRegistrationService;
     }
 
-    // POST /api/drivers/{id}/vehicle — chofer registra su vehículo
+    // POST /api/drivers/{id}/vehicle — personal admin registra vehículo de un chofer
+    @PreAuthorize("hasRole('personal_admin') or hasRole('administrador')")
     @PostMapping("/choferes/{id}/vehiculo")
     public ResponseEntity<Map<String, Object>> registerVehicle(
             @PathVariable Integer id,
@@ -55,8 +57,8 @@ public class DriverRegistrationController {
         }
     }
 
-    // POST /api/drivers/{id}/psych-eval — admin registra evaluación psicológica
-    // La seguridad por rol (solo personal_admin) la agrega Eliuber con JWT
+    // POST /api/drivers/{id}/psych-eval — personal admin registra evaluación psicológica
+    @PreAuthorize("hasRole('personal_admin') or hasRole('administrador')")
     @PostMapping("/choferes/{id}/evaluacion-psicologica")
     public ResponseEntity<Map<String, Object>> registerPsychEval(
             @PathVariable Integer id,
@@ -79,8 +81,8 @@ public class DriverRegistrationController {
         }
     }
 
-    // POST /api/vehicles/{id}/inspection — admin registra revisión vehicular
-    // La seguridad por rol (solo personal_admin) la agrega Eliuber con JWT
+    // POST /api/vehicles/{id}/inspection — personal admin registra revisión vehicular
+    @PreAuthorize("hasRole('personal_admin') or hasRole('administrador')")
     @PostMapping("/vehiculos/{id}/revision")
     public ResponseEntity<Map<String, Object>> registerVehicleInspection(
             @PathVariable Integer id,
