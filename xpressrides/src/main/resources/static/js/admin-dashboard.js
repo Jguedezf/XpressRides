@@ -13,7 +13,7 @@ async function cargarChoferesPendientes() {
 
     try {
         // Consumimos el endpoint usando la herramienta del equipo
-        const response = await fetchAPI('/admin/choferes-pendientes');
+        const response = await fetchAPI('/admin/choferes');
         const choferes = response.data || [];
 
         if (choferes.length === 0) {
@@ -24,7 +24,7 @@ async function cargarChoferesPendientes() {
         // Llenamos el select con los datos reales
         selectChofer.innerHTML = '<option value="" disabled selected>Elige un chofer de la lista...</option>';
         choferes.forEach(chofer => {
-            selectChofer.innerHTML += `<option value="${chofer.id}">${chofer.nombre} ${chofer.apellido} (V-${chofer.cedula})</option>`;
+            selectChofer.innerHTML += `<option value="${chofer.id}">${chofer.nombre} ${chofer.apellido} (${chofer.username})</option>`;
         });
 
     } catch (error) {
@@ -73,10 +73,9 @@ document.getElementById('evaluation-form').addEventListener('submit', async (e) 
             notaVehicular: notaVeh
         };
 
-        // Enviamos la petición POST al backend (Asumiendo la ruta de evaluación)
-        await fetchAPI('/admin/choferes/evaluar', {
+        await fetchAPI(`/admin/choferes/${choferId}/evaluar`, {
             method: 'POST',
-            body: JSON.stringify(payload)
+            body: JSON.stringify({ notaPsicologica: notaPsi, notaVehicular: notaVeh })
         });
 
         // Si llega hasta aquí, todo salió bien (fetchAPI maneja los errores automáticamente)

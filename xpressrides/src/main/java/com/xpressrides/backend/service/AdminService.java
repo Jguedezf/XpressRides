@@ -3,18 +3,22 @@ package com.xpressrides.backend.service;
 import com.xpressrides.backend.model.AdminPersonnel;
 import com.xpressrides.backend.model.Customer;
 import com.xpressrides.backend.model.Driver;
+import com.xpressrides.backend.model.PsychologicalEvaluation;
 import com.xpressrides.backend.model.Trip;
 import com.xpressrides.backend.model.User;
+import com.xpressrides.backend.model.Vehicle;
+import com.xpressrides.backend.model.VehicleInspection;
 import com.xpressrides.backend.repository.AdminPersonnelRepository;
 import com.xpressrides.backend.repository.CustomerRepository;
 import com.xpressrides.backend.repository.DriverRepository;
 import com.xpressrides.backend.repository.TripRepository;
 import com.xpressrides.backend.repository.UserRepository;
+import com.xpressrides.backend.repository.VehicleRepository;
 import com.xpressrides.backend.exception.ResourceNotFoundException;
-import java.util.HashMap;
-import java.util.Map;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,17 +32,23 @@ public class AdminService {
     private final TripRepository tripRepository;
     private final UserRepository userRepository;
     private final AdminPersonnelRepository adminPersonnelRepository;
+    private final VehicleRepository vehicleRepository;
+    private final DriverRegistrationService driverRegistrationService;
 
     public AdminService(DriverRepository driverRepository,
                         CustomerRepository customerRepository,
                         TripRepository tripRepository,
                         UserRepository userRepository,
-                        AdminPersonnelRepository adminPersonnelRepository) {
-        this.driverRepository        = driverRepository;
-        this.customerRepository      = customerRepository;
-        this.tripRepository          = tripRepository;
-        this.userRepository          = userRepository;
-        this.adminPersonnelRepository = adminPersonnelRepository;
+                        AdminPersonnelRepository adminPersonnelRepository,
+                        VehicleRepository vehicleRepository,
+                        DriverRegistrationService driverRegistrationService) {
+        this.driverRepository          = driverRepository;
+        this.customerRepository        = customerRepository;
+        this.tripRepository            = tripRepository;
+        this.userRepository            = userRepository;
+        this.adminPersonnelRepository  = adminPersonnelRepository;
+        this.vehicleRepository         = vehicleRepository;
+        this.driverRegistrationService = driverRegistrationService;
     }
 
     // Retorna todos los choferes con su estado operativo
@@ -92,6 +102,26 @@ public class AdminService {
                 .ifPresent(ap -> profile.put("cargo", ap.getPosition()));
         }
         return profile;
+    }
+
+    // Registra evaluación psicológica y revisión vehicular para un chofer en un solo paso
+    public void evaluarChofer(Integer driverId, BigDecimal notaPsicologica, BigDecimal notaVehicular) {
+        Driver driver = driverRepository.findById(driverId)
+            .orElseThrow(() -> new ResourceNotFoundException("Chofer no encontrado"));
+
+        PsychologicalEvaluation eval = new PsychologicalEvaluation();
+        eval.setDriver(driver);
+        eval.setScore(notaPsicologica);
+        eval.setEvaluationDate(LocalDate.now());
+        driverRegistrationService.registerPsychologicalEvaluation(eval);
+
+        Vehicle vehicle = vehicleRepository.findByDriver_Id(driverId)
+            .orElseThrow(() -> new ResourceNotFoundException("El chofer no tiene vehículo registrado"));
+        VehicleInspection inspection = new VehicleInspection();
+        inspection.setVehicle(vehicle);
+        inspection.setScore(notaVehicular);
+        inspection.setInspectionDate(LocalDate.now());
+        driverRegistrationService.registerVehicleInspection(inspection);
     }
 
     // Retorna traslados en estados activos (no finalizados)

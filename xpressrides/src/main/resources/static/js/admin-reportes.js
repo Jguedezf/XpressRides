@@ -14,7 +14,7 @@ async function cargarPagosPendientes() {
 
     try {
         // Consumimos el endpoint de pagos pendientes
-        const response = await fetchAPI('/admin/pagos/pendientes');
+        const response = await fetchAPI('/reportes/pendientes-pago');
         const deudas = response.data || [];
 
         if (deudas.length === 0) {
@@ -62,7 +62,7 @@ async function registrarPago(event, choferId) {
         const payload = { choferId: choferId };
 
         // Enviar petición POST usando fetchAPI
-        await fetchAPI('/admin/pagos/registrar', {
+        await fetchAPI('/pagos-chofer', {
             method: 'POST',
             body: JSON.stringify(payload)
         });
@@ -105,7 +105,7 @@ document.getElementById('form-filtro-ganancias').addEventListener('submit', asyn
 
     try {
         // Petición GET con variables en la URL
-        const response = await fetchAPI(`/admin/reportes/ganancias?inicio=${fechaInicio}&fin=${fechaFin}`);
+        const response = await fetchAPI(`/reportes/ganancias?desde=${fechaInicio}&hasta=${fechaFin}`);
         const registros = response.data || [];
 
         if (registros.length === 0) {
