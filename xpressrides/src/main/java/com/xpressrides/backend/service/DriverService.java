@@ -200,7 +200,7 @@ public class DriverService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getActiveTrip(String username) {
-        List<String> activeStatuses = List.of("aceptado", "chofer_llego", "en_progreso");
+        List<String> activeStatuses = List.of("solicitado", "aceptado", "chofer_llego", "en_progreso");
         Optional<Trip> tripOpt = tripRepository
             .findFirstByDriver_Username_UsernameAndStatusInOrderByRequestDateDesc(
                 username, activeStatuses);
