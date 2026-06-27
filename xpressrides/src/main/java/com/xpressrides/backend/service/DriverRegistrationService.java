@@ -16,12 +16,15 @@
  */
 package com.xpressrides.backend.service;
 
+import com.xpressrides.backend.exception.BadRequestException;
 import com.xpressrides.backend.model.*;
 import com.xpressrides.backend.repository.*;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Optional;
 
 @Service
@@ -76,6 +79,19 @@ public class DriverRegistrationService {
         driverRepository.findById(driverId)
                 .orElseThrow(() -> new RuntimeException("Chofer no encontrado con ID: " + driverId));
 
+        if (eval.getScore() == null || eval.getScore().compareTo(BigDecimal.valueOf(73)) < 0) {
+            throw new BadRequestException(
+                "La calificación mínima aprobatoria para la evaluación psicológica es 73. " +
+                "Calificación recibida: " + eval.getScore());
+        }
+
+        int year = eval.getEvaluationDate().getYear();
+        if (psychEvalRepository.existsByDriver_IdAndEvaluationDateBetween(
+                driverId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31))) {
+            throw new BadRequestException(
+                "El chofer ya tiene una evaluación psicológica registrada en el año " + year);
+        }
+
         PsychologicalEvaluation saved = psychEvalRepository.save(eval);
 
         // refresh fuerza re-lectura desde MySQL para obtener 'aprobado' calculado
@@ -93,6 +109,19 @@ public class DriverRegistrationService {
     public VehicleInspection registerVehicleInspection(VehicleInspection inspection) {
         Vehicle vehicle = vehicleRepository.findById(inspection.getVehicle().getId())
                 .orElseThrow(() -> new RuntimeException("Vehículo no encontrado."));
+
+        if (inspection.getScore() == null || inspection.getScore().compareTo(BigDecimal.valueOf(65)) < 0) {
+            throw new BadRequestException(
+                "La calificación mínima aprobatoria para la revisión vehicular es 65. " +
+                "Calificación recibida: " + inspection.getScore());
+        }
+
+        int year = inspection.getInspectionDate().getYear();
+        if (vehicleInspectionRepository.existsByVehicle_IdAndInspectionDateBetween(
+                inspection.getVehicle().getId(), LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31))) {
+            throw new BadRequestException(
+                "Este vehículo ya tiene una revisión registrada en el año " + year);
+        }
 
         VehicleInspection saved = vehicleInspectionRepository.save(inspection);
 

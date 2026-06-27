@@ -17,6 +17,7 @@ package com.xpressrides.backend.repository;
 import com.xpressrides.backend.model.VehicleInspection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import java.time.LocalDate;
 import java.util.Optional;
 
 @Repository
@@ -25,4 +26,6 @@ public interface VehicleInspectionRepository extends JpaRepository<VehicleInspec
     // Retorna la revisión vehicular más reciente de un vehículo —
     // usada para verificar si el vehículo está apto antes de habilitar al chofer
     Optional<VehicleInspection> findFirstByVehicle_IdOrderByInspectionDateDesc(Integer vehicleId);
+
+    boolean existsByVehicle_IdAndInspectionDateBetween(Integer vehicleId, LocalDate start, LocalDate end);
 }

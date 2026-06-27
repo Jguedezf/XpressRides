@@ -17,6 +17,7 @@ package com.xpressrides.backend.repository;
 import com.xpressrides.backend.model.PsychologicalEvaluation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import java.time.LocalDate;
 import java.util.Optional;
 
 @Repository
@@ -27,4 +28,6 @@ public interface PsychologicalEvaluationRepository extends JpaRepository<Psychol
     boolean existsByDriver_IdAndApprovedTrue(Integer driverId);
 
     Optional<PsychologicalEvaluation> findFirstByDriver_IdOrderByEvaluationDateDesc(Integer driverId);
+
+    boolean existsByDriver_IdAndEvaluationDateBetween(Integer driverId, LocalDate start, LocalDate end);
 }
