@@ -608,3 +608,180 @@ SELECT 'SALDO_CARLOSR' AS entidad,
        u.username, c.saldo_acumulado_usd, c.habilitado, c.disponible
 FROM chofer c JOIN usuario u ON c.id_usuario = u.id
 WHERE u.username = 'carlosr';
+
+-- ================================================================
+-- SECCIÓN ÁNGEL — Datos de Prueba · Panel Administrativo
+-- Usuarios adicionales: 2 personal_admin + 3 choferes en estados
+-- distintos + 2 clientes. Contraseña igual a carlosr y laurap.
+-- ================================================================
+
+SET SQL_SAFE_UPDATES = 0;
+
+-- ----------------------------------------------------------------
+-- LIMPIEZA PREVIA — solo los usuarios de esta sección
+-- ----------------------------------------------------------------
+SET FOREIGN_KEY_CHECKS = 0;
+
+DELETE FROM evaluacion_psicologica
+  WHERE id_chofer IN (
+    SELECT id FROM (
+      SELECT c.id FROM chofer c JOIN usuario u ON c.id_usuario = u.id
+      WHERE u.username IN ('miguelch', 'robertoch', 'anach')
+    ) AS tmp);
+
+DELETE FROM revision_vehiculo
+  WHERE id_vehiculo IN (
+    SELECT id FROM (
+      SELECT v.id FROM vehiculo v
+      JOIN chofer c ON v.id_chofer = c.id
+      JOIN usuario u ON c.id_usuario = u.id
+      WHERE u.username IN ('miguelch', 'robertoch', 'anach')
+    ) AS tmp);
+
+DELETE FROM contacto_emergencia
+  WHERE id_chofer IN (
+    SELECT id FROM (
+      SELECT c.id FROM chofer c JOIN usuario u ON c.id_usuario = u.id
+      WHERE u.username IN ('miguelch', 'robertoch', 'anach')
+    ) AS tmp);
+
+DELETE FROM vehiculo
+  WHERE id_chofer IN (
+    SELECT id FROM (
+      SELECT c.id FROM chofer c JOIN usuario u ON c.id_usuario = u.id
+      WHERE u.username IN ('miguelch', 'robertoch', 'anach')
+    ) AS tmp);
+
+DELETE FROM chofer
+  WHERE id_usuario IN (
+    SELECT id FROM (SELECT id FROM usuario
+      WHERE username IN ('miguelch', 'robertoch', 'anach')) AS tmp);
+
+DELETE FROM cliente
+  WHERE id_usuario IN (
+    SELECT id FROM (SELECT id FROM usuario
+      WHERE username IN ('josecl', 'marycl')) AS tmp);
+
+DELETE FROM personal_admin
+  WHERE id_usuario IN (
+    SELECT id FROM (SELECT id FROM usuario
+      WHERE username IN ('luisapa', 'pedrop')) AS tmp);
+
+DELETE FROM usuario
+  WHERE username IN ('miguelch', 'robertoch', 'anach', 'josecl', 'marycl', 'luisapa', 'pedrop');
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- ----------------------------------------------------------------
+-- PERSONAL ADMINISTRATIVO — para loguear con rol personal_admin
+-- ----------------------------------------------------------------
+SET @hash_angel = '$2a$10$SeAgMoDqTfHmtpDSpSmkteZTMNqT/LSyOOc7tzVkr1Mhhqge3aq5i';
+
+INSERT INTO usuario (cedula, nombre, apellido, username, password_hash, email, telefono, rol) VALUES
+('V-20000001', 'Luisa', 'Padrón',  'luisapa', @hash_angel, 'luisapa@test.ve', '0414-2000001', 'personal_admin'),
+('V-20000002', 'Pedro', 'Paredes', 'pedrop',  @hash_angel, 'pedrop@test.ve',  '0416-2000002', 'personal_admin');
+
+SET @u_luisapa = (SELECT id FROM usuario WHERE username = 'luisapa');
+SET @u_pedrop  = (SELECT id FROM usuario WHERE username = 'pedrop');
+
+INSERT INTO personal_admin (id_usuario, cargo) VALUES
+(@u_luisapa, 'Coordinador de Choferes'),
+(@u_pedrop,  'Analista de Reportes');
+
+SET @pa_luisa = (SELECT id FROM personal_admin WHERE id_usuario = @u_luisapa);
+SET @pa_pedro = (SELECT id FROM personal_admin WHERE id_usuario = @u_pedrop);
+
+-- ----------------------------------------------------------------
+-- CHOFER A — HABILITADO (evaluación + revisión aprobadas)
+-- Aparece en GET /api/admin/choferes como habilitado=true
+-- ----------------------------------------------------------------
+INSERT INTO usuario (cedula, nombre, apellido, username, password_hash, email, telefono, rol) VALUES
+('V-20000003', 'Miguel', 'Torres', 'miguelch', @hash_angel, 'miguelch@test.ve', '0424-2000003', 'chofer');
+SET @u_miguel = LAST_INSERT_ID();
+
+INSERT INTO chofer (id_usuario, id_banco, id_zona_actual, numero_cuenta,
+                    saldo_acumulado_usd, habilitado, disponible)
+VALUES (@u_miguel, @id_banco, @id_zona, '01020000000000000011', 42.00, 1, 1);
+SET @ch_miguel = LAST_INSERT_ID();
+
+INSERT INTO vehiculo (id_chofer, placa, marca, modelo, anio_fabricacion, color, activo)
+VALUES (@ch_miguel, 'EF456GH', 'Chevrolet', 'Aveo', 2018, 'Gris', 1);
+SET @v_miguel = LAST_INSERT_ID();
+
+INSERT INTO evaluacion_psicologica (id_chofer, id_admin, calificacion, fecha_eval, observacion)
+VALUES (@ch_miguel, @pa_luisa, 80.00,
+        DATE_SUB(CURDATE(), INTERVAL 2 MONTH), 'Aprobado sin observaciones.');
+
+INSERT INTO revision_vehiculo (id_vehiculo, id_admin, calificacion, fecha_revision, observacion)
+VALUES (@v_miguel, @pa_pedro, 88.00,
+        DATE_SUB(CURDATE(), INTERVAL 2 MONTH), 'Vehículo en buenas condiciones.');
+
+INSERT INTO contacto_emergencia (id_chofer, nombre, telefono, parentesco)
+VALUES (@ch_miguel, 'Carmen Torres', '0414-2000010', 'Madre');
+
+-- ----------------------------------------------------------------
+-- CHOFER B — EN PROCESO (psico aprobada, sin revisión vehicular)
+-- habilitado permanece 0 hasta que tenga revisión aprobada
+-- ----------------------------------------------------------------
+INSERT INTO usuario (cedula, nombre, apellido, username, password_hash, email, telefono, rol) VALUES
+('V-20000004', 'Roberto', 'Díaz', 'robertoch', @hash_angel, 'robertoch@test.ve', '0426-2000004', 'chofer');
+SET @u_roberto = LAST_INSERT_ID();
+
+INSERT INTO chofer (id_usuario, id_banco, id_zona_actual, numero_cuenta,
+                    saldo_acumulado_usd, habilitado, disponible)
+VALUES (@u_roberto, @id_banco, @id_zona, '01020000000000000022', 0.00, 0, 0);
+SET @ch_roberto = LAST_INSERT_ID();
+
+INSERT INTO vehiculo (id_chofer, placa, marca, modelo, anio_fabricacion, color, activo)
+VALUES (@ch_roberto, 'IJ789KL', 'Ford', 'Fiesta', 2017, 'Azul', 1);
+
+INSERT INTO evaluacion_psicologica (id_chofer, id_admin, calificacion, fecha_eval, observacion)
+VALUES (@ch_roberto, @pa_luisa, 75.00,
+        DATE_SUB(CURDATE(), INTERVAL 1 MONTH), 'Aprobado. Pendiente revisión vehicular.');
+-- Sin revisión vehicular → habilitado = 0
+
+-- ----------------------------------------------------------------
+-- CHOFER C — SIN HABILITAR (recién registrado, sin nada)
+-- ----------------------------------------------------------------
+INSERT INTO usuario (cedula, nombre, apellido, username, password_hash, email, telefono, rol) VALUES
+('V-20000005', 'Ana', 'Gómez', 'anach', @hash_angel, 'anach@test.ve', '0412-2000005', 'chofer');
+SET @u_ana = LAST_INSERT_ID();
+
+INSERT INTO chofer (id_usuario, id_banco, id_zona_actual, numero_cuenta,
+                    saldo_acumulado_usd, habilitado, disponible)
+VALUES (@u_ana, @id_banco, @id_zona, '01020000000000000033', 0.00, 0, 0);
+-- Sin vehículo ni evaluaciones — debe aparecer como pendiente en el panel
+
+-- ----------------------------------------------------------------
+-- CLIENTES ADICIONALES
+-- ----------------------------------------------------------------
+INSERT INTO usuario (cedula, nombre, apellido, username, password_hash, email, telefono, rol) VALUES
+('V-20000006', 'José',  'Ramírez', 'josecl', @hash_angel, 'josecl@test.ve', '0416-2000006', 'cliente'),
+('V-20000007', 'María', 'Blanco',  'marycl', @hash_angel, 'marycl@test.ve',  '0414-2000007', 'cliente');
+
+SET @u_jose = (SELECT id FROM usuario WHERE username = 'josecl');
+SET @u_mary = (SELECT id FROM usuario WHERE username = 'marycl');
+
+INSERT INTO cliente (id_usuario, saldo_usd, es_estudiante, primer_viaje_usado) VALUES
+(@u_jose, 15.00, 0, 0),
+(@u_mary,  5.50, 1, 0);
+
+-- ----------------------------------------------------------------
+-- VERIFICACIÓN — panel de Ángel
+-- ----------------------------------------------------------------
+SELECT 'PERSONAL_ADMIN' AS entidad, u.username, pa.cargo
+FROM personal_admin pa JOIN usuario u ON pa.id_usuario = u.id
+WHERE u.username IN ('luisapa', 'pedrop');
+
+SELECT 'CHOFERES' AS entidad, u.username, u.nombre,
+       c.habilitado, c.disponible, c.saldo_acumulado_usd
+FROM chofer c JOIN usuario u ON c.id_usuario = u.id
+WHERE u.username IN ('miguelch', 'robertoch', 'anach')
+ORDER BY c.habilitado DESC;
+
+SELECT 'CLIENTES' AS entidad, u.username, u.nombre,
+       cl.saldo_usd, cl.es_estudiante, cl.primer_viaje_usado
+FROM cliente cl JOIN usuario u ON cl.id_usuario = u.id
+WHERE u.username IN ('josecl', 'marycl');
+
+SET SQL_SAFE_UPDATES = 1;
