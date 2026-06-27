@@ -12,7 +12,7 @@ async function cargarHistorial() {
     const usuarioString = localStorage.getItem('xpressUsuario');
     if (!usuarioString) {
         // Sin sesión activa, redirigir al login
-        window.location.href = '/views/login.html';
+        window.location.href = '../views/login.html';
         return;
     }
 

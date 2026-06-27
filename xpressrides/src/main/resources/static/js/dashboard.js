@@ -21,7 +21,7 @@ let zonasData = [];
  */
 async function cargarZonas() {
     try {
-        const response = await fetchAPI('/zonas');
+        const response = await fetchAPI('../zonas');
         zonasData = response.data || [];
 
         const selectOrigen = document.getElementById('origen');
@@ -179,7 +179,7 @@ function configurarFormularioViaje() {
         // Obtener usuario autenticado
         const usuario = getUsuario();
         if (!usuario) {
-            window.location.href = '/views/login.html';
+            window.location.href = '../views/login.html';
             return;
         }
 
@@ -196,7 +196,7 @@ function configurarFormularioViaje() {
                 passengerCount: pasajeros
             };
 
-            const responseTarifa = await fetchAPI('/traslados/calcular-tarifa', {
+            const responseTarifa = await fetchAPI('../traslados/calcular-tarifa', {
                 method: 'POST',
                 body: JSON.stringify(payloadTarifa)
             });
@@ -315,7 +315,7 @@ function mostrarPreviewTarifa(tarifa, origenId, destinoId, pasajeros, textoOrigi
                 customerCouponId: null
             };
 
-            const response = await fetchAPI('/traslado/solicitar', {
+            const response = await fetchAPI('../traslado/solicitar', {
                 method: 'POST',
                 body: JSON.stringify(payloadViaje)
             });

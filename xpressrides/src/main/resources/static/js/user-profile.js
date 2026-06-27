@@ -9,7 +9,7 @@ function cargarPerfil() {
     // 1. Obtener datos de la sesión desde LocalStorage
     const usuarioString = localStorage.getItem('xpressUsuario');
     if (!usuarioString) {
-        window.location.href = '/views/login.html';
+        window.location.href = '../views/login.html';
         return;
     }
 

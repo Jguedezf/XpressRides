@@ -39,14 +39,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 if (isChofer) {
                     // Datos específicos del chofer
-                    endpoint = '/auth/registro-chofer';
+                    endpoint = '/auth/registro';
                     payload = {
                         ...datosBase
                         // Nota: banco, cuenta y emergencias se registrarán en una fase posterior
                     };
                 } else {
                     // Datos específicos del cliente
-                    endpoint = '/auth/registro';
+                    endpoint = '/auth/register-cliente';
                     payload = {
                         ...datosBase,
                         esEstudiante: document.getElementById('es_estudiante').checked
@@ -65,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 // Redirigir al login tras 2 segundos
                 setTimeout(() => {
-                    window.location.href = '/views/login.html';
+                    window.location.href = '../views/login.html';
                 }, 2000);
 
             } catch (error) {
@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function cargarBancos() {
     try {
-        const response = await fetchAPI('/bancos');
+        const response = await fetchAPI('../bancos');
         const bancos = response.data;
         const selectBanco = document.getElementById('banco');
 

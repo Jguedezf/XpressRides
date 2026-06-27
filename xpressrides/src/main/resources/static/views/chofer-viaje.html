@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Viaje - XpressRides</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+    <link rel="stylesheet" href="../css/estilos.css">
+
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .top-bar {
+            background-color: var(--color-bg-main);
+            padding: var(--space-md) var(--space-lg);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            z-index: 1000;
+            position: relative;
+        }
+
+        .brand-logo-small {
+            color: var(--color-primary);
+            font-weight: 800;
+            font-size: var(--font-size-h2);
+            margin: 0;
+        }
+
+        .brand-text { color: var(--color-secondary); }
+
+        .desktop-nav { display: none; }
+
+        #map {
+            flex-grow: 1;
+            width: 100%;
+            z-index: 1;
+        }
+
+        /* ── Push Notification ── */
+        #push-notification {
+            position: fixed;
+            top: 70px;
+            right: 16px;
+            width: 340px;
+            max-width: calc(100vw - 32px);
+            z-index: 9999;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.18);
+            overflow: hidden;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .push-header {
+            padding: 14px 16px;
+            background: linear-gradient(135deg, #1F4E79 0%, #C55A11 100%);
+            color: white;
+            font-weight: 700;
+            font-size: 15px;
+            position: relative;
+        }
+
+        .push-close {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            opacity: 0.8;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .push-close:hover {
+            opacity: 1;
+            background: rgba(255,255,255,0.15);
+        }
+
+        .push-body {
+            padding: 16px;
+        }
+
+        .timer-bar {
+            height: 6px;
+            background-color: var(--color-primary);
+            border-radius: 3px;
+            transition: width 1s linear;
+            width: 100%;
+            margin: 8px 0;
+        }
+
+        .timer-bar.expired {
+            background-color: var(--color-error);
+            width: 0%;
+        }
+
+        /* ── Botones de estado (bottom-left) ── */
+        #state-buttons {
+            position: fixed;
+            bottom: 80px;
+            left: 16px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 160px;
+        }
+
+        /* ── Panel de notificaciones ── */
+        .notif-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            position: relative;
+        }
+
+        .notif-item.pendiente {
+            background-color: #FFF8F0;
+        }
+
+        .notif-item .notif-close {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: #999;
+            transition: background 0.2s;
+        }
+
+        .notif-item .notif-close:hover {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .notif-status {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+
+        .notif-status.pendiente {
+            background-color: #FFF3E0;
+            color: var(--color-primary);
+        }
+
+        .notif-status.aceptado {
+            background-color: #E2EFDA;
+            color: var(--color-success);
+        }
+
+        .notif-status.rechazado, .notif-status.expirado {
+            background-color: #FCE4D6;
+            color: var(--color-error);
+        }
+
+        /* ── Botones Acción en panel ── */
+        .notif-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .btn-sm-aceptar, .btn-sm-rechazar {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-sm-aceptar {
+            background-color: var(--color-primary);
+            color: white;
+        }
+
+        .btn-sm-aceptar:hover {
+            background-color: var(--color-primary-hover);
+        }
+
+        .btn-sm-rechazar {
+            background: transparent;
+            color: var(--color-error);
+            border: 1px solid var(--color-error);
+        }
+
+        .btn-sm-rechazar:hover {
+            background-color: var(--color-error-bg);
+        }
+
+        .hidden { display: none !important; }
+
+        @media (min-width: 768px) {
+            .desktop-nav {
+                display: flex;
+                gap: var(--space-lg);
+                align-items: center;
+            }
+            .desktop-nav a {
+                color: var(--color-text-muted);
+                text-decoration: none;
+                font-weight: 600;
+                font-size: var(--font-size-normal);
+                transition: color 0.2s ease;
+            }
+            .desktop-nav a:hover, .desktop-nav a.active {
+                color: var(--color-primary);
+            }
+            .bottom-nav { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="top-bar d-flex justify-between align-center">
+    <h1 class="brand-logo-small">Xpress<span class="brand-text">Rides</span></h1>
+    <nav class="desktop-nav">
+        <a href="#" class="active">Inicio</a>
+        <a href="chofer-travel-history.html">Historial de Viajes</a>
+        <a href="chofer-dashboard.html">Mi Perfil</a>
+    </nav>
+    <div class="notification-bell" onclick="abrirNotificaciones()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <span class="notification-badge" id="badge-count">0</span>
+    </div>
+</header>
+
+<main id="map"></main>
+
+<!-- Push Notification -->
+<div id="push-notification" class="hidden">
+    <div class="push-header">
+        🚗 Nuevo viaje solicitado
+        <button class="push-close" onclick="cerrarPushNotification()" title="Cerrar">✕</button>
+    </div>
+    <div class="push-body">
+        <p class="text-small"><strong>Origen:</strong> <span id="push-origen">---</span></p>
+        <p class="text-small"><strong>Destino:</strong> <span id="push-destino">---</span></p>
+        <div class="timer-bar" id="push-timer-bar"></div>
+        <p class="text-small text-center" id="push-timer-text" style="margin-bottom: 12px;">30 segundos restantes</p>
+        <div class="d-flex gap-sm">
+            <button id="push-btn-rechazar" class="btn-secondary" style="flex:1;">Rechazar</button>
+            <button id="push-btn-aceptar" class="btn-primary" style="flex:1;">Aceptar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Botones de estado -->
+<div id="state-buttons" class="hidden">
+    <button id="btn-en-camino" class="btn-primary">En camino</button>
+    <button id="btn-llegue" class="btn-primary hidden">Llegué</button>
+    <button id="btn-completado" class="btn-primary hidden">Completado</button>
+</div>
+
+<!-- Botón SOS -->
+<div class="fab sos" onclick="mostrarEmergencia()" title="Emergencia">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+    </svg>
+</div>
+
+<nav class="bottom-nav">
+    <a href="chofer-dashboard.html" class="bottom-nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        <span class="mt-xs">Panel</span>
+    </a>
+    <a href="#" class="bottom-nav-item active">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"></path><circle cx="7" cy="17" r="2"></circle><path d="M9 17h6"></path><circle cx="17" cy="17" r="2"></circle></svg>
+        <span class="mt-xs">Viaje</span>
+    </a>
+    <a href="chofer-dashboard.html" class="bottom-nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        <span class="mt-xs">Perfil</span>
+    </a>
+</nav>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="../js/chofer-viaje.js"></script>
+
+</body>
+</html>

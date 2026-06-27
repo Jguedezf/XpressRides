@@ -99,7 +99,7 @@ function configurarFormulario() {
 
         // Verificar autenticación
         const usuario = getUsuario();
-        if (!usuario) return window.location.href = '/views/login.html';
+        if (!usuario) return window.location.href = '../views/login.html';
 
         const btnSubmit = document.getElementById('btn-submit');
         const alertSuccess = document.getElementById('recharge-success');
@@ -146,7 +146,7 @@ function configurarFormulario() {
 
             // Volver al perfil después de 2.5 segundos
             setTimeout(() => {
-                window.location.href = '/views/user-profile.html';
+                window.location.href = '../views/user-profile.html';
             }, 2500);
 
         } catch (error) {
