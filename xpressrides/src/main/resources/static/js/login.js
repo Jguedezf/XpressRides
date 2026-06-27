@@ -31,11 +31,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Redirección basada en el rol del usuario
                 const rol = (userData.rol || userData.role || '').toLowerCase();
                 if (rol === 'admin' || rol === 'administrador' || rol === 'personal_admin') {
-                    window.location.href = '../views/admin-dashboard.html';
+                    window.location.href = '/views/admin-dashboard.html';
                 } else if (rol === 'chofer') {
-                    window.location.href = '../views/chofer-dashboard.html';
+                    window.location.href = '/views/chofer-dashboard.html';
                 } else {
-                    window.location.href = '../views/cliente-dashboard.html';
+                    window.location.href = '/views/cliente-dashboard.html';
                 }
 
             } catch (error) {

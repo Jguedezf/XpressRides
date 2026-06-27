@@ -14,17 +14,17 @@
 
     <style>
         body {
-            background-color: var(--color-page-bg, #F8F9FB);
+            background-color: var(--color-bg-card);
             font-family: var(--font-family-base);
             margin: 0;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            justify-content: flex-start;
             min-height: 100vh;
-            padding: 20px;
+            padding: 76px 20px 20px;
         }
 
-        /* Estilo para el nuevo logo */
         .brand-logo-img {
             max-width: 260px;
             width: 100%;
@@ -36,18 +36,27 @@
 </head>
 <body>
 
-<main class="main-container" style="max-width: 600px;">
+<header style="position:fixed;top:0;left:0;right:0;z-index:1000;background:#1F4E79;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+    <span style="color:white;font-weight:700;font-size:18px;">Xpress<span style="color:#C55A11;">Rides</span><span style="font-weight:400;font-size:13px;opacity:0.75;"> | Admin</span></span>
+    <nav style="display:flex;gap:8px;">
+        <a href="/views/admin-dashboard.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;background:#C55A11;">Panel Principal</a>
+        <a href="/views/admin-reportes.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Reportes y Pagos</a>
+    </nav>
+    <a href="/views/user-logout.html" style="color:white;text-decoration:none;font-size:13px;opacity:0.75;">Cerrar sesión</a>
+</header>
+
+<main class="d-flex flex-col align-center" style="width: 100%; max-width: 480px;">
 
     <!-- Logo XpressRides (Imagen) -->
-    <div class="text-center mb-24">
+    <div class="text-center mb-md">
         <img src="/img/logo.png" alt="XpressRides Logo" class="brand-logo-img">
     </div>
 
-    <!-- Tarjeta Blanca Moderna -->
-    <section class="premium-card">
+    <!-- Tarjeta del formulario -->
+    <div class="card" style="width: 100%; background-color: var(--color-bg-main);">
 
-        <h2 class="premium-title" style="margin-bottom: 5px;">Panel de Administración</h2>
-        <p class="premium-subtitle">Evaluación y Habilitación de Choferes</p>
+        <h2 class="h2-subtitle text-center" style="color: var(--color-secondary); margin-bottom: 4px; font-weight: 700;">Panel de Administración</h2>
+        <p class="text-small text-center mb-md">Evaluación y Habilitación de Choferes</p>
 
         <!-- Mensajes de Alerta -->
         <div class="alert-success" id="eval-success" style="display: none; font-size: 13px; text-align: center;">
@@ -60,27 +69,27 @@
         <!-- Formulario de Evaluación -->
         <form id="evaluation-form">
 
-            <div class="mb-24">
-                <label for="choferPostulante" class="premium-label">Seleccionar Postulante</label>
-                <select id="choferPostulante" class="premium-input" required>
+            <div class="input-group">
+                <label for="choferPostulante" class="input-label">Seleccionar Postulante</label>
+                <select id="choferPostulante" class="input-field" required>
                     <option value="" disabled selected>Postulantes registrados</option>
                 </select>
             </div>
 
-            <div class="mb-24">
-                <label for="notaPsicologica" class="premium-label">Prueba Psicológica (Mín. 73)</label>
-                <input type="number" id="notaPsicologica" class="premium-input" placeholder="Ingresar nota del 0 al 100" min="0" max="100" required>
+            <div class="input-group">
+                <label for="notaPsicologica" class="input-label">Prueba Psicológica (Mín. 73)</label>
+                <input type="number" id="notaPsicologica" class="input-field" placeholder="Ingresar nota del 0 al 100" min="0" max="100" required>
             </div>
 
-            <div class="mb-24">
-                <label for="notaVehicular" class="premium-label">Revisión Vehicular (Mín. 65)</label>
-                <input type="number" id="notaVehicular" class="premium-input" placeholder="Ingresar nota del 0 al 100" min="0" max="100" required>
+            <div class="input-group">
+                <label for="notaVehicular" class="input-label">Revisión Vehicular (Mín. 65)</label>
+                <input type="number" id="notaVehicular" class="input-field" placeholder="Ingresar nota del 0 al 100" min="0" max="100" required>
             </div>
 
-            <button type="submit" class="premium-btn" id="btn-evaluar">Registrar Calificaciones</button>
+            <button type="submit" class="btn-primary" id="btn-evaluar">Registrar Calificaciones</button>
 
         </form>
-    </section>
+    </div>
 
 </main>
 

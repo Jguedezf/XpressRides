@@ -19,7 +19,7 @@
             margin: 0;
             display: flex;
             justify-content: center;
-            padding: 40px 20px;
+            padding: 76px 20px 40px;
             min-height: 100vh;
         }
 
@@ -40,6 +40,15 @@
     </style>
 </head>
 <body>
+
+<header style="position:fixed;top:0;left:0;right:0;z-index:1000;background:#1F4E79;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+    <span style="color:white;font-weight:700;font-size:18px;">Xpress<span style="color:#C55A11;">Rides</span><span style="font-weight:400;font-size:13px;opacity:0.75;"> | Admin</span></span>
+    <nav style="display:flex;gap:8px;">
+        <a href="/views/admin-dashboard.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Panel Principal</a>
+        <a href="/views/admin-reportes.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;background:#C55A11;">Reportes y Pagos</a>
+    </nav>
+    <a href="/views/user-logout.html" style="color:white;text-decoration:none;font-size:13px;opacity:0.75;">Cerrar sesión</a>
+</header>
 
 <main class="report-container">
 
