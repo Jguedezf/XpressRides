@@ -41,8 +41,16 @@ document.addEventListener('DOMContentLoaded', async () => {
                     // Datos específicos del chofer
                     endpoint = '/auth/registro';
                     payload = {
-                        ...datosBase
-                        // Nota: banco, cuenta y emergencias se registrarán en una fase posterior
+                        name: document.getElementById('nombre').value,
+                        lastName: document.getElementById('apellido').value,
+                        ci: document.getElementById('cedula').value,
+                        phone: document.getElementById('telefono').value,
+                        password: document.getElementById('password').value,
+                        username: document.getElementById('cedula').value,
+                        email: document.getElementById('cedula').value + '@xpressrides.local',
+                        role: 'chofer',
+                        bankId: parseInt(document.getElementById('banco').value),
+                        accountNumber: document.getElementById('cuenta').value
                     };
                 } else {
                     // Datos específicos del cliente

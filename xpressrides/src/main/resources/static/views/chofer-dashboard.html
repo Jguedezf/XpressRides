@@ -136,7 +136,7 @@
     <h1 class="brand-logo-small">Xpress<span class="brand-text">Rides</span></h1>
 
     <nav class="desktop-nav">
-        <a href="chofer-viaje.html" >Inicio</a>
+        <a href="../views/chofer-viaje.html" >Inicio</a>
         <a href="../views/chofer-travel-history.html">Mis Viajes</a>
         <a href="#" class="active">Mi perfil</a>
     </nav>
@@ -223,50 +223,8 @@
         <span class="mt-xs">Ajustes</span>
     </a>
 </nav>
-
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        // --- 1. Lógica del Interruptor de Estado (En línea / Inactivo) ---
-        const toggleInput = document.getElementById('availability-toggle');
-        const statusText = document.getElementById('status-text');
-
-        toggleInput.addEventListener('change', function() {
-            if (this.checked) {
-                statusText.textContent = "En línea";
-                statusText.classList.remove('offline');
-            } else {
-                statusText.textContent = "Inactivo";
-                statusText.classList.add('offline');
-            }
-        });
-
-        // --- 2. Lógica para Mostrar/Ocultar Saldo ---
-        const btnShowBalance = document.getElementById('btn-show-balance');
-        const balanceDisplay = document.getElementById('balance-display');
-        
-        // Simulando datos de sesión
-        const driverFakeData = {
-            nombre: "Manuel",
-            apellido: "Jaimes",
-            saldoUsd: 0.00
-        };
-
-        // Pintar nombre inicial
-        document.getElementById('driver-name').innerText = `${driverFakeData.nombre} ${driverFakeData.apellido}`;
-        document.getElementById('driver-avatar').innerText = `${driverFakeData.nombre.charAt(0)}${driverFakeData.apellido.charAt(0)}`;
-        document.getElementById('driver-balance').innerText = `$${driverFakeData.saldoUsd.toFixed(2)}`;
-
-        btnShowBalance.addEventListener('click', function() {
-            if (balanceDisplay.classList.contains('hidden')) {
-                balanceDisplay.classList.remove('hidden');
-                btnShowBalance.textContent = "Ocultar Saldo";
-            } else {
-                balanceDisplay.classList.add('hidden');
-                btnShowBalance.textContent = "Ver Saldo Acumulado";
-            }
-        });
-    });
-</script>
-
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="../js/api.js"></script>
+<script src="../js/chofer-dashboard.js"></script>
 </body>
 </html>

@@ -196,6 +196,7 @@ public class AuthController {
                 .ifPresent(driver -> {
                     data.put("habilitado", driver.isEnabled());
                     data.put("disponible", driver.isAvailable());
+                    data.put("saldoUsd", driver.getBalance());
                 });
         }
         return data;
