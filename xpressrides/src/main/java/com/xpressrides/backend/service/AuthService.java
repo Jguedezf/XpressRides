@@ -109,7 +109,7 @@ public class AuthService {
                 driver.setCreatedAt(LocalDateTime.now());
                 driverRepository.save(driver);
             }
-            case "admin", "personal_admin" -> {
+            case "personal_admin" -> {
                 String cargo = request.getPosition() != null ? request.getPosition() : "Empleado Administrativo";
                 AdminPersonnel admin = new AdminPersonnel();
                 admin.setUserId(user);

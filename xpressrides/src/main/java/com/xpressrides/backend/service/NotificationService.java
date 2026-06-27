@@ -38,4 +38,10 @@ public class NotificationService {
         notification.setRead(true);
         notificationRepository.save(notification);
     }
+
+    public long countUnread(String username) {
+        User user = userRepository.findByUsername(username)
+            .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        return notificationRepository.countByUser_IdAndReadFalse(user.getId());
+    }
 }

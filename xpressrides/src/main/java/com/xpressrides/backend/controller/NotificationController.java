@@ -3,6 +3,7 @@ package com.xpressrides.backend.controller;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,6 +15,7 @@ import com.xpressrides.backend.service.NotificationService;
 
 @RestController
 @RequestMapping("/api/notificaciones")
+@PreAuthorize("isAuthenticated()")
 public class NotificationController {
 
     private final NotificationService notificationService;
@@ -33,5 +35,11 @@ public class NotificationController {
             Authentication authentication) {
         notificationService.markAsRead(authentication.getName(), id);
         return ResponseEntity.ok(Map.of("message", "Notificación marcada como leída"));
+    }
+
+    @GetMapping("/no-leidas/count")
+    public ResponseEntity<?> countUnread(Authentication authentication) {
+        long count = notificationService.countUnread(authentication.getName());
+        return ResponseEntity.ok(Map.of("noLeidas", count));
     }
 }
