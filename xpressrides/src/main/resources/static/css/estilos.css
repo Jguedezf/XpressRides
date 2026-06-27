@@ -387,3 +387,12 @@ input:checked + .toggle-slider:before {
 .mt-md { margin-top: var(--space-md); }
 .mb-md { margin-bottom: var(--space-md); }
 .text-center { text-align: center; }
+
+/* --- 7. IMÁGENES Y LOGOTIPOS --- */
+.brand-logo-img {
+    max-width: 260px; /* Ancho máximo para que se vea proporcionado */
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
