@@ -1,5 +1,19 @@
 {
+    "version": "0.2.0",
     "configurations": [
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "XpressridesApplication",
+            "request": "launch",
+            "mainClass": "com.xpressrides.backend.XpressridesApplication",
+            "projectName": "xpressrides"
+        },
         {
             "type": "java",
             "name": "Spring Boot-XpressridesApplication<xpressrides>",

@@ -95,7 +95,7 @@ async function fetchAPI(endpoint, options = {}) {
 function requireAuth() {
     const usuario = getUsuario();
     if (!usuario) {
-        window.location.href = '/views/login.html';
+        window.location.href = '../views/login.html';
         return false;
     }
     return true;
