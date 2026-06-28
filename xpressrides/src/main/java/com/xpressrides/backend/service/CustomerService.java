@@ -180,7 +180,15 @@ public class CustomerService {
                 map.put("comment", t.getCustomerComment());
                 map.put("date", t.getRequestDate());
                 
+                String origin = t.getOriginZone() != null ? t.getOriginZone().getName() : "Origen";
+                String dest = t.getDestinationZone() != null ? t.getDestinationZone().getName() : "Destino";
+                map.put("route", origin + " → " + dest);
+
                 String driverName = "Desconocido";
+                String driverPhone = "—";
+                Map<String, Object> vehicleInfo = new java.util.HashMap<>();
+                Map<String, Object> driverDetails = new java.util.HashMap<>();
+                
                 if (t.getDriver() != null && t.getDriver().getUsername() != null) {
                     User driverUser = t.getDriver().getUsername();
                     String name = driverUser.getName();
@@ -188,8 +196,25 @@ public class CustomerService {
                     if (name != null && !name.trim().isEmpty()) {
                         driverName = (lastName != null && !lastName.trim().isEmpty()) ? name + " " + lastName : name;
                     }
+                    driverPhone = driverUser.getPhone();
+                    
+                    if (t.getDriver().getPsychologicalEvaluation() != null) {
+                        driverDetails.put("psychEval", t.getDriver().getPsychologicalEvaluation().getQualification());
+                    }
                 }
+                
+                if (t.getVehicle() != null) {
+                    vehicleInfo.put("brand", t.getVehicle().getBrand());
+                    vehicleInfo.put("model", t.getVehicle().getModel());
+                    vehicleInfo.put("plate", t.getVehicle().getPlate());
+                    vehicleInfo.put("color", t.getVehicle().getColor());
+                }
+
                 map.put("driverName", driverName);
+                map.put("driverPhone", driverPhone);
+                map.put("vehicle", vehicleInfo);
+                map.put("driverDetails", driverDetails);
+                
                 return map;
             })
             .collect(java.util.stream.Collectors.toList());

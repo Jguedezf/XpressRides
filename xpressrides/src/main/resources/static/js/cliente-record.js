@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await cargarHistorial();
 });
 
-let currentPage = 0;
+let currentPage = parseInt(sessionStorage.getItem('historialPage')) || 0;
 const pageSize = 5; // Mostrar 5 por página para probar paginación
 
 async function cargarHistorial() {
@@ -105,7 +105,7 @@ async function cargarHistorial() {
                                         Calificar
                                     </button>
                                 ` : `
-                                    <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; width: auto; background-color:#FFD700; color:#000; border:none;" onclick="window.location.href='/views/cliente-resenas.html'">
+                                    <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; width: auto; background-color:#FFD700; color:#000; border:none;" onclick="window.location.href='/views/cliente-resenas.html?tripId=${viaje.id}'">
                                         Ver Reseña
                                     </button>
                                 `}
@@ -127,11 +127,7 @@ async function cargarHistorial() {
             document.getElementById('btn-next-page').disabled = pageData.last;
         }
 
-        const unratedTrip = viajes.find(v => (v.status || '').toLowerCase() === 'completado' && v.starRating == null);
-        if (unratedTrip) {
-            const dn = unratedTrip.driver && unratedTrip.driver.user ? `${unratedTrip.driver.user.nombre} ${unratedTrip.driver.user.apellido}` : (unratedTrip.driverName || '');
-            setTimeout(() => abrirModalCalificacion(unratedTrip.id, dn), 500);
-        }
+
 
     } catch (error) {
         console.error("Error cargando historial:", error);
@@ -147,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnPrev.addEventListener('click', () => {
             if (currentPage > 0) {
                 currentPage--;
+                sessionStorage.setItem('historialPage', currentPage);
                 cargarHistorial();
             }
         });
@@ -155,6 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnNext) {
         btnNext.addEventListener('click', () => {
             currentPage++;
+            sessionStorage.setItem('historialPage', currentPage);
             cargarHistorial();
         });
     }
@@ -402,8 +400,8 @@ window.abrirModalDetalles = function(viaje) {
 
     const icono = document.getElementById('detalle-estado-icono');
     if (viaje.driver && estadoActual !== 'solicitado') {
-        const partes = (viaje.driver.user.nombre || '').split(' ');
-        icono.textContent = ((partes[0]?.[0] || '') + (partes[1]?.[0] || '')).toUpperCase();
+        const partes = (viaje.driver.user?.nombre || '').split(' ');
+        icono.textContent = ((partes[0]?.[0] || '') + (partes[1]?.[0] || '')).toUpperCase() || 'CH';
         icono.style.background = 'var(--color-secondary)';
     } else {
         icono.textContent = cfg.icono;
@@ -425,13 +423,17 @@ window.abrirModalDetalles = function(viaje) {
 
     // Chofer y Vehículo
     if (viaje.driver && (estadoActual !== 'solicitado' || estadoActual === 'cancelado')) {
-        document.getElementById('detalle-chofer-nombre').textContent = `${viaje.driver.user.nombre} ${viaje.driver.user.apellido}`;
-        document.getElementById('detalle-chofer-telefono').textContent = viaje.driver.user.phone || '—';
+        document.getElementById('detalle-chofer-nombre').textContent = viaje.driver.user ? `${viaje.driver.user.nombre} ${viaje.driver.user.apellido}` : (viaje.driverName || 'N/A');
+        document.getElementById('detalle-chofer-telefono').textContent = viaje.driver.user?.phone || '—';
         
         if (viaje.vehicle) {
             document.getElementById('detalle-vehiculo-modelo').textContent = `${viaje.vehicle.marca || viaje.vehicle.brand} ${viaje.vehicle.modelo || viaje.vehicle.model}`;
             document.getElementById('detalle-vehiculo-color').textContent = viaje.vehicle.color || '—';
             document.getElementById('detalle-vehiculo-placa').textContent = viaje.vehicle.placa || viaje.vehicle.plate || '—';
+        } else {
+            document.getElementById('detalle-vehiculo-modelo').textContent = '—';
+            document.getElementById('detalle-vehiculo-color').textContent = '—';
+            document.getElementById('detalle-vehiculo-placa').textContent = '—';
         }
 
         document.getElementById('detalle-chofer-card').classList.remove('hidden');
