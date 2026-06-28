@@ -62,7 +62,7 @@ async function cargarHistorial() {
 
             const originName = viaje.originZone ? (viaje.originZone.name || viaje.originZone.nombre) : 'Zona Origen';
             const destName = viaje.destinationZone ? (viaje.destinationZone.name || viaje.destinationZone.nombre) : 'Zona Destino';
-            const driverName = viaje.driver && viaje.driver.username ? `${viaje.driver.username.name || ''} ${viaje.driver.username.lastName || ''}`.trim() : (viaje.driverName || '');
+            const driverName = viaje.driver && viaje.driver.user ? `${viaje.driver.user.nombre} ${viaje.driver.user.apellido}` : (viaje.driverName || '');
 
             const cardHTML = `
                 <div class="trip-card">
@@ -94,7 +94,7 @@ async function cargarHistorial() {
                         </span>
                         
                         <div class="d-flex gap-xs" style="margin-top: 5px; flex-wrap: wrap; justify-content: flex-end;">
-                            <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="abrirModalDetalles(window.viajesCache[${idx}])">
+                            <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick='abrirModalDetalles(${JSON.stringify(viaje)})'>
                                 Ver Detalles
                             </button>
                             ${esCompletado ? `
@@ -401,7 +401,7 @@ window.abrirModalDetalles = function(viaje) {
 
     const icono = document.getElementById('detalle-estado-icono');
     if (viaje.driver && estadoActual !== 'solicitado') {
-        const partes = (viaje.driver.username?.name || '').split(' ');
+        const partes = (viaje.driver.user?.nombre || '').split(' ');
         icono.textContent = ((partes[0]?.[0] || '') + (partes[1]?.[0] || '')).toUpperCase() || 'CH';
         icono.style.background = 'var(--color-secondary)';
     } else {
@@ -423,30 +423,22 @@ window.abrirModalDetalles = function(viaje) {
     }
 
     // Chofer y Vehículo
-    if (viaje.driver && estadoActual !== 'solicitado') {
-        document.getElementById('detalle-chofer-nombre').textContent = viaje.driver.username ? `${viaje.driver.username.name || ''} ${viaje.driver.username.lastName || ''}`.trim() : (viaje.driverName || 'N/A');
-        const telefono = viaje.driver.username?.phone || '';
-        document.getElementById('detalle-chofer-telefono').textContent = telefono || '—';
+    if (viaje.driver && (estadoActual !== 'solicitado' || estadoActual === 'cancelado')) {
+        document.getElementById('detalle-chofer-nombre').textContent = viaje.driver.user ? `${viaje.driver.user.nombre} ${viaje.driver.user.apellido}` : (viaje.driverName || 'N/A');
+        document.getElementById('detalle-chofer-telefono').textContent = viaje.driver.user?.phone || '—';
         
-        const tel = telefono.replace(/\D/g, '');
-        const waBtn = document.getElementById('detalle-chofer-whatsapp');
-        if (tel) {
-            waBtn.href = `https://wa.me/${tel.startsWith('58') ? tel : '58' + tel}`;
-            waBtn.style.display = 'flex';
-        } else {
-            waBtn.style.display = 'none';
-        }
-
         if (viaje.vehicle) {
             document.getElementById('detalle-vehiculo-modelo').textContent = `${viaje.vehicle.marca || viaje.vehicle.brand} ${viaje.vehicle.modelo || viaje.vehicle.model}`;
             document.getElementById('detalle-vehiculo-color').textContent = viaje.vehicle.color || '—';
             document.getElementById('detalle-vehiculo-placa').textContent = viaje.vehicle.placa || viaje.vehicle.plate || '—';
-            document.getElementById('detalle-vehiculo-card').classList.remove('hidden');
         } else {
-            document.getElementById('detalle-vehiculo-card').classList.add('hidden');
+            document.getElementById('detalle-vehiculo-modelo').textContent = '—';
+            document.getElementById('detalle-vehiculo-color').textContent = '—';
+            document.getElementById('detalle-vehiculo-placa').textContent = '—';
         }
 
         document.getElementById('detalle-chofer-card').classList.remove('hidden');
+        document.getElementById('detalle-vehiculo-card').classList.remove('hidden');
 
         // Mostrar Evaluaciones si es completado
         if (estadoActual === 'completado') {
@@ -457,13 +449,7 @@ window.abrirModalDetalles = function(viaje) {
             document.getElementById('detalle-rev-tecnica').style.display = 'none';
         }
     } else {
-        // Validación: Sin chofer asignado (solicitado o cancelado sin chofer)
-        document.getElementById('detalle-chofer-nombre').textContent = 'No asignado';
-        document.getElementById('detalle-chofer-telefono').textContent = '—';
-        document.getElementById('detalle-chofer-whatsapp').style.display = 'none';
-        document.getElementById('detalle-eval-psicologica').style.display = 'none';
-        document.getElementById('detalle-rev-tecnica').style.display = 'none';
-        document.getElementById('detalle-chofer-card').classList.remove('hidden');
+        document.getElementById('detalle-chofer-card').classList.add('hidden');
         document.getElementById('detalle-vehiculo-card').classList.add('hidden');
     }
 
