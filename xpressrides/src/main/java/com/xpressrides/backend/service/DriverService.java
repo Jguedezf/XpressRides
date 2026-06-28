@@ -42,6 +42,8 @@ public class DriverService {
     private final TripRepository tripRepository;
     private final EmergencyContactRepository emergencyContactRepository;
     private final NotificationRepository notificationRepository;
+    private final com.xpressrides.backend.repository.UserRepository userRepository;
+    private final com.xpressrides.backend.repository.CustomerRepository customerRepository;
 
     public DriverService(DriverRepository driverRepository,
             PsychologicalEvaluationRepository psychEvalRepository,
@@ -49,7 +51,9 @@ public class DriverService {
             VehicleInspectionRepository vehicleInspectionRepository,
             TripRepository tripRepository,
             EmergencyContactRepository emergencyContactRepository,
-            NotificationRepository notificationRepository) {
+            NotificationRepository notificationRepository,
+            com.xpressrides.backend.repository.UserRepository userRepository,
+            com.xpressrides.backend.repository.CustomerRepository customerRepository) {
         this.driverRepository            = driverRepository;
         this.psychEvalRepository         = psychEvalRepository;
         this.vehicleRepository           = vehicleRepository;
@@ -57,6 +61,8 @@ public class DriverService {
         this.tripRepository              = tripRepository;
         this.emergencyContactRepository  = emergencyContactRepository;
         this.notificationRepository      = notificationRepository;
+        this.userRepository              = userRepository;
+        this.customerRepository          = customerRepository;
     }
 
     public void toggleAvailability(String username, boolean available) {
@@ -152,6 +158,15 @@ public class DriverService {
                 long minutes = java.time.Duration.between(trip.getStartDate(), now).toMinutes();
                 trip.setDurationMinutes((int) minutes);
             }
+            
+            Driver driver = trip.getDriver();
+            if (driver != null) {
+                if (trip.getDriverAmountUsd() != null) {
+                    driver.setBalance(driver.getBalance().add(trip.getDriverAmountUsd()));
+                }
+                driver.setAvailable(true);
+                driverRepository.save(driver);
+            }
         }
 
         tripRepository.save(trip);
@@ -171,6 +186,13 @@ public class DriverService {
         trip.setCancellationReason(motivo);
         tripRepository.save(trip);
 
+        // Refund the customer
+        if (trip.getCustomerCostUsd() != null) {
+            Customer customer = trip.getCustomer();
+            customer.setBalance(customer.getBalance().add(trip.getCustomerCostUsd()));
+            customerRepository.save(customer);
+        }
+
         driverRepository.findByUsername_Username(username).ifPresent(driver -> {
             driver.setAvailable(true);
             driverRepository.save(driver);
@@ -184,6 +206,15 @@ public class DriverService {
         notif.setRead(false);
         notif.setDateTime(LocalDateTime.now());
         notificationRepository.save(notif);
+
+        Notification notifChofer = new Notification();
+        notifChofer.setUser(trip.getDriver().getUsername());
+        notifChofer.setTrip(trip);
+        notifChofer.setType("viaje_cancelado");
+        notifChofer.setMessage("Has cancelado el viaje exitosamente.");
+        notifChofer.setRead(false);
+        notifChofer.setDateTime(LocalDateTime.now());
+        notificationRepository.save(notifChofer);
     }
 
     public Map<String, Object> getProfile(String username) {
@@ -191,6 +222,16 @@ public class DriverService {
             .orElseThrow(() -> new ResourceNotFoundException("Chofer no encontrado"));
         User user = driver.getUsername();
         List<EmergencyContact> contacts = emergencyContactRepository.findByDriver_Id(driver.getId());
+        Vehicle vehicle = vehicleRepository.findByDriver_Id(driver.getId()).orElse(null);
+        
+        PsychologicalEvaluation lastEval = psychEvalRepository
+            .findFirstByDriver_IdOrderByEvaluationDateDesc(driver.getId()).orElse(null);
+            
+        VehicleInspection lastInsp = null;
+        if (vehicle != null) {
+            lastInsp = vehicleInspectionRepository
+                .findFirstByVehicle_IdOrderByInspectionDateDesc(vehicle.getId()).orElse(null);
+        }
 
         List<Map<String, Object>> contactList = contacts.stream().map(c -> {
             Map<String, Object> cm = new HashMap<>();
@@ -213,8 +254,68 @@ public class DriverService {
         profile.put("saldoAcumuladoUsd", driver.getBalance());
         profile.put("habilitado", driver.isEnabled());
         profile.put("disponible", driver.isAvailable());
+        Double avgRating = tripRepository.findAverageRatingByDriverId(driver.getId());
+        profile.put("calificacion", avgRating != null ? avgRating : 0.0);
+        
         profile.put("contactosEmergencia", contactList);
+        
+        if (vehicle != null) {
+            Map<String, Object> vehData = new HashMap<>();
+            vehData.put("placa", vehicle.getPlate());
+            vehData.put("marca", vehicle.getBrand());
+            vehData.put("modelo", vehicle.getModel());
+            vehData.put("anioFabricacion", vehicle.getYear());
+            vehData.put("color", vehicle.getColor());
+            vehData.put("activo", vehicle.getActive());
+            profile.put("vehiculo", vehData);
+        }
+        
+        if (lastEval != null) {
+            Map<String, Object> evalData = new HashMap<>();
+            evalData.put("calificacion", lastEval.getScore());
+            evalData.put("fecha", lastEval.getEvaluationDate());
+            evalData.put("observacion", lastEval.getObservation());
+            profile.put("evaluacionPsicologica", evalData);
+        }
+        
+        if (lastInsp != null) {
+            Map<String, Object> inspData = new HashMap<>();
+            inspData.put("calificacion", lastInsp.getScore());
+            inspData.put("fecha", lastInsp.getInspectionDate());
+            inspData.put("observacion", lastInsp.getObservation());
+            profile.put("revisionVehiculo", inspData);
+        }
+        
         return profile;
+    }
+
+    public List<Map<String, Object>> getReviews(String username) {
+        Driver driver = driverRepository.findByUsername_Username(username)
+            .orElseThrow(() -> new ResourceNotFoundException("Chofer no encontrado"));
+            
+        List<Trip> trips = tripRepository.findByDriver_Username_UsernameOrderByRequestDateDesc(username);
+        return trips.stream()
+            .filter(t -> t.getStarRating() != null)
+            .map(t -> {
+                Map<String, Object> map = new java.util.HashMap<>();
+                map.put("tripId", t.getId());
+                map.put("starRating", t.getStarRating());
+                map.put("comment", t.getCustomerComment());
+                map.put("date", t.getRequestDate());
+                
+                String customerName = "Desconocido";
+                if (t.getCustomer() != null && t.getCustomer().getUserId() != null) {
+                    User customerUser = t.getCustomer().getUserId();
+                    String name = customerUser.getName();
+                    String lastName = customerUser.getLastName();
+                    if (name != null && !name.trim().isEmpty()) {
+                        customerName = (lastName != null && !lastName.trim().isEmpty()) ? name + " " + lastName : name;
+                    }
+                }
+                map.put("customerName", customerName);
+                return map;
+            })
+            .collect(java.util.stream.Collectors.toList());
     }
 
     @Transactional(readOnly = true)
@@ -275,5 +376,29 @@ public class DriverService {
             && inspection.getNextInspectionDate() != null
             && !inspection.getNextInspectionDate().isBefore(LocalDate.now()));
         return status;
+    }
+
+    @Transactional
+    public void requestWithdrawal(String username) {
+        Driver driver = driverRepository.findByUsername_Username(username)
+            .orElseThrow(() -> new ResourceNotFoundException("Chofer no encontrado"));
+        if (driver.getBalance().compareTo(java.math.BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException("No tienes saldo pendiente para retirar.");
+        }
+        
+        List<User> admins = userRepository.findByActiveTrueAndRole("personal_admin");
+        
+        String mensaje = "El chofer " + driver.getUsername().getName() + " " + driver.getUsername().getLastName() 
+                + " ha solicitado el pago de su deuda de $" + driver.getBalance() + ".";
+                
+        for (User admin : admins) {
+            Notification notification = new Notification();
+            notification.setDateTime(LocalDateTime.now());
+            notification.setType("RETIRO");
+            notification.setMessage(mensaje);
+            notification.setRead(false);
+            notification.setUser(admin);
+            notificationRepository.save(notification);
+        }
     }
 }

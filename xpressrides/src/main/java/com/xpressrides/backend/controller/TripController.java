@@ -27,7 +27,7 @@ public class TripController {
     // POST /api/traslado/solicitar  — URL canónica
     // POST /api/solicitar-viaje     — alias para compatibilidad con el frontend de Freddy
     @PreAuthorize("hasRole('cliente')") //solo clientes
-    @PostMapping({"/traslado/solicitar", "/solicitar-viaje"})
+    @PostMapping({"/traslados/solicitar", "/traslado/solicitar", "/solicitar-viaje"})
     public ResponseEntity<TripResponse> solicitarTraslado(
             @Valid @RequestBody TripRequest request,
             Authentication authentication) {

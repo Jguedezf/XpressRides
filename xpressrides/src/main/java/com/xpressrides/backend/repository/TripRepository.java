@@ -39,4 +39,9 @@ public interface TripRepository extends JpaRepository<Trip, Integer> {
     // Traslados del chofer filtrados por estado (usado para cancelados)
     List<Trip> findByDriver_Username_UsernameAndStatusOrderByRequestDateDesc(
             String username, String status);
+
+    // Marca como pagados todos los viajes completados de un chofer que no habían sido pagados
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("UPDATE Trip t SET t.pagadoAlChofer = true WHERE t.driver.id = :driverId AND t.status = 'completado' AND t.pagadoAlChofer = false")
+    int markTripsAsPaidForDriver(@Param("driverId") Integer driverId);
 }

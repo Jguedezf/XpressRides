@@ -18,6 +18,9 @@ import com.xpressrides.backend.dto.request.UserUpdateRequest;
 import com.xpressrides.backend.model.User;
 import com.xpressrides.backend.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.AccessDeniedException;
 
 @Service
 public class UserService {
@@ -32,6 +35,19 @@ public class UserService {
     public User updateUser(Integer id, UserUpdateRequest request) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            throw new AccessDeniedException("No autorizado para modificar este perfil");
+        }
+
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_administrador"));
+        boolean isSelf = authentication.getName().equals(user.getUsername());
+
+        if (!isAdmin && !isSelf) {
+            throw new AccessDeniedException("No autorizado para modificar este perfil");
+        }
 
         // Solo actualiza los campos que vienen en el request (no nulos)
         if (request.getName() != null)     user.setName(request.getName());

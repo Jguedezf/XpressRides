@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (rol === 'admin' || rol === 'administrador' || rol === 'personal_admin') {
                     window.location.href = '/views/admin-dashboard.html';
                 } else if (rol === 'chofer') {
-                    window.location.href = '/views/chofer-dashboard.html';
+                    window.location.href = '/views/chofer-viaje.html';
                 } else {
                     window.location.href = '/views/cliente-dashboard.html';
                 }

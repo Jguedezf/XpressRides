@@ -40,20 +40,38 @@
     <span style="color:white;font-weight:700;font-size:18px;">Xpress<span style="color:#C55A11;">Rides</span><span style="font-weight:400;font-size:13px;opacity:0.75;"> | Admin</span></span>
     <nav style="display:flex;gap:8px;">
         <a href="/views/admin-dashboard.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;background:#C55A11;">Panel Principal</a>
-        <a href="/views/admin-reportes.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Reportes y Pagos</a>
+        <a href="/views/admin-reportes.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Reporte de Ingresos</a>
+        <a href="/views/admin-pagos.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Control de Pagos</a>
+        <a href="/views/admin-notificaciones.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Notificaciones</a>
     </nav>
     <a href="/views/user-logout.html" style="color:white;text-decoration:none;font-size:13px;opacity:0.75;">Cerrar sesión</a>
 </header>
 
-<main class="d-flex flex-col align-center" style="width: 100%; max-width: 480px;">
+<main class="d-flex flex-col align-center" style="width: 100%; max-width: 900px;">
 
     <!-- Logo XpressRides (Imagen) -->
     <div class="text-center mb-md">
         <img src="/img/logo.png" alt="XpressRides Logo" class="brand-logo-img">
     </div>
 
+    <!-- Métricas del Sistema -->
+    <div class="d-flex justify-between gap-md mb-lg" style="width: 100%; flex-wrap: wrap; gap: var(--space-md);">
+        <div class="card" style="flex: 1; min-width: 200px; padding: var(--space-md); text-align: center; background-color: var(--color-bg-main); box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+            <div class="text-small text-muted mb-xs" style="color: var(--color-text-muted);">Viajes Activos</div>
+            <div class="h2-subtitle" id="metric-active-trips" style="font-size: 28px; font-weight: 700; color: var(--color-primary); margin: 0;">0</div>
+        </div>
+        <div class="card" style="flex: 1; min-width: 200px; padding: var(--space-md); text-align: center; background-color: var(--color-bg-main); box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+            <div class="text-small text-muted mb-xs" style="color: var(--color-text-muted);">Conductores Totales</div>
+            <div class="h2-subtitle" id="metric-total-drivers" style="font-size: 28px; font-weight: 700; color: var(--color-secondary); margin: 0;">0</div>
+        </div>
+        <div class="card" style="flex: 1; min-width: 200px; padding: var(--space-md); text-align: center; background-color: var(--color-bg-main); box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+            <div class="text-small text-muted mb-xs" style="color: var(--color-text-muted);">Clientes Totales</div>
+            <div class="h2-subtitle" id="metric-total-customers" style="font-size: 28px; font-weight: 700; color: var(--color-success); margin: 0;">0</div>
+        </div>
+    </div>
+
     <!-- Tarjeta del formulario -->
-    <div class="card" style="width: 100%; background-color: var(--color-bg-main);">
+    <div class="card" style="width: 100%; max-width: 480px; background-color: var(--color-bg-main); box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
 
         <h2 class="h2-subtitle text-center" style="color: var(--color-secondary); margin-bottom: 4px; font-weight: 700;">Panel de Administración</h2>
         <p class="text-small text-center mb-md">Evaluación y Habilitación de Choferes</p>
@@ -89,6 +107,28 @@
             <button type="submit" class="btn-primary" id="btn-evaluar">Registrar Calificaciones</button>
 
         </form>
+    </div>
+
+    <!-- Gestión de Conductores -->
+    <div class="card" style="width: 100%; background-color: var(--color-bg-main); margin-top: var(--space-lg); overflow-x: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+        <h2 class="h2-subtitle mb-md" style="color: var(--color-secondary); border-bottom: 1px solid #eee; padding-bottom: 8px;">Gestión de Conductores</h2>
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+            <thead>
+                <tr style="border-bottom: 2px solid #ddd; color: var(--color-text-muted);">
+                    <th style="padding: 12px 8px;">ID</th>
+                    <th style="padding: 12px 8px;">Nombre</th>
+                    <th style="padding: 12px 8px;">Usuario</th>
+                    <th style="padding: 12px 8px;">Balance</th>
+                    <th style="padding: 12px 8px;">Estado</th>
+                    <th style="padding: 12px 8px; text-align: center;">Acción</th>
+                </tr>
+            </thead>
+            <tbody id="drivers-table-body">
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 24px; color: var(--color-text-muted);">Cargando conductores...</td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 
 </main>

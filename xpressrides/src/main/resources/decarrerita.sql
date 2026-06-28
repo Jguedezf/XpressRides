@@ -253,6 +253,7 @@ CREATE TABLE traslado (
   fecha_inicio          DATETIME      NULL,
   fecha_fin             DATETIME      NULL,
   duracion_minutos      INT           NULL,
+  pagado_al_chofer      TINYINT(1)    NOT NULL DEFAULT 0,
 
   CONSTRAINT chk_pasajeros     CHECK (nro_pasajeros BETWEEN 1 AND 3),
   CONSTRAINT chk_zonas_dist    CHECK (id_zona_origen <> id_zona_destino),
@@ -332,7 +333,7 @@ CREATE TABLE notificacion (
   id_traslado   INT           NULL,
   tipo          ENUM('viaje_solicitado','chofer_asignado','chofer_en_camino',
                       'chofer_llego','viaje_iniciado','viaje_completado','factura_emitida',
-                      'pago_recibido','recarga_acreditada','viaje_cancelado','sin_chofer')
+                      'pago_recibido','recarga_acreditada','viaje_cancelado','sin_chofer','emergencia')
                               NOT NULL,
   mensaje       VARCHAR(200)  NOT NULL,
   leida         TINYINT(1)    NOT NULL DEFAULT 0,
@@ -601,8 +602,7 @@ sp_solicitar_traslado: BEGIN
 
   -- Actualizar saldos y disponibilidad
   UPDATE cliente SET saldo_usd = saldo_usd - v_costo_cli WHERE id = p_id_cliente;
-  UPDATE chofer  SET saldo_acumulado_usd = saldo_acumulado_usd + v_monto_ch,
-                     disponible = 0 WHERE id = v_id_chofer;
+  UPDATE chofer  SET disponible = 0 WHERE id = v_id_chofer;
 
   -- Marcar cupón y primer viaje
   IF p_id_cupon_cliente IS NOT NULL THEN
@@ -659,15 +659,17 @@ CREATE OR REPLACE VIEW v_historial_traslados AS
 
 CREATE OR REPLACE VIEW v_ganancias_empresa AS
   SELECT
+    t.id                         AS id_traslado,
     DATE(t.fecha_solicitud)      AS fecha,
-    COUNT(*)                     AS cantidad_viajes,
-    SUM(t.monto_empresa_usd)     AS total_empresa_usd,
-    SUM(t.monto_empresa_usd * tb.tasa_ves) AS total_empresa_ves
+    (t.costo_cliente_usd + t.descuento_usd) AS costo_total_usd,
+    t.descuento_usd              AS descuento_usd,
+    t.monto_empresa_usd          AS total_empresa_usd,
+    (t.monto_empresa_usd * tb.tasa_ves) AS total_empresa_ves,
+    IF(t.descuento_usd > 0, 'Viaje con descuento', 'Viaje regular') AS concepto
   FROM traslado t
   JOIN tasa_bcv tb ON t.id_tasa = tb.id
   WHERE t.estado = 'completado'
-  GROUP BY DATE(t.fecha_solicitud)
-  ORDER BY fecha DESC;
+  ORDER BY t.fecha_solicitud DESC;
 
 CREATE OR REPLACE VIEW v_pagos_por_chofer AS
   SELECT pc.id,
@@ -689,10 +691,12 @@ CREATE OR REPLACE VIEW v_pendientes_pago_chofer AS
     SUM(t.monto_chofer_usd) AS total_pendiente_usd
   FROM chofer c
   JOIN usuario u ON c.id_usuario = u.id
-  JOIN traslado t ON t.id_chofer = c.id
+  LEFT JOIN traslado t ON t.id_chofer = c.id
     AND t.estado = 'completado'
+    AND t.pagado_al_chofer = 0
   WHERE c.saldo_acumulado_usd > 0
-  GROUP BY c.id, u.nombre, u.apellido, c.saldo_acumulado_usd;
+  GROUP BY c.id, u.nombre, u.apellido, c.saldo_acumulado_usd
+  HAVING COUNT(t.id) > 0;
 
 CREATE OR REPLACE VIEW v_traslados_cancelados AS
   SELECT t.id,

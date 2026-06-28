@@ -4,16 +4,15 @@ package com.xpressrides.backend.dto.response;
 public class AuthResponse {
     private String username;
     private String role;
-    private String accesToken;
+    private String accessToken;
     private String refreshToken;
     private String message;
+    private boolean success = true;
 
-    
-    
-    public AuthResponse(String username, String role, String accesToken, String refreshToken, String message) {
+    public AuthResponse(String username, String role, String accessToken, String refreshToken, String message) {
         this.username = username;
         this.role = role;
-        this.accesToken = accesToken;
+        this.accessToken = accessToken;
         this.refreshToken = refreshToken;
         this.message = message;
     }
@@ -34,12 +33,12 @@ public class AuthResponse {
         this.role = role;
     }
 
-    public String getAccesToken() {
-        return accesToken;
+    public String getAccessToken() {
+        return accessToken;
     }
 
-    public void setAccesToken(String accesToken) {
-        this.accesToken = accesToken;
+    public void setAccessToken(String accessToken) {
+        this.accessToken = accessToken;
     }
 
     public String getRefreshToken() {
@@ -56,5 +55,13 @@ public class AuthResponse {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public boolean isSuccess() {
+        return success;
+    }
+
+    public void setSuccess(boolean success) {
+        this.success = success;
     }
 }

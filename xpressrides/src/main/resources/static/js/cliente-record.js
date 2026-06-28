@@ -36,8 +36,16 @@ async function cargarHistorial() {
 
         viajes.forEach(viaje => {
             // Evaluamos clases CSS dinámicas según el estado del viaje
-            const esCompletado = viaje.status && viaje.status.toLowerCase() === 'completado';
-            const statusClass = esCompletado ? 'status-completado' : 'status-cancelado';
+            const estadoActual = viaje.status ? viaje.status.toLowerCase() : '';
+            const esCompletado = estadoActual === 'completado';
+            const esCancelado = estadoActual === 'cancelado';
+            
+            let statusClass = 'status-solicitado'; // por defecto
+            if (esCompletado) statusClass = 'status-completado';
+            else if (esCancelado) statusClass = 'status-cancelado';
+            else if (['aceptado', 'en_camino', 'chofer_llego', 'en_progreso'].includes(estadoActual)) {
+                statusClass = 'status-en-progreso'; // u otra clase si existe
+            }
 
             // Construir info del vehículo a partir de la entidad anidada
             const vehiculoInfo = viaje.vehicle 
@@ -78,16 +86,29 @@ async function cargarHistorial() {
                     ` : ''}
 
                     <div class="trip-footer">
-                        <span class="trip-price" ${!esCompletado ? 'style="text-decoration: line-through; color: var(--color-text-muted);"' : ''}>
+                        <span class="trip-price" ${esCancelado ? 'style="text-decoration: line-through; color: var(--color-text-muted);"' : ''}>
                             $${viaje.customerCostUsd ? viaje.customerCostUsd.toFixed(2) : '0.00'}
                         </span>
                         
                         ${esCompletado ? `
-                            <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="verFactura(${viaje.id})">
-                                Ver Factura
-                            </button>
-                        ` : `
+                            <div class="d-flex gap-xs" style="margin-top: 5px;">
+                                <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="verFactura(${viaje.id})">
+                                    Factura
+                                </button>
+                                ${viaje.starRating == null ? `
+                                    <button class="btn-primary" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="abrirModalCalificacion(${viaje.id}, '${driverName}')">
+                                        Calificar
+                                    </button>
+                                ` : `
+                                    <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; width: auto; background-color:#FFD700; color:#000; border:none;" onclick="window.location.href='/views/cliente-resenas.html'">
+                                        Ver Reseña
+                                    </button>
+                                `}
+                            </div>
+                        ` : esCancelado ? `
                             <span style="font-size: 12px; color: var(--color-error);">Cancelado</span>
+                        ` : `
+                            <span style="font-size: 12px; color: #1F4E79; font-weight: bold;">En Curso</span>
                         `}
                     </div>
                 </div>
@@ -95,11 +116,101 @@ async function cargarHistorial() {
             container.innerHTML += cardHTML;
         });
 
+        // Auto-popup para el primer viaje completado sin calificar (el más reciente)
+        const unratedTrip = viajes.find(v => (v.status || '').toLowerCase() === 'completado' && v.starRating == null);
+        if (unratedTrip) {
+            const dn = unratedTrip.driver && unratedTrip.driver.user ? `${unratedTrip.driver.user.nombre} ${unratedTrip.driver.user.apellido}` : (unratedTrip.driverName || '');
+            // Retrasar un poco para que la UI termine de cargar
+            setTimeout(() => abrirModalCalificacion(unratedTrip.id, dn), 500);
+        }
+
     } catch (error) {
         console.error("Error cargando historial:", error);
         container.innerHTML = `<div class="alert-error">No pudimos cargar tu historial: ${error.message}</div>`;
     }
 }
+
+// ─────────────────────────────────────────────────────────
+// Lógica del Modal de Calificación
+// ─────────────────────────────────────────────────────────
+let currentRatingTripId = null;
+let selectedStars = 0;
+
+window.abrirModalCalificacion = function(tripId, driverName) {
+    currentRatingTripId = tripId;
+    selectedStars = 0;
+    document.getElementById('modal-driver-name').innerText = driverName;
+    document.getElementById('rating-comment').value = '';
+    
+    // Reset stars
+    const stars = document.querySelectorAll('#star-container .star');
+    stars.forEach(s => s.classList.remove('selected'));
+    
+    document.getElementById('rating-modal').style.display = 'flex';
+};
+
+window.cerrarModalCalificacion = function() {
+    document.getElementById('rating-modal').style.display = 'none';
+    currentRatingTripId = null;
+};
+
+window.enviarCalificacion = async function() {
+    if (!currentRatingTripId) return;
+    if (selectedStars === 0) {
+        alert("Por favor selecciona una calificación de 1 a 5 estrellas.");
+        return;
+    }
+    
+    const comment = document.getElementById('rating-comment').value;
+    
+    try {
+        const response = await fetchAPI(`/cliente/traslados/${currentRatingTripId}/calificar`, 'PUT', {
+            starRating: selectedStars,
+            customerComment: comment
+        });
+        
+        if (response && response.message) {
+            alert("¡Gracias por calificar tu viaje!");
+            cerrarModalCalificacion();
+            cargarHistorial(); // Recargar para actualizar el botón
+        }
+    } catch (error) {
+        alert("Error al enviar calificación: " + error.message);
+    }
+};
+
+// Event listeners para las estrellas
+document.addEventListener('DOMContentLoaded', () => {
+    const stars = document.querySelectorAll('#star-container .star');
+    stars.forEach(star => {
+        // Hover
+        star.addEventListener('mouseover', function() {
+            const val = parseInt(this.getAttribute('data-value'));
+            stars.forEach(s => {
+                if (parseInt(s.getAttribute('data-value')) <= val) s.style.color = '#FFD700';
+                else s.style.color = '#ccc';
+            });
+        });
+        
+        // Mouse out (restore to selected state)
+        star.addEventListener('mouseout', function() {
+            stars.forEach(s => {
+                if (parseInt(s.getAttribute('data-value')) <= selectedStars) s.style.color = '#FFD700';
+                else s.style.color = '#ccc';
+            });
+        });
+        
+        // Click
+        star.addEventListener('click', function() {
+            selectedStars = parseInt(this.getAttribute('data-value'));
+            stars.forEach(s => {
+                if (parseInt(s.getAttribute('data-value')) <= selectedStars) s.classList.add('selected');
+                else s.classList.remove('selected');
+            });
+        });
+    });
+});
+
 
 // ─────────────────────────────────────────────────────────
 // Modal de factura — se inyecta dinámicamente al DOM

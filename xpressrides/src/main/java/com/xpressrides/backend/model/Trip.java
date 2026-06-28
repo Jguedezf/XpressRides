@@ -108,6 +108,9 @@ public class Trip {
     @Column(name = "eta_minutos")
     private Integer etaMinutes;
 
+    @Column(name = "pagado_al_chofer")
+    private Boolean pagadoAlChofer = false;
+
     @Column(name = "fecha_solicitud")
     private LocalDateTime requestDate;
 

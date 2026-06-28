@@ -50,10 +50,57 @@ function cargarDatosChofer() {
         statusText.classList.toggle('offline', !disponible);
     }
 
-    // Calificación (hardcoded por ahora, sin backend)
+    // Calificación
     const driverRating = document.getElementById('driver-rating');
     if (driverRating) {
-        driverRating.innerText = '5.00 ★';
+        const calif = usuario.calificacion !== undefined ? usuario.calificacion : (usuario.rating !== undefined ? usuario.rating : 5.0);
+        driverRating.innerText = Number(calif).toFixed(2) + ' ★';
+    }
+
+    // Actualizar con datos reales del backend
+    actualizarDatosBackendChofer(usuario, driverBalance);
+}
+
+async function actualizarDatosBackendChofer(usuario, driverBalance) {
+    try {
+        const response = await fetchAPI('/chofer/perfil');
+        if (response && response.data) {
+            const profileData = response.data;
+            // Actualizar localstorage con los nuevos datos
+            const updatedUser = { ...usuario, ...profileData };
+            // Aseguramos mantener la propiedad saldoUsd para no romper otra logica
+            if (profileData.saldoAcumuladoUsd !== undefined) {
+                updatedUser.saldoUsd = profileData.saldoAcumuladoUsd;
+            }
+            
+            localStorage.setItem('xpressUsuario', JSON.stringify(updatedUser));
+            
+            if (driverBalance) {
+                const saldo = updatedUser.saldoUsd != null ? Number(updatedUser.saldoUsd) : 0;
+                driverBalance.innerText = `$${saldo.toFixed(2)}`;
+            }
+
+            const driverRating = document.getElementById('driver-rating');
+            if (driverRating && profileData.calificacion !== undefined) {
+                driverRating.innerText = Number(profileData.calificacion).toFixed(2) + ' ★';
+            }
+
+            // Actualizar toggle switch UI
+            if (profileData.disponible !== undefined) {
+                updatedUser.disponible = profileData.disponible;
+                localStorage.setItem('xpressUsuario', JSON.stringify(updatedUser));
+
+                const toggleInput = document.getElementById('availability-toggle');
+                const statusText = document.getElementById('status-text');
+                if (toggleInput && statusText) {
+                    toggleInput.checked = profileData.disponible;
+                    statusText.textContent = profileData.disponible ? 'En línea' : 'Inactivo';
+                    statusText.classList.toggle('offline', !profileData.disponible);
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Error actualizando perfil del chofer desde backend:", e);
     }
 }
 

@@ -84,6 +84,12 @@ public class CustomerController {
     }
 
     @PreAuthorize("hasRole('cliente')")
+    @GetMapping("/resenas")
+    public ResponseEntity<?> getReviews(Authentication authentication) {
+        return ResponseEntity.ok(customerService.getReviews(authentication.getName()));
+    }
+
+    @PreAuthorize("hasRole('cliente')")
     @GetMapping("/cupones")
     public ResponseEntity<?> getCoupons(Authentication authentication) {
         return ResponseEntity.ok(customerService.getCoupons(authentication.getName()));

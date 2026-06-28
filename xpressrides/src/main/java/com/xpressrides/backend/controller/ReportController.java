@@ -27,7 +27,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/reportes")
-@CrossOrigin(origins = "*")
 @PreAuthorize("hasAnyRole('administrador', 'personal_admin')")
 public class ReportController {
 
@@ -64,10 +63,13 @@ public class ReportController {
         return ResponseEntity.ok(response);
     }
 
-    // GET /api/reports/driver-payments
+    // GET /api/reportes/pagos-chofer
     @GetMapping("/pagos-chofer")
-    public ResponseEntity<Map<String, Object>> getDriverPaymentReport() {
-        List<DriverPaymentReport> data = reportService.getDriverPaymentReport();
+    public ResponseEntity<Map<String, Object>> getDriverPaymentReport(
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        List<DriverPaymentReport> data = reportService.getDriverPaymentReport(nombre, desde, hasta);
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("data", data);

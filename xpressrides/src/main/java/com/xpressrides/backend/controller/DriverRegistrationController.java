@@ -26,7 +26,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*")
 public class DriverRegistrationController {
 
     private final DriverRegistrationService driverRegistrationService;

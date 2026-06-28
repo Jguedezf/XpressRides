@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reportes Financieros - XpressRides</title>
+    <title>Reporte de Ingresos - XpressRides</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -29,13 +29,31 @@
         .premium-table {
             width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 14px;
             background-color: white; border-radius: 8px; overflow: hidden;
-            border: 1px solid var(--color-border-muted);
+            border: 1px solid #CBD5E1;
         }
         .premium-table th { background-color: var(--color-secondary); color: white; text-align: left; padding: 12px 16px; font-weight: 600; }
-        .premium-table td { padding: 12px 16px; color: var(--color-text-main); border-bottom: 1px solid var(--color-border-light); }
+        .premium-table td { padding: 12px 16px; color: var(--color-text-main); border-bottom: 1px solid #E2E8F0; }
         .premium-table tbody tr:nth-child(even) { background-color: var(--color-bg-card); }
         .premium-table tbody tr:hover { background-color: #E2E8F0; }
 
+        .premium-card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid #E2E8F0;
+        }
+        .premium-title { margin-top: 0; }
+        .premium-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #CBD5E1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-family: inherit;
+            background-color: white;
+        }
+        .form-group { margin-bottom: 15px; }
+        .premium-label { display: block; font-weight: 500; margin-bottom: 5px; font-size: 13px; color: var(--color-text-main); margin-left: 2px; }
         .btn-sm { padding: 6px 12px; font-size: 12px; height: auto; margin: 0; }
     </style>
 </head>
@@ -45,7 +63,9 @@
     <span style="color:white;font-weight:700;font-size:18px;">Xpress<span style="color:#C55A11;">Rides</span><span style="font-weight:400;font-size:13px;opacity:0.75;"> | Admin</span></span>
     <nav style="display:flex;gap:8px;">
         <a href="/views/admin-dashboard.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Panel Principal</a>
-        <a href="/views/admin-reportes.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;background:#C55A11;">Reportes y Pagos</a>
+        <a href="/views/admin-reportes.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;background:#C55A11;">Reporte de Ingresos</a>
+        <a href="/views/admin-pagos.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Control de Pagos</a>
+        <a href="/views/admin-notificaciones.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Notificaciones</a>
     </nav>
     <a href="/views/user-logout.html" style="color:white;text-decoration:none;font-size:13px;opacity:0.75;">Cerrar sesión</a>
 </header>
@@ -62,33 +82,37 @@
         <p class="premium-subtitle" style="margin-bottom: 20px;">Reporte de ingresos acumulados</p>
 
         <!-- Formulario para Filtrar Fechas -->
-        <form id="form-filtro-ganancias" class="d-flex align-center gap-md" style="margin-bottom: 20px;">
-            <div style="flex: 1;">
-                <label class="premium-label" for="fechaInicio">Desde:</label>
-                <input type="date" id="fechaInicio" class="premium-input" style="height: 40px;" required>
-            </div>
-            <div style="flex: 1;">
-                <label class="premium-label" for="fechaFin">Hasta:</label>
-                <input type="date" id="fechaFin" class="premium-input" style="height: 40px;" required>
-            </div>
-            <div style="flex: 1; align-self: flex-end;">
-                <button type="submit" class="premium-btn" id="btn-filtrar" style="height: 40px;">Filtrar Fechas</button>
-            </div>
-        </form>
+        <div class="premium-card" style="margin-top: 20px; padding: 20px; margin-bottom: 20px;">
+            <form id="form-filtro-ganancias" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 150px;">
+                    <label class="premium-label" for="fechaInicio">Desde:</label>
+                    <input type="date" id="fechaInicio" class="premium-input" style="height: 40px;" required>
+                </div>
+                <div style="flex: 1; min-width: 150px;">
+                    <label class="premium-label" for="fechaFin">Hasta:</label>
+                    <input type="date" id="fechaFin" class="premium-input" style="height: 40px;" required>
+                </div>
+                <div style="display: flex; gap: 10px; height: 40px;">
+                    <button type="submit" class="btn-primary" id="btn-filtrar" style="padding: 0 20px; height: 100%; margin: 0;">Filtrar Fechas</button>
+                </div>
+            </form>
+        </div>
 
         <div style="overflow-x: auto;">
             <table class="premium-table">
                 <thead>
                 <tr>
+                    <th>Viaje ID</th>
                     <th>Fecha</th>
-                    <th>Viajes Realizados</th>
-                    <th>Costo Total Movido</th>
+                    <th>Costo Bruto</th>
+                    <th>Descuento</th>
                     <th>Ganancia Empresa (30%)</th>
+                    <th>Concepto</th>
                 </tr>
                 </thead>
                 <!-- AQUÍ INYECTAREMOS LOS DATOS CON JS -->
                 <tbody id="tbody-ganancias">
-                <tr><td colspan="4" class="text-center">Selecciona un rango de fechas para buscar...</td></tr>
+                <tr><td colspan="6" class="text-center">Selecciona un rango de fechas para buscar...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -97,34 +121,7 @@
         </div>
     </section>
 
-    <!-- SECCIÓN 2: PAGOS A CHOFERES -->
-    <section class="premium-card" style="padding: 30px;">
-        <h2 class="premium-title" style="margin-bottom: 5px; font-size: 20px;">Control de Pagos a Choferes</h2>
-        <p class="premium-subtitle" style="margin-bottom: 20px;">Saldos pendientes a liquidar (70% de la tarifa)</p>
 
-        <div class="alert-success" id="pago-success" style="display: none; font-size: 13px; text-align: center; margin-bottom: 15px;">
-            ¡Pago registrado! El saldo del chofer ha sido liquidado en la base de datos.
-        </div>
-        <div class="alert-error" id="pago-error" style="display: none; font-size: 13px; text-align: center; margin-bottom: 15px;"></div>
-
-        <div style="overflow-x: auto;">
-            <table class="premium-table">
-                <thead>
-                <tr>
-                    <th>Chofer</th>
-                    <th>Viajes Pendientes</th>
-                    <th>Monto a Pagar (70%)</th>
-                    <th>Estado</th>
-                    <th>Acción</th>
-                </tr>
-                </thead>
-                <!-- AQUÍ INYECTAREMOS LOS CHOFERES CON JS -->
-                <tbody id="tbody-pagos">
-                <tr><td colspan="5" class="text-center">Cargando cuentas pendientes...</td></tr>
-                </tbody>
-            </table>
-        </div>
-    </section>
 
 </main>
 
