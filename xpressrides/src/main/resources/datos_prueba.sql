@@ -52,13 +52,27 @@ ALTER TABLE notificacion
 
 -- 0.2 Índice compuesto para el conteo del badge de notificaciones
 --     Cubre: countByUser_IdAndReadFalse — consultado cada 15 s por cada usuario activo
-CREATE INDEX IF NOT EXISTS idx_notif_usuario_leida
-  ON notificacion(id_usuario, leida);
+--     Se verifica en information_schema.STATISTICS antes de crear para que el
+--     script sea idempotente en cualquier versión de MySQL
+SET @existe = (SELECT COUNT(*) FROM information_schema.STATISTICS
+    WHERE table_schema = DATABASE()
+      AND table_name   = 'notificacion'
+      AND index_name   = 'idx_notif_usuario_leida');
+SET @sql = IF(@existe = 0,
+    'CREATE INDEX idx_notif_usuario_leida ON notificacion(id_usuario, leida)',
+    'SELECT ''idx_notif_usuario_leida: ya existe, se omite''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- 0.3 Índice compuesto para el polling de viaje activo del cliente
 --     Cubre: GET /api/cliente/viaje-activo — consultado cada 5 s durante un viaje
-CREATE INDEX IF NOT EXISTS idx_traslado_cliente_estado
-  ON traslado(id_cliente, estado);
+SET @existe = (SELECT COUNT(*) FROM information_schema.STATISTICS
+    WHERE table_schema = DATABASE()
+      AND table_name   = 'traslado'
+      AND index_name   = 'idx_traslado_cliente_estado');
+SET @sql = IF(@existe = 0,
+    'CREATE INDEX idx_traslado_cliente_estado ON traslado(id_cliente, estado)',
+    'SELECT ''idx_traslado_cliente_estado: ya existe, se omite''');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- 0.4 Trigger actualizado: agrega notificación para estado 'chofer_llego'
 --     El trigger original no cubría este estado — el cliente nunca recibía
