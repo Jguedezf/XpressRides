@@ -7,7 +7,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -41,5 +43,19 @@ public class NotificationController {
     public ResponseEntity<?> countUnread(Authentication authentication) {
         long count = notificationService.countUnread(authentication.getName());
         return ResponseEntity.ok(Map.of("noLeidas", count));
+    }
+
+    @PostMapping("/emergencia")
+    public ResponseEntity<Map<String, String>> triggerEmergency(
+            @RequestBody(required = false) Map<String, Object> body,
+            Authentication authentication) {
+        Integer tripId = null;
+        if (body != null && body.containsKey("tripId") && body.get("tripId") != null) {
+            try {
+                tripId = Integer.parseInt(body.get("tripId").toString());
+            } catch (NumberFormatException ignored) {}
+        }
+        notificationService.sendEmergencyAlert(authentication.getName(), tripId);
+        return ResponseEntity.ok(Map.of("message", "Alerta de emergencia enviada a soporte."));
     }
 }

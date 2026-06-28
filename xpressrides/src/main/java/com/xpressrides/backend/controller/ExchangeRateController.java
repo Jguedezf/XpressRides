@@ -87,4 +87,27 @@ public class ExchangeRateController {
             return ResponseEntity.status(400).body(response);
         }
     }
+
+    // GET /api/tasa-bcv/convertir?monto=&moneda=
+    @GetMapping("/tasa-bcv/convertir")
+    public ResponseEntity<Map<String, Object>> convertCurrency(
+            @RequestParam double monto,
+            @RequestParam String moneda) {
+        
+        Optional<ExchangeRate> rateOpt = exchangeRateService.getCurrentRate();
+        Map<String, Object> response = new HashMap<>();
+        if (rateOpt.isEmpty()) {
+            response.put("success", false);
+            response.put("message", "No hay tasa BCV vigente");
+            return ResponseEntity.status(404).body(response);
+        }
+        
+        double tasa = rateOpt.get().getRateVes().doubleValue();
+        double ves = monto * tasa;
+        
+        response.put("success", true);
+        response.put("ves", ves);
+        response.put("message", "Conversión exitosa");
+        return ResponseEntity.ok(response);
+    }
 }

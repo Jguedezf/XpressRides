@@ -55,6 +55,46 @@ function cargarDatosChofer() {
     if (driverRating) {
         driverRating.innerText = '5.00 ★';
     }
+
+    // Actualizar con datos reales del backend
+    actualizarDatosBackendChofer(usuario, driverBalance);
+}
+
+async function actualizarDatosBackendChofer(usuario, driverBalance) {
+    try {
+        const response = await fetchAPI('/chofer/perfil');
+        if (response) {
+            // Actualizar localstorage con los nuevos datos
+            const updatedUser = { ...usuario, ...response };
+            // Aseguramos mantener la propiedad saldoUsd para no romper otra logica
+            if (response.saldoAcumuladoUsd !== undefined) {
+                updatedUser.saldoUsd = response.saldoAcumuladoUsd;
+            }
+            
+            localStorage.setItem('xpressUsuario', JSON.stringify(updatedUser));
+            
+            if (driverBalance) {
+                const saldo = updatedUser.saldoUsd != null ? Number(updatedUser.saldoUsd) : 0;
+                driverBalance.innerText = `$${saldo.toFixed(2)}`;
+            }
+
+            // Actualizar toggle switch UI
+            if (response.available !== undefined) {
+                updatedUser.disponible = response.available;
+                localStorage.setItem('xpressUsuario', JSON.stringify(updatedUser));
+
+                const toggleInput = document.getElementById('availability-toggle');
+                const statusText = document.getElementById('status-text');
+                if (toggleInput && statusText) {
+                    toggleInput.checked = response.available;
+                    statusText.textContent = response.available ? 'En línea' : 'Inactivo';
+                    statusText.classList.toggle('offline', !response.available);
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Error actualizando perfil del chofer desde backend:", e);
+    }
 }
 
 function configurarToggle() {

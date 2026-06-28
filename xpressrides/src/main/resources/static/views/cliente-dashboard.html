@@ -137,14 +137,15 @@
 <!-- 2. CONTENEDOR DEL MAPA (LEAFLET) -->
 <main id="map"></main>
 
-<!-- 3. TARJETA FLOTANTE DE SOLICITUD -->
 <div class="card floating-request-card">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <h2 class="h2-subtitle" style="color: var(--color-secondary); font-size: 18px; margin:0;">¿A dónde vamos hoy?</h2>
-        <div class="converter-widget" style="background:#f4f4f4; padding:5px 10px; border-radius:8px; display:flex; align-items:center; gap:5px;">
-            <input type="number" id="conv-usd" placeholder="USD" style="width:50px; border:1px solid #ccc; border-radius:4px; font-size:12px; padding:2px 4px;" min="1">
-            <span style="font-size:12px; color:var(--color-primary); font-weight:bold;">=</span>
-            <span id="conv-ves" style="font-size:12px; color:var(--color-primary); font-weight:bold;">Bs 0.00</span>
+    <h2 class="h2-subtitle" style="color: var(--color-secondary); font-size: 18px; margin:0 0 12px 0;">¿A dónde vamos hoy?</h2>
+    
+    <div class="converter-widget" style="background:#f8f9fa; border: 1px solid #eee; padding:8px 12px; border-radius:8px; display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px;">
+        <span style="font-size:12px; color:#555; font-weight:600;">💰 Conversor BCV</span>
+        <div style="display:flex; align-items:center; gap:6px;">
+            <input type="number" id="conv-usd" placeholder="USD" style="width:55px; border:1px solid #ccc; border-radius:4px; font-size:12px; padding:3px 6px; text-align: center; outline: none;" min="1">
+            <span style="font-size:12px; color:#888;">=</span>
+            <span id="conv-ves" style="font-size:13px; color:var(--color-primary); font-weight:700; min-width: 60px; text-align: right;">Bs 0.00</span>
         </div>
     </div>
 

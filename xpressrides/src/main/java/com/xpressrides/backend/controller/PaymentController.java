@@ -21,6 +21,7 @@ import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -76,10 +77,11 @@ public class PaymentController {
     @PreAuthorize("hasRole('personal_admin')")
     @PostMapping("/pagos-chofer")
     public ResponseEntity<Map<String, Object>> registerDriverPayment(
-            @Valid @RequestBody DriverPayment payment) {
+            @Valid @RequestBody DriverPayment payment,
+            Authentication authentication) {
         Map<String, Object> response = new HashMap<>();
         try {
-            DriverPayment nuevo = paymentService.registerDriverPayment(payment);
+            DriverPayment nuevo = paymentService.registerDriverPayment(payment, authentication.getName());
             response.put("success", true);
             response.put("data", nuevo);
             response.put("message", "Pago al chofer registrado correctamente.");

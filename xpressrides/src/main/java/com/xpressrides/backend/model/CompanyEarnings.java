@@ -27,15 +27,24 @@ import java.time.LocalDate;
 public class CompanyEarnings {
 
     @Id
+    @Column(name = "id_traslado")
+    private Long id;
+
     @Column(name = "fecha")
     private LocalDate date;
 
-    @Column(name = "cantidad_viajes")
-    private Integer tripCount;
+    @Column(name = "costo_total_usd")
+    private BigDecimal totalCostUsd;
+
+    @Column(name = "descuento_usd")
+    private BigDecimal discountUsd;
 
     @Column(name = "total_empresa_usd")
     private BigDecimal totalCompanyUsd;
 
     @Column(name = "total_empresa_ves")
     private BigDecimal totalCompanyVes;
+
+    @Column(name = "concepto")
+    private String concept;
 }

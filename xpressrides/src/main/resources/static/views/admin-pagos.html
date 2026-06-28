@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Pagos - XpressRides</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Ruta lista para Spring Boot -->
+    <link rel="stylesheet" href="/css/estilos.css">
+
+    <style>
+        body {
+            background-color: var(--color-page-bg, #F8F9FB);
+            font-family: var(--font-family-base);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 76px 20px 40px;
+            min-height: 100vh;
+        }
+
+        .report-container { width: 100%; max-width: 900px; }
+        .brand-logo-img { max-width: 260px; width: 100%; height: auto; display: block; margin: 0 auto; }
+
+        .premium-table {
+            width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 14px;
+            background-color: white; border-radius: 8px; overflow: hidden;
+            border: 1px solid #CBD5E1;
+        }
+        .premium-table th { background-color: var(--color-secondary); color: white; text-align: left; padding: 12px 16px; font-weight: 600; }
+        .premium-table td { padding: 12px 16px; color: var(--color-text-main); border-bottom: 1px solid #E2E8F0; }
+        .premium-table tbody tr:nth-child(even) { background-color: var(--color-bg-card); }
+        .premium-table tbody tr:hover { background-color: #E2E8F0; }
+
+        .premium-card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid #E2E8F0;
+        }
+        .premium-title { margin-top: 0; }
+        .premium-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #CBD5E1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-family: inherit;
+            background-color: white;
+        }
+        .form-group { margin-bottom: 15px; }
+        .premium-label { display: block; font-weight: 500; margin-bottom: 5px; font-size: 13px; color: var(--color-text-main); margin-left: 2px; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; height: auto; margin: 0; }
+    </style>
+</head>
+<body>
+
+<header style="position:fixed;top:0;left:0;right:0;z-index:1000;background:#1F4E79;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+    <span style="color:white;font-weight:700;font-size:18px;">Xpress<span style="color:#C55A11;">Rides</span><span style="font-weight:400;font-size:13px;opacity:0.75;"> | Admin</span></span>
+    <nav style="display:flex;gap:8px;">
+        <a href="/views/admin-dashboard.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Panel Principal</a>
+        <a href="/views/admin-reportes.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Reporte de Ingresos</a>
+        <a href="/views/admin-pagos.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;background:#C55A11;">Control de Pagos</a>
+        <a href="/views/admin-notificaciones.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Notificaciones</a>
+    </nav>
+    <a href="/views/user-logout.html" style="color:white;text-decoration:none;font-size:13px;opacity:0.75;">Cerrar sesión</a>
+</header>
+
+<main class="report-container">
+
+    <div class="text-center mb-24">
+        <img src="/img/logo.png" alt="XpressRides Logo" class="brand-logo-img">
+    </div>
+
+    <!-- SECCIÓN 1: PAGOS A CHOFERES (Pendientes) -->
+    <section class="premium-card" style="padding: 30px; margin-bottom: 30px;">
+        <h2 class="premium-title" style="margin-bottom: 5px; font-size: 20px;">Control de Pagos a Choferes</h2>
+        <p class="premium-subtitle" style="margin-bottom: 20px;">Saldos pendientes a liquidar (70% de la tarifa)</p>
+
+        <div class="alert-success" id="pago-success" style="display: none; font-size: 13px; text-align: center; margin-bottom: 15px;">
+            ¡Pago registrado! El saldo del chofer ha sido liquidado en la base de datos.
+        </div>
+        <div class="alert-error" id="pago-error" style="display: none; font-size: 13px; text-align: center; margin-bottom: 15px;"></div>
+
+        <div style="overflow-x: auto;">
+            <table class="premium-table">
+                <thead>
+                <tr>
+                    <th>Chofer</th>
+                    <th>Viajes Pendientes</th>
+                    <th>Monto a Pagar (70%)</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                </tr>
+                </thead>
+                <!-- AQUÍ INYECTAREMOS LOS CHOFERES CON JS -->
+                <tbody id="tbody-pagos">
+                <tr><td colspan="5" class="text-center">Cargando cuentas pendientes...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- SECCIÓN 2: HISTORIAL DE PAGOS REALIZADOS -->
+    <section class="admin-section" style="margin-top: 40px;">
+        <h2 class="admin-subtitle">Historial de Pagos Realizados</h2>
+        <p class="admin-description">Pagos liquidados anteriormente a los choferes</p>
+
+        <!-- Filtros del Historial -->
+        <div class="premium-card" style="margin-top: 20px; padding: 20px; margin-bottom: 20px;">
+            <form id="form-filtros-historial" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 150px;">
+                    <label class="premium-label">Desde:</label>
+                    <input type="date" id="filtro-desde" class="premium-input" style="height: 40px;">
+                </div>
+                <div style="flex: 1; min-width: 150px;">
+                    <label class="premium-label">Hasta:</label>
+                    <input type="date" id="filtro-hasta" class="premium-input" style="height: 40px;">
+                </div>
+                <div style="flex: 2; min-width: 200px;">
+                    <label class="premium-label">Nombre del Chofer:</label>
+                    <input type="text" id="filtro-nombre" class="premium-input" style="height: 40px;" placeholder="Buscar por nombre...">
+                </div>
+                <div style="display: flex; gap: 10px; height: 40px;">
+                    <button type="submit" class="btn-primary" style="padding: 0 20px; height: 100%; margin: 0;">Filtrar</button>
+                    <button type="button" id="btn-limpiar-filtros" class="btn-secondary" style="padding: 0 20px; height: 100%; margin: 0;">Limpiar</button>
+                </div>
+            </form>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table class="premium-table">
+                <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Chofer</th>
+                    <th>Monto Total (USD)</th>
+                    <th>Monto Total (VES)</th>
+                    <th>Banco Emisor</th>
+                    <th>Nro Referencia</th>
+                </tr>
+                </thead>
+                <tbody id="tbody-historial">
+                <tr><td colspan="6" class="text-center">Cargando historial de pagos...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- MODAL DE PAGO A CHOFER -->
+    <div id="modal-pago-chofer" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="premium-card" style="width: 400px; padding: 25px; max-width: 90%; background-color: white; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);">
+            <h3 class="premium-title" style="font-size: 18px; margin-bottom: 5px;">Liquidar Pago</h3>
+            <p class="premium-subtitle" id="modal-pago-subtitle" style="margin-bottom: 20px;">Chofer: ...</p>
+            
+            <form id="form-registrar-pago">
+                <input type="hidden" id="modal-pago-chofer-id">
+                
+                <div class="form-group" style="display: flex; gap: 10px;">
+                    <div style="flex: 1;">
+                        <label class="premium-label">Monto a Pagar (USD)</label>
+                        <input type="text" id="modal-pago-monto" class="premium-input" disabled style="background-color: #f1f5f9; color: var(--color-success); font-weight: bold;">
+                    </div>
+                    <div style="flex: 1;">
+                        <label class="premium-label">Monto en Bs. (VES)</label>
+                        <input type="text" id="modal-pago-monto-ves" class="premium-input" disabled style="background-color: #f1f5f9; font-weight: bold;">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label class="premium-label">Banco Emisor</label>
+                    <select id="modal-pago-banco" class="premium-input" required>
+                        <option value="">Seleccione un banco...</option>
+                        <option value="1">Banco de Venezuela</option>
+                        <option value="2">Banesco</option>
+                        <option value="3">Mercantil</option>
+                        <option value="4">BBVA Provincial</option>
+                        <option value="5">Bicentenario</option>
+                        <option value="6">Banco del Tesoro</option>
+                        <option value="7">Banco Exterior</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label class="premium-label">Número de Referencia</label>
+                    <input type="text" id="modal-pago-referencia" class="premium-input" placeholder="Ej: 1234567890" required>
+                </div>
+
+                <div class="d-flex" style="justify-content: flex-end; gap: 10px;">
+                    <button type="button" class="btn-secondary" onclick="cerrarModalPago()" style="padding: 10px 15px;">Cancelar</button>
+                    <button type="submit" class="btn-primary" id="btn-confirmar-pago" style="padding: 10px 15px;">Confirmar Pago</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</main>
+
+<!-- IMPORTACIÓN DE SCRIPTS -->
+<script src="/js/api.js"></script>
+<script src="/js/admin-pagos.js"></script>
+</body>
+</html>

@@ -7,19 +7,14 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.xpressrides.backend.dto.request.AvailabilityRequest;
 import com.xpressrides.backend.dto.request.EnableRequest;
 import com.xpressrides.backend.dto.request.TripStatusRequest;
 import com.xpressrides.backend.dto.response.DriverStatusResponse;
 import com.xpressrides.backend.service.DriverService;
+import com.xpressrides.backend.service.PaymentService;
 import com.xpressrides.backend.service.TripRejectionService;
 
 import jakarta.validation.Valid;
@@ -30,11 +25,14 @@ import java.util.HashMap;
 public class DriverController {
     private final DriverService driverService;
     private final TripRejectionService tripRejectionService;
+    private final PaymentService paymentService;
 
     public DriverController(DriverService driverService,
-                            TripRejectionService tripRejectionService) {
+                            TripRejectionService tripRejectionService,
+                            PaymentService paymentService) {
         this.driverService        = driverService;
         this.tripRejectionService = tripRejectionService;
+        this.paymentService       = paymentService;
     }
 
     @PreAuthorize("hasRole('chofer')")
@@ -161,6 +159,39 @@ public class DriverController {
             response.put("data", null);
             response.put("message", e.getMessage());
             return ResponseEntity.status(400).body(response);
+        }
+    }
+
+    // GET /api/chofer/pagos — historial de pagos recibidos
+    @PreAuthorize("hasRole('chofer')")
+    @GetMapping("/pagos")
+    public ResponseEntity<Map<String, Object>> getPayments(
+            Authentication authentication,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        
+        Map<String, Object> data = driverService.getProfile(authentication.getName());
+        Integer driverId = (Integer) data.get("id");
+        
+        // Asumiendo que injectaremos PaymentService en DriverController o hacemos la consulta
+        // Ya que no tenemos paymentService injectado en DriverController, lo injectaré arriba
+        return ResponseEntity.ok(Map.of("data", paymentService.getDriverPaymentHistory(driverId, desde, hasta)));
+    }
+
+    // POST /api/chofer/solicitar-retiro — envía notificación a admins
+    @PreAuthorize("hasRole('chofer')")
+    @PostMapping("/solicitar-retiro")
+    public ResponseEntity<Map<String, Object>> requestWithdrawal(Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            driverService.requestWithdrawal(authentication.getName());
+            response.put("success", true);
+            response.put("message", "Solicitud de retiro enviada correctamente. El administrador procesará su pago.");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 }

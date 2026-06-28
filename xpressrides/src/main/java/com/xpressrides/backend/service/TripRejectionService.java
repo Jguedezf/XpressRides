@@ -23,13 +23,16 @@ public class TripRejectionService {
     private final TripRepository tripRepository;
     private final DriverRepository driverRepository;
     private final NotificationRepository notificationRepository;
+    private final com.xpressrides.backend.repository.CustomerRepository customerRepository;
 
     public TripRejectionService(TripRepository tripRepository,
                                 DriverRepository driverRepository,
-                                NotificationRepository notificationRepository) {
+                                NotificationRepository notificationRepository,
+                                com.xpressrides.backend.repository.CustomerRepository customerRepository) {
         this.tripRepository         = tripRepository;
         this.driverRepository       = driverRepository;
         this.notificationRepository = notificationRepository;
+        this.customerRepository     = customerRepository;
     }
 
     // PUT /api/chofer/traslados/{id}/rechazar — chofer rechaza el viaje asignado
@@ -83,6 +86,13 @@ public class TripRejectionService {
         trip.setCancelledBy("sistema");
         trip.setCancellationReason("No hay choferes disponibles en este momento");
         tripRepository.save(trip);
+
+        // Refund the customer
+        if (trip.getCustomerCostUsd() != null) {
+            com.xpressrides.backend.model.Customer customer = trip.getCustomer();
+            customer.setBalance(customer.getBalance().add(trip.getCustomerCostUsd()));
+            customerRepository.save(customer);
+        }
 
         Notification notif = new Notification();
         notif.setUser(trip.getCustomer().getUserId());

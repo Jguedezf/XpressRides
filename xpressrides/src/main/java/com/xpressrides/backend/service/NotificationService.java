@@ -44,4 +44,26 @@ public class NotificationService {
             .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         return notificationRepository.countByUser_IdAndReadFalse(user.getId());
     }
+
+    @Transactional
+    public void sendEmergencyAlert(String username, Integer tripId) {
+        User driverUser = userRepository.findByUsername(username)
+            .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+
+        List<User> admins = userRepository.findAll().stream()
+            .filter(u -> "administrador".equalsIgnoreCase(u.getRole()) || "personal_admin".equalsIgnoreCase(u.getRole()))
+            .toList();
+
+        for (User admin : admins) {
+            Notification alert = new Notification();
+            alert.setUser(admin);
+            alert.setType("emergencia");
+            alert.setMessage("🚨 EMERGENCIA REPORTADA por el chofer " + driverUser.getName() + " " + driverUser.getLastName() + 
+                             (tripId != null ? " en el traslado #" + tripId : ""));
+            alert.setRead(false);
+            alert.setDateTime(java.time.LocalDateTime.now());
+            // Opcionalmente se puede asociar el tripId si se recupera la entidad Trip
+            notificationRepository.save(alert);
+        }
+    }
 }

@@ -65,8 +65,10 @@ public class ReportService {
     }
 
     // Pagos realizados a choferes
-    public List<DriverPaymentReport> getDriverPaymentReport() {
-        return driverPaymentReportRepository.findAll();
+    public List<DriverPaymentReport> getDriverPaymentReport(String nombre, LocalDate desde, LocalDate hasta) {
+        java.time.LocalDateTime desdeDt = (desde != null) ? desde.atStartOfDay() : null;
+        java.time.LocalDateTime hastaDt = (hasta != null) ? hasta.atTime(23, 59, 59) : null;
+        return driverPaymentReportRepository.findByFilters(nombre, desdeDt, hastaDt);
     }
 
     // Choferes con saldo pendiente de pago

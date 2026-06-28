@@ -18,6 +18,20 @@ import com.xpressrides.backend.model.DriverPaymentReport;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import java.time.LocalDateTime;
+import java.util.List;
+
 @Repository
 public interface DriverPaymentReportRepository extends JpaRepository<DriverPaymentReport, Integer> {
+
+    @Query("SELECT d FROM DriverPaymentReport d WHERE " +
+           "(:nombre IS NULL OR :nombre = '' OR LOWER(d.driverName) LIKE LOWER(CONCAT('%', :nombre, '%'))) AND " +
+           "(cast(:desde as timestamp) IS NULL OR d.dateTime >= :desde) AND " +
+           "(cast(:hasta as timestamp) IS NULL OR d.dateTime <= :hasta) " +
+           "ORDER BY d.dateTime DESC")
+    List<DriverPaymentReport> findByFilters(@Param("nombre") String nombre,
+                                            @Param("desde") LocalDateTime desde,
+                                            @Param("hasta") LocalDateTime hasta);
 }

@@ -220,19 +220,29 @@ async function cancelarViajeActivo() {
 
 function configurarBotonEmergencia() {}
 
-window.mostrarEmergencia = function () {
+window.mostrarEmergencia = async function () {
     const modalHTML = `
         <div id="modal-emergencia" class="modal-overlay" onclick="if(event.target===this)this.remove();">
             <div class="modal-content text-center">
                 <h3 class="h2-subtitle" style="color:var(--color-error);">🚨 Emergencia</h3>
                 <p class="text-normal mt-md mb-md">Si estás en peligro, contacta a las autoridades:</p>
                 <p class="text-highlight" style="font-size:24px;color:var(--color-error);">911</p>
-                <p class="text-small mt-sm">Este botón enviará una alerta a soporte de XpressRides.</p>
+                <p class="text-small mt-sm">Se ha enviado una alerta de emergencia a soporte.</p>
                 <button class="btn-secondary mt-md" onclick="document.getElementById('modal-emergencia').remove();">Cerrar</button>
             </div>
         </div>
     `;
     document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    try {
+        const payload = viajeActual ? { tripId: viajeActual.idTraslado } : {};
+        await fetchAPI('/notificaciones/emergencia', {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        });
+    } catch (e) {
+        console.error("Error al enviar alerta de emergencia:", e);
+    }
 };
 
 // ─── 5. MENSAJES TEMPORALES ─────────────────────────

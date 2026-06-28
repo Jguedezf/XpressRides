@@ -36,8 +36,16 @@ async function cargarHistorial() {
 
         viajes.forEach(viaje => {
             // Evaluamos clases CSS dinámicas según el estado del viaje
-            const esCompletado = viaje.status && viaje.status.toLowerCase() === 'completado';
-            const statusClass = esCompletado ? 'status-completado' : 'status-cancelado';
+            const estadoActual = viaje.status ? viaje.status.toLowerCase() : '';
+            const esCompletado = estadoActual === 'completado';
+            const esCancelado = estadoActual === 'cancelado';
+            
+            let statusClass = 'status-solicitado'; // por defecto
+            if (esCompletado) statusClass = 'status-completado';
+            else if (esCancelado) statusClass = 'status-cancelado';
+            else if (['aceptado', 'en_camino', 'chofer_llego', 'en_progreso'].includes(estadoActual)) {
+                statusClass = 'status-en-progreso'; // u otra clase si existe
+            }
 
             // Construir info del vehículo a partir de la entidad anidada
             const vehiculoInfo = viaje.vehicle 
@@ -78,7 +86,7 @@ async function cargarHistorial() {
                     ` : ''}
 
                     <div class="trip-footer">
-                        <span class="trip-price" ${!esCompletado ? 'style="text-decoration: line-through; color: var(--color-text-muted);"' : ''}>
+                        <span class="trip-price" ${esCancelado ? 'style="text-decoration: line-through; color: var(--color-text-muted);"' : ''}>
                             $${viaje.customerCostUsd ? viaje.customerCostUsd.toFixed(2) : '0.00'}
                         </span>
                         
@@ -86,8 +94,10 @@ async function cargarHistorial() {
                             <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="verFactura(${viaje.id})">
                                 Ver Factura
                             </button>
-                        ` : `
+                        ` : esCancelado ? `
                             <span style="font-size: 12px; color: var(--color-error);">Cancelado</span>
+                        ` : `
+                            <span style="font-size: 12px; color: #1F4E79; font-weight: bold;">En Curso</span>
                         `}
                     </div>
                 </div>

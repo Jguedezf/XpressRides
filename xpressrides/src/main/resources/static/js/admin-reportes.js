@@ -1,90 +1,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
     // 1. Proteger la ruta (Regla de la Guía)
     if (!requireAuth()) return;
-
-    // 2. Cargar automáticamente la lista de choferes a los que se les debe dinero
-    await cargarPagosPendientes();
 });
-
-/* ==========================================
-   MÓDULO: PAGOS A CHOFERES
-========================================== */
-async function cargarPagosPendientes() {
-    const tbodyPagos = document.getElementById('tbody-pagos');
-
-    try {
-        // Consumimos el endpoint de pagos pendientes
-        const response = await fetchAPI('/reportes/pendientes-pago');
-        const deudas = response.data || [];
-
-        if (deudas.length === 0) {
-            tbodyPagos.innerHTML = '<tr><td colspan="5" class="text-center" style="color: var(--color-success);">¡Todo al día! No hay pagos pendientes.</td></tr>';
-            return;
-        }
-
-        tbodyPagos.innerHTML = ''; // Limpiamos el "Cargando..."
-
-        // Inyectamos las filas reales
-        deudas.forEach(deuda => {
-            tbodyPagos.innerHTML += `
-                <tr>
-                    <td>${deuda.driverName}</td>
-                    <td>${deuda.pendingTrips} viajes</td>
-                    <td style="font-weight: bold;">$ ${Number(deuda.pendingTotalUsd).toFixed(2)}</td>
-                    <td><span style="background-color: #FCE4D6; color: #C00000; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">PENDIENTE</span></td>
-                    <td>
-                        <button class="premium-btn btn-sm" onclick="registrarPago(event, ${deuda.driverId})">Registrar Pago</button>
-                    </td>
-                </tr>
-            `;
-        });
-    } catch (error) {
-        tbodyPagos.innerHTML = `<tr><td colspan="5" class="text-center" style="color: var(--color-error);">Error: ${error.message}</td></tr>`;
-    }
-}
-
-// Función accionada por el botón de la tabla (POST / PUT)
-async function registrarPago(event, choferId) {
-    const btn = event.target;
-    const successAlert = document.getElementById('pago-success');
-    const errorAlert = document.getElementById('pago-error');
-
-    successAlert.style.display = 'none';
-    errorAlert.style.display = 'none';
-
-    // Feedback visual (Regla 5 de la Guía)
-    btn.innerText = "Procesando...";
-    btn.disabled = true;
-    btn.style.opacity = "0.7";
-
-    try {
-        // Objeto que enviaremos a Java
-        const payload = { choferId: choferId };
-
-        // Enviar petición POST usando fetchAPI
-        await fetchAPI('/pagos-chofer', {
-            method: 'POST',
-            body: JSON.stringify(payload)
-        });
-
-        successAlert.style.display = 'block';
-
-        // Refrescamos la tabla para que desaparezca la deuda pagada
-        await cargarPagosPendientes();
-
-        // Ocultamos la alerta a los 3 segundos
-        setTimeout(() => successAlert.style.display = 'none', 3000);
-
-    } catch (error) {
-        errorAlert.innerText = error.message;
-        errorAlert.style.display = 'block';
-
-        // Restauramos el botón si hubo error
-        btn.innerText = "Registrar Pago";
-        btn.disabled = false;
-        btn.style.opacity = "1";
-    }
-}
 
 /* ==========================================
    MÓDULO: GANANCIAS DE LA EMPRESA
@@ -118,13 +35,21 @@ document.getElementById('form-filtro-ganancias').addEventListener('submit', asyn
         let granTotal = 0;
 
         registros.forEach(reg => {
-            granTotal += reg.gananciaEmpresa;
+            const ganancia = Number(reg.totalCompanyUsd || 0);
+            const costoMovido = Number(reg.totalCostUsd || 0);
+            const descuento = Number(reg.discountUsd || 0);
+            
+            granTotal += ganancia;
             tbodyGanancias.innerHTML += `
                 <tr>
-                    <td>${reg.fecha}</td>
-                    <td>${reg.cantidadViajes} viajes</td>
-                    <td>$ ${reg.costoTotal.toFixed(2)}</td>
-                    <td style="color: var(--color-success); font-weight: bold;">+ $ ${reg.gananciaEmpresa.toFixed(2)}</td>
+                    <td>#${reg.id}</td>
+                    <td>${reg.date}</td>
+                    <td>$ ${costoMovido.toFixed(2)}</td>
+                    <td style="color: var(--color-error);">- $ ${descuento.toFixed(2)}</td>
+                    <td style="color: ${ganancia < 0 ? 'var(--color-error)' : 'var(--color-success)'}; font-weight: bold;">
+                        ${ganancia < 0 ? '' : '+ '} $ ${ganancia.toFixed(2)}
+                    </td>
+                    <td style="font-size: 13px;">${reg.concept}</td>
                 </tr>
             `;
         });

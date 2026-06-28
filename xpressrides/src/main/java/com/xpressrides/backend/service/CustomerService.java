@@ -129,6 +129,12 @@ public class CustomerService {
         trip.setCancellationReason(reason);
         tripRepository.save(trip);
 
+        // Refund the customer
+        if (trip.getCustomerCostUsd() != null) {
+            customer.setBalance(customer.getBalance().add(trip.getCustomerCostUsd()));
+            customerRepository.save(customer);
+        }
+
         if (trip.getDriver() != null) {
             Driver driver = trip.getDriver();
             driver.setAvailable(true);
@@ -143,6 +149,15 @@ public class CustomerService {
             notif.setDateTime(LocalDateTime.now());
             notificationRepository.save(notif);
         }
+
+        Notification notifCliente = new Notification();
+        notifCliente.setUser(customer.getUserId());
+        notifCliente.setTrip(trip);
+        notifCliente.setType("viaje_cancelado");
+        notifCliente.setMessage("Has cancelado el viaje exitosamente.");
+        notifCliente.setRead(false);
+        notifCliente.setDateTime(LocalDateTime.now());
+        notificationRepository.save(notifCliente);
     }
 
     public List<TopUp> getTopUps(String username) {
