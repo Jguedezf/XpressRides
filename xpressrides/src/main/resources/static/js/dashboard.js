@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     inicializarMapa();
     configurarFormularioViaje();
     configurarCalculadora();
+    iniciarPollingViajeActivo();
 });
 
 function configurarCalculadora() {
@@ -437,8 +438,9 @@ async function consultarViajeActivo() {
         const data = response.data;
 
         if (data) {
-            viajeEstadoPrevio = data;
-            mostrarTarjetaViajeActivo(data);
+            clearInterval(viajeActivoInterval);
+            window.location.href = '/views/cliente-viaje-activo.html';
+            return;
         } else {
             // Si data es null pero antes teníamos un viaje activo, significa que finalizó (completado/cancelado)
             if (viajeEstadoPrevio) {

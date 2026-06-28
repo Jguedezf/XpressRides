@@ -182,6 +182,7 @@ public class CustomerService {
             Vehicle vehicle = trip.getVehicle();
             choferData = new HashMap<>();
             choferData.put("nombre", driverUser.getName() + " " + driverUser.getLastName());
+            choferData.put("telefono", driverUser.getPhone());
             choferData.put("vehiculo", vehicle.getBrand() + " " + vehicle.getModel() + " " + vehicle.getYear());
             choferData.put("placa", vehicle.getPlate());
             choferData.put("color", vehicle.getColor());

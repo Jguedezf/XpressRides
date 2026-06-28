@@ -150,6 +150,10 @@ function renderizarEstado(viaje) {
     }
 }
 
+window.cerrarPushNotification = function () {
+    document.getElementById('push-notification').classList.add('hidden');
+};
+
 // ─── 3. BOTONES DE ESTADO ───────────────────────────
 
 function configurarBotonesEstado() {
