@@ -1,3 +1,5 @@
+let resenasCompletas = [];
+
 document.addEventListener('DOMContentLoaded', async () => {
     if (!requireAuth()) return;
     await cargarResenas();
@@ -7,17 +9,25 @@ async function cargarResenas() {
     const container = document.getElementById('reviews-container');
     
     try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tripIdFilter = urlParams.get('tripId');
+
         const response = await fetchAPI('/cliente/resenas');
-        const resenas = response.data || response;
+        resenasCompletas = response.data || response;
         
-        if (!resenas || resenas.length === 0) {
-            container.innerHTML = '<p class="text-center text-muted mt-lg">No has emitido ninguna reseña aún.</p>';
+        let resenasAMostrar = resenasCompletas;
+        if (tripIdFilter) {
+            resenasAMostrar = resenasCompletas.filter(r => r.tripId == tripIdFilter);
+        }
+        
+        if (!resenasAMostrar || resenasAMostrar.length === 0) {
+            container.innerHTML = '<p class="text-center text-muted mt-lg">No se encontraron reseñas.</p>';
             return;
         }
 
         container.innerHTML = '';
         
-        resenas.forEach(resena => {
+        resenasAMostrar.forEach((resena, index) => {
             let timeStr = resena.date || '';
             if (timeStr) {
                 const d = new Date(timeStr);
@@ -33,15 +43,20 @@ async function cargarResenas() {
 
             const comment = resena.comment || '<span class="text-muted">Sin comentario</span>';
             const driverName = resena.driverName || 'Desconocido';
+            const route = resena.route || 'Ruta Desconocida';
 
             const html = `
                 <div class="review-card">
                     <div class="d-flex justify-between align-center mb-sm">
-                        <span style="font-weight: 600;">Para: ${driverName}</span>
+                        <span style="font-weight: 600; font-size: 14px;">${route}</span>
                         <span style="font-size: 12px; color: var(--color-text-muted);">${timeStr}</span>
                     </div>
+                    <div class="d-flex justify-between align-center mb-sm">
+                        <span style="font-size: 14px; color: var(--color-text-muted);">Chofer: ${driverName}</span>
+                    </div>
                     <div class="stars mb-sm">${starsHtml}</div>
-                    <p style="font-size: 14px; margin: 0;">${comment}</p>
+                    <p style="font-size: 14px; margin: 0; margin-bottom: 15px;">${comment}</p>
+                    <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="abrirModalChofer(${index})">Ver Detalles del Chofer</button>
                 </div>
             `;
             container.insertAdjacentHTML('beforeend', html);
@@ -50,4 +65,37 @@ async function cargarResenas() {
     } catch (err) {
         container.innerHTML = `<p class="text-center text-error mt-lg">Error al cargar reseñas: ${err.message}</p>`;
     }
+}
+
+function abrirModalChofer(index) {
+    const resena = resenasCompletas[index];
+    if (!resena) return;
+    
+    document.getElementById('detalle-modal-chofer-nombre').textContent = resena.driverName || 'Desconocido';
+    document.getElementById('detalle-modal-chofer-telefono').textContent = resena.driverPhone || '—';
+    
+    const partes = (resena.driverName || '').split(' ');
+    document.getElementById('detalle-modal-chofer-iniciales').textContent = ((partes[0]?.[0] || '') + (partes[1]?.[0] || '')).toUpperCase() || 'CH';
+
+    if (resena.vehicle) {
+        document.getElementById('detalle-modal-vehiculo-modelo').textContent = `${resena.vehicle.brand || ''} ${resena.vehicle.model || ''}`.trim() || '—';
+        document.getElementById('detalle-modal-vehiculo-color').textContent = resena.vehicle.color || '—';
+        document.getElementById('detalle-modal-vehiculo-placa').textContent = resena.vehicle.plate || '—';
+    } else {
+        document.getElementById('detalle-modal-vehiculo-modelo').textContent = '—';
+        document.getElementById('detalle-modal-vehiculo-color').textContent = '—';
+        document.getElementById('detalle-modal-vehiculo-placa').textContent = '—';
+    }
+    
+    if (resena.driverDetails) {
+        document.getElementById('detalle-modal-chofer-psicologica').textContent = resena.driverDetails.psychEval || '—';
+    } else {
+        document.getElementById('detalle-modal-chofer-psicologica').textContent = '—';
+    }
+
+    document.getElementById('modal-detalles-chofer').classList.remove('hidden');
+}
+
+function cerrarModalChofer() {
+    document.getElementById('modal-detalles-chofer').classList.add('hidden');
 }

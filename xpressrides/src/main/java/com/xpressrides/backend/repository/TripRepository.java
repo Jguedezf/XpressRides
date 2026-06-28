@@ -9,8 +9,13 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface TripRepository extends JpaRepository<Trip, Integer> {
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
+public interface TripRepository extends JpaRepository<Trip, Integer>, JpaSpecificationExecutor<Trip> {
+
+    Page<Trip> findByCustomer_IdOrderByRequestDateDesc(Integer customerId, Pageable pageable);
     List<Trip> findByStatusIn(List<String> statuses);
 
     @Query("SELECT AVG(t.starRating) FROM Trip t WHERE t.driver.id = :driverId AND t.status = 'completado' AND t.starRating IS NOT NULL")

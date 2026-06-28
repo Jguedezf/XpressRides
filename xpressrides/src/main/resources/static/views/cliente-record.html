@@ -146,7 +146,7 @@
 
     <nav class="desktop-nav">
         <a href="../views/cliente-dashboard.html">Inicio</a>
-        <a href="../views/cliente-record.html" class="active">Historial de Viajes</a>
+        <a href="../views/cliente-record.html" class="active">Historial de Viajes</a>`n        <a href="../views/cliente-resenas.html">Mis Rese�as</a>
         <a href="../views/user-profile.html">Mi Perfil</a>
     </nav>
 
@@ -167,6 +167,12 @@
     <div id="historial-container">
         <!-- El mensaje de carga será reemplazado por las tarjetas desde js/cliente-record.js -->
         <p class="text-center mt-md" style="color: var(--color-text-muted);">Cargando tu historial de viajes...</p>
+    </div>
+    
+    <div id="pagination-controls" class="d-flex justify-between align-center mt-md" style="display: none;">
+        <button id="btn-prev-page" class="btn btn-secondary" disabled>Anterior</button>
+        <span id="page-info" style="font-size: 14px; font-weight: 600;"></span>
+        <button id="btn-next-page" class="btn btn-secondary" disabled>Siguiente</button>
     </div>
 </main>
 
@@ -206,6 +212,65 @@
     }
     /* El hover en flex no funciona así de fácil para seleccionar anteriores, lo controlaremos con JS */
 </style>
+
+<!-- MODAL DE DETALLES DEL VIAJE -->
+<div id="trip-details-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content" style="max-height: 90vh; overflow-y: auto; padding: 20px; background-color: var(--color-bg-card);">
+        <button onclick="cerrarModalDetalles()" style="position:absolute; top:12px; right:16px; background:none; border:none; font-size:22px; cursor:pointer; color:#888;">✕</button>
+        <h2 class="h2-subtitle mb-md text-center" style="margin-top: 10px;">Detalles del Viaje</h2>
+        
+        <!-- Tarjeta de estado -->
+        <div class="estado-card" style="background-color: var(--color-bg-main); border-radius: var(--radius-card); padding: 20px; text-align: center; margin-bottom: var(--space-md); border: 1px solid #EAEAEA;">
+            <div class="estado-icono" id="detalle-estado-icono" style="width: 64px; height: 64px; border-radius: 50%; background: var(--color-secondary); margin: 0 auto 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; color: white;">?</div>
+            <div class="estado-badge" id="detalle-estado-badge" style="display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; background:#EEE; color:#666; margin-bottom: 12px;">Cargando...</div>
+            <p class="ruta-texto" id="detalle-ruta-texto" style="font-size: 14px; color: var(--color-text-muted);">—</p>
+            <p class="ruta-texto mt-xs" id="detalle-cancel-info" style="font-size: 12px; color: var(--color-error); display: none;">—</p>
+        </div>
+
+        <!-- Tarjeta del chofer -->
+        <div class="info-card hidden" id="detalle-chofer-card" style="background-color: var(--color-bg-main); border-radius: var(--radius-card); padding: var(--space-md); margin-bottom: var(--space-md); border: 1px solid #EAEAEA;">
+            <p class="info-card-title" style="font-size: 12px; font-weight: 700; color: var(--color-text-muted); margin-bottom: 14px;">Tu Chofer</p>
+            <div class="info-row" style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px;">
+                <span class="info-label" style="color: var(--color-text-muted);">Nombre</span>
+                <span class="info-value" id="detalle-chofer-nombre" style="font-weight: 600;">—</span>
+            </div>
+            <div class="info-row" style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px;">
+                <span class="info-label" style="color: var(--color-text-muted);">Teléfono</span>
+                <span class="info-value" id="detalle-chofer-telefono" style="font-weight: 600;">—</span>
+            </div>
+            <div class="info-row" id="detalle-eval-psicologica" style="display: none; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px;">
+                <span class="info-label" style="color: var(--color-text-muted);">Eval. Psicológica</span>
+                <span class="info-value" style="font-weight: 600; color: #2E7D32;">Aprobada</span>
+            </div>
+        </div>
+
+        <!-- Tarjeta del vehículo -->
+        <div class="info-card hidden" id="detalle-vehiculo-card" style="background-color: var(--color-bg-main); border-radius: var(--radius-card); padding: var(--space-md); margin-bottom: var(--space-md); border: 1px solid #EAEAEA;">
+            <p class="info-card-title" style="font-size: 12px; font-weight: 700; color: var(--color-text-muted); margin-bottom: 14px;">Vehículo</p>
+            <div class="info-row" style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px;">
+                <span class="info-label" style="color: var(--color-text-muted);">Modelo</span>
+                <span class="info-value" id="detalle-vehiculo-modelo" style="font-weight: 600;">—</span>
+            </div>
+            <div class="info-row" style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px;">
+                <span class="info-label" style="color: var(--color-text-muted);">Color</span>
+                <span class="info-value" id="detalle-vehiculo-color" style="font-weight: 600;">—</span>
+            </div>
+            <div class="info-row" style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; font-size: 14px;">
+                <span class="info-label" style="color: var(--color-text-muted);">Placa</span>
+                <span class="info-value" id="detalle-vehiculo-placa" style="font-weight: 600; font-family: monospace;">—</span>
+            </div>
+            <div class="info-row" id="detalle-rev-tecnica" style="display: none; justify-content: space-between; padding: 8px 0; font-size: 14px;">
+                <span class="info-label" style="color: var(--color-text-muted);">Revisión Técnica</span>
+                <span class="info-value" style="font-weight: 600; color: #2E7D32;">Aprobada</span>
+            </div>
+        </div>
+
+        <!-- Botón cancelar -->
+        <button class="btn-danger hidden" id="detalle-btn-cancelar" style="width:100%; margin-bottom:16px;">
+            Cancelar Viaje
+        </button>
+    </div>
+</div>
 <nav class="bottom-nav">
     <a href="/views/cliente-dashboard.html" class="bottom-nav-item">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>

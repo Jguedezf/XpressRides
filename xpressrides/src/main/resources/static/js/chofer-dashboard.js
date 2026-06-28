@@ -147,3 +147,82 @@ function configurarBalance() {
         }
     });
 }
+
+// ─────────────────────────────────────────────────────────
+// Polling Viaje Pendiente
+// ─────────────────────────────────────────────────────────
+let pollingTripInterval = null;
+let currentPendingTripId = null;
+
+function iniciarPollingViajes() {
+    verificarViajePendiente();
+    pollingTripInterval = setInterval(verificarViajePendiente, 5000);
+}
+
+async function verificarViajePendiente() {
+    // Si el chofer está inactivo en UI, podemos saltar
+    const toggle = document.getElementById('availability-toggle');
+    if (toggle && !toggle.checked) return;
+
+    try {
+        const response = await fetchAPI('/chofer/viaje-activo');
+        const data = response.data || response;
+        if (data && data.estado) {
+            if (data.estado === 'solicitado') {
+                mostrarAlertaViaje(data);
+            } else if (['aceptado', 'en_camino', 'chofer_llego', 'en_progreso'].includes(data.estado)) {
+                // Redirigir a la vista del viaje en curso
+                window.location.href = '/views/chofer-viaje.html';
+            }
+        } else {
+            ocultarAlertaViaje();
+        }
+    } catch (err) {
+        console.warn("Error al verificar viaje pendiente:", err);
+    }
+}
+
+function mostrarAlertaViaje(trip) {
+    if (currentPendingTripId === trip.idTraslado) return; // Ya está mostrándose
+    currentPendingTripId = trip.idTraslado;
+
+    const alertContainer = document.getElementById('trip-alert-container');
+    if (!alertContainer) return;
+
+    document.getElementById('alert-trip-origin').textContent = trip.origen;
+    document.getElementById('alert-trip-dest').textContent = trip.destino;
+    document.getElementById('alert-trip-price').textContent = `$${trip.costoUsd ? trip.costoUsd.toFixed(2) : '0.00'}`;
+    
+    alertContainer.style.display = 'block';
+}
+
+function ocultarAlertaViaje() {
+    currentPendingTripId = null;
+    const alertContainer = document.getElementById('trip-alert-container');
+    if (alertContainer) alertContainer.style.display = 'none';
+}
+
+window.aceptarViajeAlerta = async function() {
+    if (!currentPendingTripId) return;
+    try {
+        await fetchAPI(`/chofer/traslados/${currentPendingTripId}/estado`, 'PUT', { status: 'aceptado' });
+        window.location.href = '/views/chofer-viaje.html';
+    } catch (err) {
+        alert("Error al aceptar viaje: " + err.message);
+        ocultarAlertaViaje();
+    }
+};
+
+window.rechazarViajeAlerta = async function() {
+    if (!currentPendingTripId) return;
+    try {
+        await fetchAPI(`/chofer/traslados/${currentPendingTripId}/rechazar`, 'PUT', {});
+        ocultarAlertaViaje();
+    } catch (err) {
+        alert("Error al rechazar viaje: " + err.message);
+        ocultarAlertaViaje();
+    }
+};
+
+// Iniciar polling al cargar
+document.addEventListener('DOMContentLoaded', iniciarPollingViajes);
