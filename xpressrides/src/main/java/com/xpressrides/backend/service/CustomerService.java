@@ -81,10 +81,10 @@ public class CustomerService {
         return mapToProfileResponse(customer);
     }
 
-    public List<Trip> getTrips(String username) {
+    public org.springframework.data.domain.Page<Trip> getTrips(String username, org.springframework.data.domain.Pageable pageable) {
         Customer customer = customerRepository.findByUserId_Username(username)
             .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
-        return tripRepository.findByCustomer_IdOrderByRequestDateDesc(customer.getId());
+        return tripRepository.findByCustomer_IdOrderByRequestDateDesc(customer.getId(), pageable);
     }
 
     public Trip getTripDetail(String username, Integer tripId) {

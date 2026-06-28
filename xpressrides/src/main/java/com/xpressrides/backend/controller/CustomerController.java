@@ -46,8 +46,8 @@ public class CustomerController {
 
     @PreAuthorize("hasRole('cliente')")
     @GetMapping("/traslados")
-    public ResponseEntity<?> getTrips(Authentication authentication) {
-        return ResponseEntity.ok(customerService.getTrips(authentication.getName()));
+    public ResponseEntity<?> getTrips(Authentication authentication, org.springframework.data.domain.Pageable pageable) {
+        return ResponseEntity.ok(customerService.getTrips(authentication.getName(), pageable));
     }
 
     @PreAuthorize("hasRole('cliente')")

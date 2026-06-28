@@ -5,54 +5,56 @@ document.addEventListener('DOMContentLoaded', async () => {
     await cargarHistorial();
 });
 
+let currentPage = 0;
+const pageSize = 5; // Mostrar 5 por página para probar paginación
+
 async function cargarHistorial() {
     const container = document.getElementById('historial-container');
+    const paginationControls = document.getElementById('pagination-controls');
 
     // 1. Obtener los datos del usuario logueado desde LocalStorage
     const usuarioString = localStorage.getItem('xpressUsuario');
     if (!usuarioString) {
-        // Sin sesión activa, redirigir al login
         window.location.href = '../views/login.html';
         return;
     }
 
-    const usuario = JSON.parse(usuarioString);
-
-    // Mostramos estado de carga
     container.innerHTML = '<p class="text-center mt-md" style="color: var(--color-text-muted);">Cargando tu historial de viajes...</p>';
+    paginationControls.style.display = 'none';
 
     try {
-        // 2. Consumir el endpoint que trae los traslados del cliente (filtrado por JWT en el backend)
-        const response = await fetchAPI('/cliente/traslados');
-        const viajes = Array.isArray(response) ? response : (response.data || []);
+        const response = await fetchAPI(`/cliente/traslados?page=${currentPage}&size=${pageSize}`);
+        // Puede que devuelva un objeto con content, totalPages, etc.
+        const pageData = response.data || response;
+        const viajes = pageData.content || pageData || [];
 
         if (viajes.length === 0) {
-            container.innerHTML = '<p class="text-center mt-md">Aún no tienes viajes registrados. ¡Solicita tu primer XpressRide!</p>';
+            if (currentPage === 0) {
+                container.innerHTML = '<p class="text-center mt-md">Aún no tienes viajes registrados. ¡Solicita tu primer XpressRide!</p>';
+            } else {
+                container.innerHTML = '<p class="text-center mt-md">No hay más viajes registrados.</p>';
+            }
             return;
         }
 
-        // 3. Limpiar contenedor e inyectar tarjetas dinámicas
         container.innerHTML = '';
 
         viajes.forEach(viaje => {
-            // Evaluamos clases CSS dinámicas según el estado del viaje
             const estadoActual = viaje.status ? viaje.status.toLowerCase() : '';
             const esCompletado = estadoActual === 'completado';
             const esCancelado = estadoActual === 'cancelado';
             
-            let statusClass = 'status-solicitado'; // por defecto
+            let statusClass = 'status-solicitado';
             if (esCompletado) statusClass = 'status-completado';
             else if (esCancelado) statusClass = 'status-cancelado';
             else if (['aceptado', 'en_camino', 'chofer_llego', 'en_progreso'].includes(estadoActual)) {
-                statusClass = 'status-en-progreso'; // u otra clase si existe
+                statusClass = 'status-en-progreso';
             }
 
-            // Construir info del vehículo a partir de la entidad anidada
             const vehiculoInfo = viaje.vehicle 
                 ? [viaje.vehicle.marca || viaje.vehicle.brand, viaje.vehicle.modelo || viaje.vehicle.model, viaje.vehicle.color].filter(Boolean).join(' ') 
                 : '';
 
-            // Formatear fecha "19 jun 2026, 02:30 p.m."
             const fechaObj = new Date(viaje.requestDate);
             const opcionesFecha = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
             const fechaFormateada = fechaObj.toLocaleDateString('es-VE', opcionesFecha);
@@ -90,8 +92,11 @@ async function cargarHistorial() {
                             $${viaje.customerCostUsd ? viaje.customerCostUsd.toFixed(2) : '0.00'}
                         </span>
                         
-                        ${esCompletado ? `
-                            <div class="d-flex gap-xs" style="margin-top: 5px;">
+                        <div class="d-flex gap-xs" style="margin-top: 5px; flex-wrap: wrap; justify-content: flex-end;">
+                            <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick='abrirModalDetalles(${JSON.stringify(viaje)})'>
+                                Ver Detalles
+                            </button>
+                            ${esCompletado ? `
                                 <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="verFactura(${viaje.id})">
                                     Factura
                                 </button>
@@ -104,23 +109,27 @@ async function cargarHistorial() {
                                         Ver Reseña
                                     </button>
                                 `}
-                            </div>
-                        ` : esCancelado ? `
-                            <span style="font-size: 12px; color: var(--color-error);">Cancelado</span>
-                        ` : `
-                            <span style="font-size: 12px; color: #1F4E79; font-weight: bold;">En Curso</span>
-                        `}
+                            ` : esCancelado ? `
+                            ` : `
+                            `}
+                        </div>
                     </div>
                 </div>
             `;
             container.innerHTML += cardHTML;
         });
 
-        // Auto-popup para el primer viaje completado sin calificar (el más reciente)
+        // Configurar botones de paginación si se usa Pageable en el backend
+        if (pageData.totalPages !== undefined) {
+            paginationControls.style.display = 'flex';
+            document.getElementById('page-info').textContent = `Página ${pageData.number + 1} de ${pageData.totalPages || 1}`;
+            document.getElementById('btn-prev-page').disabled = pageData.first;
+            document.getElementById('btn-next-page').disabled = pageData.last;
+        }
+
         const unratedTrip = viajes.find(v => (v.status || '').toLowerCase() === 'completado' && v.starRating == null);
         if (unratedTrip) {
             const dn = unratedTrip.driver && unratedTrip.driver.user ? `${unratedTrip.driver.user.nombre} ${unratedTrip.driver.user.apellido}` : (unratedTrip.driverName || '');
-            // Retrasar un poco para que la UI termine de cargar
             setTimeout(() => abrirModalCalificacion(unratedTrip.id, dn), 500);
         }
 
@@ -129,6 +138,27 @@ async function cargarHistorial() {
         container.innerHTML = `<div class="alert-error">No pudimos cargar tu historial: ${error.message}</div>`;
     }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    const btnPrev = document.getElementById('btn-prev-page');
+    const btnNext = document.getElementById('btn-next-page');
+
+    if (btnPrev) {
+        btnPrev.addEventListener('click', () => {
+            if (currentPage > 0) {
+                currentPage--;
+                cargarHistorial();
+            }
+        });
+    }
+
+    if (btnNext) {
+        btnNext.addEventListener('click', () => {
+            currentPage++;
+            cargarHistorial();
+        });
+    }
+});
 
 // ─────────────────────────────────────────────────────────
 // Lógica del Modal de Calificación
@@ -347,3 +377,102 @@ window.verFactura = async function (trasladoId) {
         alert('No se pudo cargar la factura. ' + (error.message || ''));
     }
 };
+
+// ─────────────────────────────────────────────────────────
+// Lógica del Modal de Detalles
+// ─────────────────────────────────────────────────────────
+
+const ESTADOS_DETALLE = {
+    'solicitado':   { texto: 'Buscando chofer',        icono: '🔍', bg: '#FFF3E0', color: '#C55A11' },
+    'aceptado':     { texto: 'Chofer asignado',         icono: '✅', bg: '#E3F2FD', color: '#1F4E79' },
+    'en_camino':    { texto: 'Chofer en camino',        icono: '🚗', bg: '#E3F2FD', color: '#1F4E79' },
+    'chofer_llego': { texto: '¡Chofer llegó!',          icono: '📍', bg: '#E8F5E9', color: '#2E7D32' },
+    'en_progreso':  { texto: 'Viaje en progreso',       icono: '🛣️', bg: '#E8F5E9', color: '#2E7D32' },
+    'completado':   { texto: 'Completado',              icono: '⭐', bg: '#E8F5E9', color: '#2E7D32' },
+    'cancelado':    { texto: 'Cancelado',               icono: '❌', bg: '#FFEBEE', color: '#C62828' }
+};
+
+window.abrirModalDetalles = function(viaje) {
+    const estadoActual = viaje.status ? viaje.status.toLowerCase() : '';
+    const cfg = ESTADOS_DETALLE[estadoActual] || { texto: viaje.status, icono: '⏳', bg: '#EEE', color: '#666' };
+
+    document.getElementById('detalle-estado-badge').textContent = cfg.texto;
+    document.getElementById('detalle-estado-badge').style.background = cfg.bg;
+    document.getElementById('detalle-estado-badge').style.color = cfg.color;
+
+    const icono = document.getElementById('detalle-estado-icono');
+    if (viaje.driver && estadoActual !== 'solicitado') {
+        const partes = (viaje.driver.user.nombre || '').split(' ');
+        icono.textContent = ((partes[0]?.[0] || '') + (partes[1]?.[0] || '')).toUpperCase();
+        icono.style.background = 'var(--color-secondary)';
+    } else {
+        icono.textContent = cfg.icono;
+        icono.style.background = 'var(--color-primary)';
+    }
+
+    const originName = viaje.originZone ? (viaje.originZone.name || viaje.originZone.nombre) : 'Zona Origen';
+    const destName = viaje.destinationZone ? (viaje.destinationZone.name || viaje.destinationZone.nombre) : 'Zona Destino';
+    document.getElementById('detalle-ruta-texto').textContent = `${originName}  →  ${destName}`;
+
+    // Mostrar quién canceló
+    const cancelInfo = document.getElementById('detalle-cancel-info');
+    if (estadoActual === 'cancelado') {
+        cancelInfo.style.display = 'block';
+        cancelInfo.textContent = `Cancelado por: ${viaje.cancelledBy === 'chofer' ? 'El Chofer' : 'Tú'}`;
+    } else {
+        cancelInfo.style.display = 'none';
+    }
+
+    // Chofer y Vehículo
+    if (viaje.driver && (estadoActual !== 'solicitado' || estadoActual === 'cancelado')) {
+        document.getElementById('detalle-chofer-nombre').textContent = `${viaje.driver.user.nombre} ${viaje.driver.user.apellido}`;
+        document.getElementById('detalle-chofer-telefono').textContent = viaje.driver.user.phone || '—';
+        
+        if (viaje.vehicle) {
+            document.getElementById('detalle-vehiculo-modelo').textContent = `${viaje.vehicle.marca || viaje.vehicle.brand} ${viaje.vehicle.modelo || viaje.vehicle.model}`;
+            document.getElementById('detalle-vehiculo-color').textContent = viaje.vehicle.color || '—';
+            document.getElementById('detalle-vehiculo-placa').textContent = viaje.vehicle.placa || viaje.vehicle.plate || '—';
+        }
+
+        document.getElementById('detalle-chofer-card').classList.remove('hidden');
+        document.getElementById('detalle-vehiculo-card').classList.remove('hidden');
+
+        // Mostrar Evaluaciones si es completado
+        if (estadoActual === 'completado') {
+            document.getElementById('detalle-eval-psicologica').style.display = 'flex';
+            document.getElementById('detalle-rev-tecnica').style.display = 'flex';
+        } else {
+            document.getElementById('detalle-eval-psicologica').style.display = 'none';
+            document.getElementById('detalle-rev-tecnica').style.display = 'none';
+        }
+    } else {
+        document.getElementById('detalle-chofer-card').classList.add('hidden');
+        document.getElementById('detalle-vehiculo-card').classList.add('hidden');
+    }
+
+    // Botón cancelar
+    const btnCancelar = document.getElementById('detalle-btn-cancelar');
+    if (estadoActual === 'solicitado' || estadoActual === 'aceptado') {
+        btnCancelar.classList.remove('hidden');
+        btnCancelar.onclick = () => confirmarCancelacion(viaje.id);
+    } else {
+        btnCancelar.classList.add('hidden');
+    }
+
+    document.getElementById('trip-details-modal').style.display = 'flex';
+};
+
+window.cerrarModalDetalles = function() {
+    document.getElementById('trip-details-modal').style.display = 'none';
+};
+
+async function confirmarCancelacion(tripId) {
+    if (!confirm('¿Estás seguro de que deseas cancelar este viaje?')) return;
+    try {
+        await fetchAPI(`/cliente/traslados/${tripId}/cancelar`, 'PUT', { motivo: 'Cancelado por el cliente' });
+        cerrarModalDetalles();
+        cargarHistorial();
+    } catch (error) {
+        alert('No se pudo cancelar: ' + (error.message || 'Error desconocido'));
+    }
+}
