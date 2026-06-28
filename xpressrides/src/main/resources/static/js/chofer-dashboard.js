@@ -63,12 +63,13 @@ function cargarDatosChofer() {
 async function actualizarDatosBackendChofer(usuario, driverBalance) {
     try {
         const response = await fetchAPI('/chofer/perfil');
-        if (response) {
+        if (response && response.data) {
+            const profileData = response.data;
             // Actualizar localstorage con los nuevos datos
-            const updatedUser = { ...usuario, ...response };
+            const updatedUser = { ...usuario, ...profileData };
             // Aseguramos mantener la propiedad saldoUsd para no romper otra logica
-            if (response.saldoAcumuladoUsd !== undefined) {
-                updatedUser.saldoUsd = response.saldoAcumuladoUsd;
+            if (profileData.saldoAcumuladoUsd !== undefined) {
+                updatedUser.saldoUsd = profileData.saldoAcumuladoUsd;
             }
             
             localStorage.setItem('xpressUsuario', JSON.stringify(updatedUser));
@@ -79,16 +80,16 @@ async function actualizarDatosBackendChofer(usuario, driverBalance) {
             }
 
             // Actualizar toggle switch UI
-            if (response.available !== undefined) {
-                updatedUser.disponible = response.available;
+            if (profileData.disponible !== undefined) {
+                updatedUser.disponible = profileData.disponible;
                 localStorage.setItem('xpressUsuario', JSON.stringify(updatedUser));
 
                 const toggleInput = document.getElementById('availability-toggle');
                 const statusText = document.getElementById('status-text');
                 if (toggleInput && statusText) {
-                    toggleInput.checked = response.available;
-                    statusText.textContent = response.available ? 'En línea' : 'Inactivo';
-                    statusText.classList.toggle('offline', !response.available);
+                    toggleInput.checked = profileData.disponible;
+                    statusText.textContent = profileData.disponible ? 'En línea' : 'Inactivo';
+                    statusText.classList.toggle('offline', !profileData.disponible);
                 }
             }
         }

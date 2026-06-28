@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     inicializarMapa();
     configurarFormularioViaje();
     configurarCalculadora();
+    
+    // Iniciar el polling para mostrar viajes activos (ej: si fue asignado desde SQL)
+    iniciarPollingViajeActivo();
 });
 
 function configurarCalculadora() {

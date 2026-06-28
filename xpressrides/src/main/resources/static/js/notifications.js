@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await cargarNotificaciones(usuario);
     configurarCampanita();
+    
+    // Polling cada 10 segundos para actualizar las notificaciones de forma global
+    setInterval(() => cargarNotificaciones(usuario), 10000);
 });
 
 /**

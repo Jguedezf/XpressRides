@@ -59,16 +59,19 @@ async function actualizarDatosBackend(usuario, walletAmount) {
         const response = await fetchAPI(endpoint);
         
         if (response) {
+            // El backend del chofer devuelve {success: true, data: {...}}, mientras que el cliente devuelve el objeto directo
+            const profileData = response.data ? response.data : response;
+
             // Actualizar localstorage con los nuevos datos
-            const updatedUser = { ...usuario, ...response };
+            const updatedUser = { ...usuario, ...profileData };
             // El backend devuelve saldoUsd para cliente, o saldoAcumuladoUsd para chofer.
             // Aseguramos que se guarde en saldoUsd para mantener compatibilidad
-            if (response.saldoAcumuladoUsd !== undefined) {
-                updatedUser.saldoUsd = response.saldoAcumuladoUsd;
-            } else if (response.balance !== undefined) {
-                updatedUser.saldoUsd = response.balance;
-            } else if (response.saldoUsd !== undefined) {
-                updatedUser.saldoUsd = response.saldoUsd;
+            if (profileData.saldoAcumuladoUsd !== undefined) {
+                updatedUser.saldoUsd = profileData.saldoAcumuladoUsd;
+            } else if (profileData.balance !== undefined) {
+                updatedUser.saldoUsd = profileData.balance;
+            } else if (profileData.saldoUsd !== undefined) {
+                updatedUser.saldoUsd = profileData.saldoUsd;
             }
             
             localStorage.setItem('xpressUsuario', JSON.stringify(updatedUser));
