@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mi Viaje - XpressRides</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/estilos.css">
+
+    <style>
+        body { background-color: var(--color-bg-card); padding-bottom: 80px; }
+
+        .top-bar {
+            background-color: var(--color-bg-main);
+            padding: var(--space-md) var(--space-lg);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .viaje-main {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px 16px 100px;
+        }
+
+        .brand-logo-small {
+            color: var(--color-primary);
+            font-weight: 800;
+            font-size: var(--font-size-h2);
+            margin: 0;
+        }
+
+        .brand-text { color: var(--color-secondary); }
+
+        .estado-card {
+            background-color: var(--color-bg-main);
+            border-radius: var(--radius-card);
+            padding: 28px 20px;
+            text-align: center;
+            margin-bottom: var(--space-md);
+            border: 1px solid #EAEAEA;
+        }
+
+        .estado-icono {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--color-secondary);
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            font-weight: 700;
+            color: white;
+            letter-spacing: 1px;
+        }
+
+        .estado-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .ruta-texto {
+            font-size: 14px;
+            color: var(--color-text-muted);
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .info-card {
+            background-color: var(--color-bg-main);
+            border-radius: var(--radius-card);
+            padding: var(--space-md);
+            margin-bottom: var(--space-md);
+            border: 1px solid #EAEAEA;
+        }
+
+        .info-card-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--color-text-muted);
+            margin: 0 0 14px 0;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+
+        .info-row:last-child { border-bottom: none; }
+
+        .info-label { color: var(--color-text-muted); }
+        .info-value { font-weight: 600; color: var(--color-text-main); }
+
+        .btn-whatsapp {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 12px;
+            background: #25D366;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            margin-top: 14px;
+        }
+
+        .polling-indicator {
+            text-align: center;
+            color: #bbb;
+            font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .pulse {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4CAF50;
+            margin-right: 6px;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.3; }
+        }
+
+        .hidden { display: none !important; }
+
+        .desktop-nav { display: none; }
+
+        @media (min-width: 768px) {
+            .desktop-nav {
+                display: flex;
+                gap: var(--space-lg);
+                align-items: center;
+            }
+            .desktop-nav a {
+                color: var(--color-text-muted);
+                text-decoration: none;
+                font-weight: 600;
+                font-size: var(--font-size-normal);
+            }
+            .desktop-nav a:hover { color: var(--color-primary); }
+            .bottom-nav { display: none !important; }
+            .viaje-main { padding-top: var(--space-xl); }
+        }
+    </style>
+</head>
+<body>
+
+<header class="top-bar d-flex justify-between align-center">
+    <h1 class="brand-logo-small">Xpress<span class="brand-text">Rides</span></h1>
+
+    <nav class="desktop-nav">
+        <a href="../views/cliente-dashboard.html">Inicio</a>
+        <a href="../views/cliente-record.html">Historial de Viajes</a>
+        <a href="../views/user-profile.html">Mi Perfil</a>
+    </nav>
+    <div class="notification-bell" onclick="abrirNotificaciones()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <span class="notification-badge hidden" id="badge-count">0</span>
+    </div>
+</header>
+
+<main class="viaje-main">
+
+    <!-- Tarjeta de estado -->
+    <div class="estado-card">
+        <div class="estado-icono" id="estado-icono">?</div>
+        <div class="estado-badge" id="estado-badge" style="background:#EEE; color:#666;">
+            Cargando...
+        </div>
+        <p class="ruta-texto" id="ruta-texto">—</p>
+    </div>
+
+    <!-- Tarjeta del chofer -->
+    <div class="info-card hidden" id="chofer-card">
+        <p class="info-card-title">Tu Chofer</p>
+        <div class="info-row">
+            <span class="info-label">Nombre</span>
+            <span class="info-value" id="chofer-nombre">—</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Teléfono</span>
+            <span class="info-value" id="chofer-telefono">—</span>
+        </div>
+        <a id="chofer-whatsapp" class="btn-whatsapp" href="#" target="_blank" rel="noopener">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+            Contactar por WhatsApp
+        </a>
+    </div>
+
+    <!-- Tarjeta del vehículo -->
+    <div class="info-card hidden" id="vehiculo-card">
+        <p class="info-card-title">Vehículo</p>
+        <div class="info-row">
+            <span class="info-label">Vehículo</span>
+            <span class="info-value" id="vehiculo-modelo">—</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Color</span>
+            <span class="info-value" id="vehiculo-color">—</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Placa</span>
+            <span class="info-value" id="vehiculo-placa" style="font-family: monospace; font-size: 16px; letter-spacing: 2px;">—</span>
+        </div>
+    </div>
+
+    <!-- Botón cancelar (solo en estados cancelables) -->
+    <button class="btn-danger hidden" id="btn-cancelar"
+            style="width:100%; margin-bottom:16px;">
+        Cancelar Viaje
+    </button>
+
+    <p class="polling-indicator">
+        <span class="pulse"></span>Actualizando en tiempo real
+    </p>
+
+</main>
+
+<nav class="bottom-nav">
+    <a href="../views/cliente-dashboard.html" class="bottom-nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        <span class="mt-xs">Inicio</span>
+    </a>
+    <a href="../views/cliente-record.html" class="bottom-nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span class="mt-xs">Historial</span>
+    </a>
+    <a href="../views/user-profile.html" class="bottom-nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <span class="mt-xs">Perfil</span>
+    </a>
+</nav>
+
+<script src="../js/api.js"></script>
+<script src="../js/notifications.js"></script>
+<script>
+
+const ESTADOS = {
+    'solicitado':   { texto: 'Buscando chofer',        icono: '🔍', bg: '#FFF3E0', color: '#C55A11' },
+    'aceptado':     { texto: 'Chofer asignado',         icono: '✅', bg: '#E3F2FD', color: '#1F4E79' },
+    'en_camino':    { texto: 'Chofer en camino',        icono: '🚗', bg: '#E3F2FD', color: '#1F4E79' },
+    'chofer_llego': { texto: '¡Chofer llegó!',          icono: '📍', bg: '#E8F5E9', color: '#2E7D32' },
+    'en_progreso':  { texto: 'Viaje en progreso',       icono: '🛣️', bg: '#E8F5E9', color: '#2E7D32' },
+};
+
+let pollingId = null;
+let estadoPrevio = null;
+let idTrasladoActual = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (!requireAuth()) return;
+    cargarViajeActivo();
+    pollingId = setInterval(cargarViajeActivo, 5000);
+    document.getElementById('btn-cancelar').addEventListener('click', confirmarCancelacion);
+});
+
+async function cargarViajeActivo() {
+    try {
+        const response = await fetchAPI('/cliente/viaje-activo');
+        const data = response.data || response;
+
+        if (!data || !data.estado) {
+            // El viaje terminó
+            if (estadoPrevio) {
+                clearInterval(pollingId);
+                window.location.href = '/views/cliente-record.html';
+            } else {
+                // No hay viaje activo — volver al dashboard
+                clearInterval(pollingId);
+                window.location.href = '/views/cliente-dashboard.html';
+            }
+            return;
+        }
+
+        idTrasladoActual = data.idTraslado;
+        estadoPrevio = data.estado;
+        renderizarViaje(data);
+
+    } catch (error) {
+        console.error('Error cargando viaje activo:', error);
+    }
+}
+
+function renderizarViaje(data) {
+    const cfg = ESTADOS[data.estado] || { texto: data.estado, icono: '⏳', bg: '#EEE', color: '#666' };
+
+    // Estado badge
+    const badge = document.getElementById('estado-badge');
+    badge.textContent = cfg.texto;
+    badge.style.background = cfg.bg;
+    badge.style.color = cfg.color;
+
+    // Círculo: iniciales del chofer o "?" si aún no hay asignación visible
+    const icono = document.getElementById('estado-icono');
+    if (data.chofer && data.estado !== 'solicitado') {
+        const partes = (data.chofer.nombre || '').split(' ');
+        icono.textContent = ((partes[0]?.[0] || '') + (partes[1]?.[0] || '')).toUpperCase();
+        icono.style.background = 'var(--color-secondary)';
+    } else {
+        icono.textContent = '?';
+        icono.style.background = 'var(--color-primary)';
+    }
+
+    // Ruta
+    document.getElementById('ruta-texto').textContent = `${data.origen}  →  ${data.destino}`;
+
+    // Chofer y vehículo solo desde 'aceptado' en adelante —
+    // en 'solicitado' el driver existe en BD pero aún no aceptó el viaje
+    if (data.chofer && data.estado !== 'solicitado') {
+        const tel = (data.chofer.telefono || '').replace(/\D/g, '');
+        const waHref = tel ? `https://wa.me/${tel.startsWith('58') ? tel : '58' + tel}` : '#';
+
+        document.getElementById('chofer-nombre').textContent   = data.chofer.nombre   || '—';
+        document.getElementById('chofer-telefono').textContent = data.chofer.telefono || '—';
+        document.getElementById('chofer-whatsapp').href        = waHref;
+        document.getElementById('vehiculo-modelo').textContent = data.chofer.vehiculo || '—';
+        document.getElementById('vehiculo-color').textContent  = data.chofer.color    || '—';
+        document.getElementById('vehiculo-placa').textContent  = data.chofer.placa    || '—';
+
+        document.getElementById('chofer-card').classList.remove('hidden');
+        document.getElementById('vehiculo-card').classList.remove('hidden');
+    }
+
+    // Botón cancelar: solo en estados donde el cliente puede cancelar
+    const btnCancelar = document.getElementById('btn-cancelar');
+    if (data.estado === 'solicitado' || data.estado === 'aceptado') {
+        btnCancelar.classList.remove('hidden');
+    } else {
+        btnCancelar.classList.add('hidden');
+    }
+}
+
+async function confirmarCancelacion() {
+    if (!idTrasladoActual) return;
+    if (!confirm('¿Estás seguro de que deseas cancelar este viaje?')) return;
+
+    const btn = document.getElementById('btn-cancelar');
+    btn.disabled = true;
+    btn.textContent = 'Cancelando...';
+
+    try {
+        await fetchAPI(`/cliente/traslados/${idTrasladoActual}/cancelar`, {
+            method: 'PUT',
+            body: JSON.stringify({ motivo: 'Cancelado por el cliente' })
+        });
+        clearInterval(pollingId);
+        window.location.href = '/views/cliente-record.html';
+    } catch (error) {
+        btn.disabled = false;
+        btn.textContent = 'Cancelar Viaje';
+        alert('No se pudo cancelar: ' + (error.message || 'Error desconocido'));
+    }
+}
+
+window.addEventListener('beforeunload', () => clearInterval(pollingId));
+
+</script>
+</body>
+</html>

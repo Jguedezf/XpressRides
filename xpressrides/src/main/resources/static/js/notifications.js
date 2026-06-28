@@ -100,9 +100,18 @@ window.abrirNotificaciones = async function () {
 
             // Ícono según tipo de notificación
             let icono = '🔔';
-            if (n.type === 'viaje') icono = '🚗';
-            else if (n.type === 'pago') icono = '💰';
-            else if (n.type === 'sistema') icono = '⚙️';
+            if (['chofer_asignado','en_camino','chofer_llego','viaje_completado','viaje_cancelado'].includes(n.type)) icono = '🚗';
+            else if (['recarga_acreditada','pago_recibido'].includes(n.type)) icono = '💰';
+            else if (n.type === 'sin_chofer') icono = '⚠️';
+
+            const tiposActivo = ['chofer_asignado', 'en_camino', 'chofer_llego'];
+            const linkVerViaje = tiposActivo.includes(n.type)
+                ? `<a href="/views/cliente-viaje-activo.html"
+                       style="display:inline-block; margin-top:6px; font-size:12px;
+                              font-weight:600; color:#C55A11; text-decoration:none;">
+                       Ver mi viaje →
+                   </a>`
+                : '';
 
             // Estilo visual de leída o no leída
             const bg = n.read ? '#fafafa' : '#fff';
@@ -114,6 +123,7 @@ window.abrirNotificaciones = async function () {
                     <div style="flex: 1; min-width: 0;">
                         <p style="margin: 0 0 4px 0; font-size: 14px; color: #333; line-height: 1.4;">${n.message || 'Sin mensaje'}</p>
                         <span style="font-size: 11px; color: #999;">${fechaStr}</span>
+                        ${linkVerViaje}
                     </div>
                 </div>
             `;

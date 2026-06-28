@@ -439,14 +439,15 @@ async function consultarViajeActivo() {
         const data = response.data;
 
         if (data) {
-            clearInterval(viajeActivoInterval);
-            window.location.href = '/views/cliente-viaje-activo.html';
-            return;
+            viajeEstadoPrevio = data.estado;
+            mostrarTarjetaViajeActivo(data);
+            bloquearFormulario(true);
         } else {
-            // Si data es null pero antes teníamos un viaje activo, significa que finalizó (completado/cancelado)
             if (viajeEstadoPrevio) {
                 ocultarTarjetaViajeActivo();
-                window.location.href = '/views/cliente-record.html';
+                viajeEstadoPrevio = null;
+                bloquearFormulario(false);
+                mostrarMensajeTemporal('Tu viaje ha finalizado. Puedes ver tu historial.', 'info');
             } else {
                 ocultarTarjetaViajeActivo();
             }
@@ -493,6 +494,14 @@ function mostrarTarjetaViajeActivo(data) {
     `;
 
     const puedeCancelar = (data.estado === 'solicitado' || data.estado === 'aceptado');
+
+    const btnVerDetalles = document.createElement('a');
+    btnVerDetalles.href = '/views/cliente-viaje-activo.html';
+    btnVerDetalles.className = 'btn-primary';
+    btnVerDetalles.style.cssText = 'display:block; width:100%; margin-top:10px; text-align:center; text-decoration:none; box-sizing:border-box;';
+    btnVerDetalles.textContent = 'Ver detalles del viaje';
+    card.appendChild(btnVerDetalles);
+
     if (puedeCancelar) {
         const btnCancelar = document.createElement('button');
         btnCancelar.className = 'btn-secondary';
@@ -525,4 +534,11 @@ function mostrarTarjetaViajeActivo(data) {
 function ocultarTarjetaViajeActivo() {
     const card = document.getElementById('viaje-activo-card');
     if (card) card.style.display = 'none';
+}
+
+function bloquearFormulario(bloqueado) {
+    const btn = document.getElementById('btn-solicitar');
+    if (!btn) return;
+    btn.disabled = bloqueado;
+    btn.textContent = bloqueado ? 'Ya tienes un viaje activo' : 'Solicitar Viaje';
 }
