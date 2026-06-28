@@ -48,8 +48,8 @@ async function cargarHistorial() {
             }
 
             // Construir info del vehículo a partir de la entidad anidada
-            const vehiculoInfo = viaje.vehicle 
-                ? [viaje.vehicle.marca || viaje.vehicle.brand, viaje.vehicle.modelo || viaje.vehicle.model, viaje.vehicle.color].filter(Boolean).join(' ') 
+            const vehiculoInfo = viaje.vehicle
+                ? [viaje.vehicle.brand || viaje.vehicle.marca, viaje.vehicle.model || viaje.vehicle.modelo, viaje.vehicle.color, viaje.vehicle.plate ? `(${viaje.vehicle.plate})` : ''].filter(Boolean).join(' ')
                 : '';
 
             // Formatear fecha "19 jun 2026, 02:30 p.m."
@@ -59,7 +59,11 @@ async function cargarHistorial() {
 
             const originName = viaje.originZone ? (viaje.originZone.name || viaje.originZone.nombre) : 'Zona Origen';
             const destName = viaje.destinationZone ? (viaje.destinationZone.name || viaje.destinationZone.nombre) : 'Zona Destino';
-            const driverName = viaje.driver && viaje.driver.user ? `${viaje.driver.user.nombre} ${viaje.driver.user.apellido}` : (viaje.driverName || '');
+            // El campo en Java es driver.username (tipo User), serializa como driver.username.name / lastName
+            const driverUser = viaje.driver ? (viaje.driver.username || viaje.driver.user || {}) : {};
+            const driverName = viaje.driver
+                ? `${driverUser.name || driverUser.nombre || ''} ${driverUser.lastName || driverUser.apellido || ''}`.trim()
+                : (viaje.driverName || '');
 
             const cardHTML = `
                 <div class="trip-card">
@@ -87,7 +91,8 @@ async function cargarHistorial() {
 
                     <div class="trip-footer">
                         <span class="trip-price" ${esCancelado ? 'style="text-decoration: line-through; color: var(--color-text-muted);"' : ''}>
-                            $${viaje.customerCostUsd ? viaje.customerCostUsd.toFixed(2) : '0.00'}
+                            $${viaje.customerCostUsd ? Number(viaje.customerCostUsd).toFixed(2) : '0.00'}
+                            ${viaje.customerCostVes ? `<span style="font-size:12px; color:var(--color-text-muted); display:block; font-weight:500;">Bs ${Number(viaje.customerCostVes).toFixed(2)}</span>` : ''}
                         </span>
                         
                         ${esCompletado ? `
