@@ -267,6 +267,10 @@ CREATE TABLE traslado (
   CONSTRAINT fk_traslado_cupon    FOREIGN KEY (id_cupon_cliente) REFERENCES cupon_cliente(id)
 );
 
+-- Cubre GET /api/cliente/viaje-activo y el polling de viaje activo del dashboard
+-- Evita full table scan en traslado (tabla de mayor crecimiento del sistema)
+CREATE INDEX idx_traslado_cliente_estado ON traslado(id_cliente, estado);
+
 CREATE TABLE pago_chofer (
   id          INT           AUTO_INCREMENT PRIMARY KEY,
   id_chofer   INT           NOT NULL,
@@ -327,8 +331,8 @@ CREATE TABLE notificacion (
   id_usuario    INT           NOT NULL,
   id_traslado   INT           NULL,
   tipo          ENUM('viaje_solicitado','chofer_asignado','chofer_en_camino',
-                      'viaje_iniciado','viaje_completado','factura_emitida',
-                      'pago_recibido','recarga_acreditada','viaje_cancelado')
+                      'chofer_llego','viaje_iniciado','viaje_completado','factura_emitida',
+                      'pago_recibido','recarga_acreditada','viaje_cancelado','sin_chofer')
                               NOT NULL,
   mensaje       VARCHAR(200)  NOT NULL,
   leida         TINYINT(1)    NOT NULL DEFAULT 0,
@@ -336,6 +340,10 @@ CREATE TABLE notificacion (
   CONSTRAINT fk_notif_usuario  FOREIGN KEY (id_usuario)  REFERENCES usuario(id) ON DELETE CASCADE,
   CONSTRAINT fk_notif_traslado FOREIGN KEY (id_traslado) REFERENCES traslado(id)
 );
+
+-- Cubre countByUser_IdAndReadFalse (badge de campanita) y listado del panel
+-- Sin este índice el conteo hace full scan en notificacion para cada polling
+CREATE INDEX idx_notif_usuario_leida ON notificacion(id_usuario, leida);
 
 -- ================================================================
 -- BLOQUE 6: FUNCIÓN HAVERSINE
@@ -770,6 +778,13 @@ BEGIN
     INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
     VALUES (v_id_usuario_cliente, NEW.id, 'chofer_en_camino',
       'Tu chofer está en camino al punto de recogida.');
+  END IF;
+
+  -- Notificación: chofer llegó al punto de origen
+  IF NEW.estado = 'chofer_llego' AND OLD.estado <> 'chofer_llego' THEN
+    INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+    VALUES (v_id_usuario_cliente, NEW.id, 'chofer_llego',
+      'Tu chofer llegó al punto de recogida. ¡Está esperándote!');
   END IF;
 
   -- Notificación: viaje iniciado (cliente abordó)

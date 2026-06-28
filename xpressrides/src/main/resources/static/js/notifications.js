@@ -6,12 +6,14 @@
 //   3. Mostrar/ocultar panel de notificaciones al hacer clic
 
 document.addEventListener('DOMContentLoaded', async () => {
-    // Solo ejecutar si el usuario está autenticado
     const usuario = getUsuario();
     if (!usuario) return;
 
     await cargarNotificaciones(usuario);
     configurarCampanita();
+    // Refrescar el badge cada 15 s para capturar notificaciones que llegan
+    // mientras el usuario navega (el trigger las inserta en tiempo real)
+    setInterval(() => cargarNotificaciones(usuario), 15000);
 });
 
 /**

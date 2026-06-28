@@ -23,8 +23,8 @@
 --               'decarrerita' DESPUÉS de cargar decarrerita.sql.
 --               Seleccionar (Ctrl+A) y ejecutar (rayo).
 --
---  Versión:     1.2.0
---  Fecha:       23/06/2026
+--  Versión:     1.3.0
+--  Fecha:       28/06/2026
 -- ================================================================
 
 USE decarrerita;
@@ -32,6 +32,132 @@ USE decarrerita;
 -- FIX Error 1175: Desactiva safe update mode de MySQL Workbench
 SET SQL_SAFE_UPDATES = 0;
 
+-- ================================================================
+-- BLOQUE 0: ACTUALIZACIONES DE ESQUEMA (DDL)
+-- DDL no puede ir dentro de un TRANSACTION en MySQL — cada ALTER/
+-- CREATE INDEX / DROP TRIGGER hace commit implícito automático.
+-- Se ejecutan con IF NOT EXISTS para que el script sea idempotente
+-- tanto sobre una BD recién creada como sobre una BD existente.
+-- ================================================================
+
+-- 0.1 Ampliar ENUM notificacion.tipo con los valores que faltaban
+--     'chofer_llego' → notificación cuando el chofer llega al origen
+--     'sin_chofer'   → ya usado en Java (TripRejectionService) pero faltaba en la BD
+ALTER TABLE notificacion
+  MODIFY COLUMN tipo ENUM(
+    'viaje_solicitado','chofer_asignado','chofer_en_camino',
+    'chofer_llego','viaje_iniciado','viaje_completado','factura_emitida',
+    'pago_recibido','recarga_acreditada','viaje_cancelado','sin_chofer'
+  ) NOT NULL;
+
+-- 0.2 Índice compuesto para el conteo del badge de notificaciones
+--     Cubre: countByUser_IdAndReadFalse — consultado cada 15 s por cada usuario activo
+CREATE INDEX IF NOT EXISTS idx_notif_usuario_leida
+  ON notificacion(id_usuario, leida);
+
+-- 0.3 Índice compuesto para el polling de viaje activo del cliente
+--     Cubre: GET /api/cliente/viaje-activo — consultado cada 5 s durante un viaje
+CREATE INDEX IF NOT EXISTS idx_traslado_cliente_estado
+  ON traslado(id_cliente, estado);
+
+-- 0.4 Trigger actualizado: agrega notificación para estado 'chofer_llego'
+--     El trigger original no cubría este estado — el cliente nunca recibía
+--     aviso cuando el chofer llegaba al punto de recogida.
+DROP TRIGGER IF EXISTS trg_traslado_eventos;
+
+DELIMITER $$
+
+CREATE TRIGGER trg_traslado_eventos
+AFTER UPDATE ON traslado
+FOR EACH ROW
+BEGIN
+  DECLARE v_id_usuario_cliente INT;
+  DECLARE v_id_usuario_chofer  INT;
+
+  SELECT u.id INTO v_id_usuario_cliente
+    FROM cliente cl JOIN usuario u ON cl.id_usuario = u.id
+    WHERE cl.id = NEW.id_cliente;
+
+  SELECT u.id INTO v_id_usuario_chofer
+    FROM chofer ch JOIN usuario u ON ch.id_usuario = u.id
+    WHERE ch.id = NEW.id_chofer;
+
+  IF NEW.estado = 'aceptado' AND OLD.estado <> 'aceptado' THEN
+    INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+    VALUES (v_id_usuario_cliente, NEW.id, 'chofer_asignado',
+      'Tu chofer fue asignado y va en camino hacia tu ubicación.');
+  END IF;
+
+  IF NEW.estado = 'en_camino' AND OLD.estado <> 'en_camino' THEN
+    INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+    VALUES (v_id_usuario_cliente, NEW.id, 'chofer_en_camino',
+      'Tu chofer está en camino al punto de recogida.');
+  END IF;
+
+  IF NEW.estado = 'chofer_llego' AND OLD.estado <> 'chofer_llego' THEN
+    INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+    VALUES (v_id_usuario_cliente, NEW.id, 'chofer_llego',
+      'Tu chofer llegó al punto de recogida. ¡Está esperándote!');
+  END IF;
+
+  IF NEW.estado = 'en_progreso' AND OLD.estado <> 'en_progreso' THEN
+    INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+    VALUES (v_id_usuario_cliente, NEW.id, 'viaje_iniciado',
+      'Tu viaje ha comenzado. ¡Buen viaje!');
+  END IF;
+
+  IF NEW.estado = 'completado' AND OLD.estado <> 'completado' THEN
+
+    INSERT INTO factura (
+      id_traslado, nro_documento, nro_control, serie,
+      razon_social, rif_cedula, direccion_fiscal,
+      igtf_porcentaje, igtf_monto_usd
+    )
+    SELECT
+      NEW.id,
+      CONCAT('FAC-', LPAD(NEW.id, 8, '0')),
+      CONCAT('00-', LPAD(NEW.id, 8, '0')),
+      'A',
+      CONCAT(u.nombre, ' ', u.apellido),
+      u.cedula,
+      'Ciudad Guayana, Venezuela',
+      3.00,
+      ROUND(NEW.costo_cliente_usd * 0.03, 2)
+    FROM cliente cl
+    JOIN usuario u ON cl.id_usuario = u.id
+    WHERE cl.id = NEW.id_cliente;
+
+    INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+    VALUES (v_id_usuario_cliente, NEW.id, 'viaje_completado',
+      CONCAT('Viaje completado. Total: $', NEW.costo_cliente_usd, ' USD. Califica tu experiencia.'));
+
+    INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+    VALUES (v_id_usuario_cliente, NEW.id, 'factura_emitida',
+      'Tu factura electrónica fue generada y está disponible para descarga.');
+
+    INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+    VALUES (v_id_usuario_chofer, NEW.id, 'viaje_completado',
+      CONCAT('Viaje completado. Ganaste: $', NEW.monto_chofer_usd, ' USD.'));
+
+  END IF;
+
+  IF NEW.estado = 'cancelado' AND OLD.estado <> 'cancelado' THEN
+    INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+    VALUES (v_id_usuario_cliente, NEW.id, 'viaje_cancelado',
+      CONCAT('Tu viaje fue cancelado. Motivo: ', IFNULL(NEW.motivo_cancelacion, 'No especificado')));
+
+    IF v_id_usuario_chofer IS NOT NULL THEN
+      INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+      VALUES (v_id_usuario_chofer, NEW.id, 'viaje_cancelado',
+        'El viaje asignado fue cancelado.');
+    END IF;
+  END IF;
+
+END$$
+
+DELIMITER ;
+
+-- ================================================================
 START TRANSACTION;
 
 -- ----------------------------------------------------------------
