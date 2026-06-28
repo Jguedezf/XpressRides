@@ -66,4 +66,5 @@ public class Driver {
     @JsonIgnore
     @OneToMany(mappedBy = "driver")
     private List<PsychologicalEvaluation> psychologicalEvaluations;
+
 }

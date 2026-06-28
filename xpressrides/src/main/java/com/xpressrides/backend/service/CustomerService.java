@@ -198,8 +198,8 @@ public class CustomerService {
                     }
                     driverPhone = driverUser.getPhone();
                     
-                    if (t.getDriver().getPsychologicalEvaluation() != null) {
-                        driverDetails.put("psychEval", t.getDriver().getPsychologicalEvaluation().getQualification());
+                    if (t.getDriver().getPsychologicalEvaluations() != null && !t.getDriver().getPsychologicalEvaluations().isEmpty()) {
+                        driverDetails.put("psychEval", t.getDriver().getPsychologicalEvaluations().get(0).getScore() + "/100");
                     }
                 }
                 
