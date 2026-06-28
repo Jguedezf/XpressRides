@@ -55,4 +55,8 @@ public class Vehicle {
 
     @Column(name = "creado_en", insertable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    @OneToMany(mappedBy = "vehicle")
+    private java.util.List<VehicleInspection> inspections;
 }

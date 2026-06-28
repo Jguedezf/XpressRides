@@ -77,14 +77,25 @@ function abrirModalChofer(index) {
     const partes = (resena.driverName || '').split(' ');
     document.getElementById('detalle-modal-chofer-iniciales').textContent = ((partes[0]?.[0] || '') + (partes[1]?.[0] || '')).toUpperCase() || 'CH';
 
+    const tel = (resena.driverPhone || '').replace(/\D/g, '');
+    const waBtn = document.getElementById('detalle-modal-chofer-whatsapp');
+    if (tel) {
+        waBtn.href = `https://wa.me/${tel.startsWith('58') ? tel : '58' + tel}`;
+        waBtn.style.display = 'flex';
+    } else {
+        waBtn.style.display = 'none';
+    }
+
     if (resena.vehicle) {
         document.getElementById('detalle-modal-vehiculo-modelo').textContent = `${resena.vehicle.brand || ''} ${resena.vehicle.model || ''}`.trim() || '—';
         document.getElementById('detalle-modal-vehiculo-color').textContent = resena.vehicle.color || '—';
         document.getElementById('detalle-modal-vehiculo-placa').textContent = resena.vehicle.plate || '—';
+        document.getElementById('detalle-modal-vehiculo-revision').textContent = resena.vehicle.inspection || '—';
     } else {
         document.getElementById('detalle-modal-vehiculo-modelo').textContent = '—';
         document.getElementById('detalle-modal-vehiculo-color').textContent = '—';
         document.getElementById('detalle-modal-vehiculo-placa').textContent = '—';
+        document.getElementById('detalle-modal-vehiculo-revision').textContent = '—';
     }
     
     if (resena.driverDetails) {
@@ -93,9 +104,9 @@ function abrirModalChofer(index) {
         document.getElementById('detalle-modal-chofer-psicologica').textContent = '—';
     }
 
-    document.getElementById('modal-detalles-chofer').classList.remove('hidden');
+    document.getElementById('modal-detalles-chofer').style.display = 'flex';
 }
 
 function cerrarModalChofer() {
-    document.getElementById('modal-detalles-chofer').classList.add('hidden');
+    document.getElementById('modal-detalles-chofer').style.display = 'none';
 }

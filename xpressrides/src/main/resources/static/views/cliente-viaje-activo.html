@@ -179,7 +179,8 @@
 
     <nav class="desktop-nav">
         <a href="../views/cliente-dashboard.html">Inicio</a>
-        <a href="../views/cliente-record.html">Historial de Viajes</a>`n        <a href="../views/cliente-resenas.html">Mis Rese�as</a>
+        <a href="../views/cliente-record.html">Historial de Viajes</a>
+        <a href="../views/cliente-resenas.html">Mis Reseñas</a>
         <a href="../views/user-profile.html">Mi Perfil</a>
     </nav>
     <div class="notification-bell" onclick="abrirNotificaciones()">
@@ -199,7 +200,7 @@
         <div class="estado-badge" id="estado-badge" style="background:#EEE; color:#666;">
             Cargando...
         </div>
-        <p class="ruta-texto" id="ruta-texto">—</p>
+        <p class="ruta-texto" id="ruta-texto">â</p>
     </div>
 
     <!-- Tarjeta del chofer -->
@@ -207,11 +208,11 @@
         <p class="info-card-title">Tu Chofer</p>
         <div class="info-row">
             <span class="info-label">Nombre</span>
-            <span class="info-value" id="chofer-nombre">—</span>
+            <span class="info-value" id="chofer-nombre">â</span>
         </div>
         <div class="info-row">
             <span class="info-label">Teléfono</span>
-            <span class="info-value" id="chofer-telefono">—</span>
+            <span class="info-value" id="chofer-telefono">â</span>
         </div>
         <a id="chofer-whatsapp" class="btn-whatsapp" href="#" target="_blank" rel="noopener">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
@@ -224,15 +225,15 @@
         <p class="info-card-title">Vehículo</p>
         <div class="info-row">
             <span class="info-label">Vehículo</span>
-            <span class="info-value" id="vehiculo-modelo">—</span>
+            <span class="info-value" id="vehiculo-modelo">â</span>
         </div>
         <div class="info-row">
             <span class="info-label">Color</span>
-            <span class="info-value" id="vehiculo-color">—</span>
+            <span class="info-value" id="vehiculo-color">â</span>
         </div>
         <div class="info-row">
             <span class="info-label">Placa</span>
-            <span class="info-value" id="vehiculo-placa" style="font-family: monospace; font-size: 16px; letter-spacing: 2px;">—</span>
+            <span class="info-value" id="vehiculo-placa" style="font-family: monospace; font-size: 16px; letter-spacing: 2px;">â</span>
         </div>
     </div>
 
@@ -268,11 +269,11 @@
 <script>
 
 const ESTADOS = {
-    'solicitado':   { texto: 'Buscando chofer',        icono: '🔍', bg: '#FFF3E0', color: '#C55A11' },
-    'aceptado':     { texto: 'Chofer asignado',         icono: '✅', bg: '#E3F2FD', color: '#1F4E79' },
-    'en_camino':    { texto: 'Chofer en camino',        icono: '🚗', bg: '#E3F2FD', color: '#1F4E79' },
-    'chofer_llego': { texto: '¡Chofer llegó!',          icono: '📍', bg: '#E8F5E9', color: '#2E7D32' },
-    'en_progreso':  { texto: 'Viaje en progreso',       icono: '🛣️', bg: '#E8F5E9', color: '#2E7D32' },
+    'solicitado':   { texto: 'Buscando chofer',        icono: 'ð', bg: '#FFF3E0', color: '#C55A11' },
+    'aceptado':     { texto: 'Chofer asignado',         icono: 'â', bg: '#E3F2FD', color: '#1F4E79' },
+    'en_camino':    { texto: 'Chofer en camino',        icono: 'ð', bg: '#E3F2FD', color: '#1F4E79' },
+    'chofer_llego': { texto: '¡Chofer llegó!',          icono: 'ð', bg: '#E8F5E9', color: '#2E7D32' },
+    'en_progreso':  { texto: 'Viaje en progreso',       icono: 'ð£ï¸', bg: '#E8F5E9', color: '#2E7D32' },
 };
 
 let pollingId = null;
@@ -297,7 +298,7 @@ async function cargarViajeActivo() {
                 clearInterval(pollingId);
                 window.location.href = '/views/cliente-record.html';
             } else {
-                // No hay viaje activo — volver al dashboard
+                // No hay viaje activo â volver al dashboard
                 clearInterval(pollingId);
                 window.location.href = '/views/cliente-dashboard.html';
             }
@@ -314,7 +315,7 @@ async function cargarViajeActivo() {
 }
 
 function renderizarViaje(data) {
-    const cfg = ESTADOS[data.estado] || { texto: data.estado, icono: '⏳', bg: '#EEE', color: '#666' };
+    const cfg = ESTADOS[data.estado] || { texto: data.estado, icono: 'â³', bg: '#EEE', color: '#666' };
 
     // Estado badge
     const badge = document.getElementById('estado-badge');
@@ -334,20 +335,20 @@ function renderizarViaje(data) {
     }
 
     // Ruta
-    document.getElementById('ruta-texto').textContent = `${data.origen}  →  ${data.destino}`;
+    document.getElementById('ruta-texto').textContent = `${data.origen}  â  ${data.destino}`;
 
-    // Chofer y vehículo solo desde 'aceptado' en adelante —
+    // Chofer y vehículo solo desde 'aceptado' en adelante â
     // en 'solicitado' el driver existe en BD pero aún no aceptó el viaje
     if (data.chofer && data.estado !== 'solicitado') {
         const tel = (data.chofer.telefono || '').replace(/\D/g, '');
         const waHref = tel ? `https://wa.me/${tel.startsWith('58') ? tel : '58' + tel}` : '#';
 
-        document.getElementById('chofer-nombre').textContent   = data.chofer.nombre   || '—';
-        document.getElementById('chofer-telefono').textContent = data.chofer.telefono || '—';
+        document.getElementById('chofer-nombre').textContent   = data.chofer.nombre   || 'â';
+        document.getElementById('chofer-telefono').textContent = data.chofer.telefono || 'â';
         document.getElementById('chofer-whatsapp').href        = waHref;
-        document.getElementById('vehiculo-modelo').textContent = data.chofer.vehiculo || '—';
-        document.getElementById('vehiculo-color').textContent  = data.chofer.color    || '—';
-        document.getElementById('vehiculo-placa').textContent  = data.chofer.placa    || '—';
+        document.getElementById('vehiculo-modelo').textContent = data.chofer.vehiculo || 'â';
+        document.getElementById('vehiculo-color').textContent  = data.chofer.color    || 'â';
+        document.getElementById('vehiculo-placa').textContent  = data.chofer.placa    || 'â';
 
         document.getElementById('chofer-card').classList.remove('hidden');
         document.getElementById('vehiculo-card').classList.remove('hidden');

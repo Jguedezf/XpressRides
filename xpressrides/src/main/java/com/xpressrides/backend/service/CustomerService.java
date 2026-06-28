@@ -165,7 +165,7 @@ public class CustomerService {
             .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
         return topUpRepository.findByCustomerIdOrderByDateTimeDesc(customer.getId());
     }
-
+    @Transactional
     public List<Map<String, Object>> getReviews(String username) {
         Customer customer = customerRepository.findByUserId_Username(username)
             .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
@@ -208,6 +208,9 @@ public class CustomerService {
                     vehicleInfo.put("model", t.getVehicle().getModel());
                     vehicleInfo.put("plate", t.getVehicle().getPlate());
                     vehicleInfo.put("color", t.getVehicle().getColor());
+                    if (t.getVehicle().getInspections() != null && !t.getVehicle().getInspections().isEmpty()) {
+                        vehicleInfo.put("inspection", t.getVehicle().getInspections().get(0).getScore() + "/100");
+                    }
                 }
 
                 map.put("driverName", driverName);
