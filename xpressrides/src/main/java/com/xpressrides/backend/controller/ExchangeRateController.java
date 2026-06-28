@@ -28,7 +28,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*")
 public class ExchangeRateController {
 
     private final ExchangeRateService exchangeRateService;

@@ -72,7 +72,9 @@ async function cargarViajeActivo() {
         const viaje = response.data;
 
         if (!viaje) {
-            ocultarPaneles();
+            if (viajeActual !== null) {
+                ocultarPaneles();
+            }
             return;
         }
 

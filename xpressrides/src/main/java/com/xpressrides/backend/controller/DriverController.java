@@ -79,6 +79,12 @@ public class DriverController {
     }
 
     @PreAuthorize("hasRole('chofer')")
+    @GetMapping("/resenas")
+    public ResponseEntity<?> getReviews(Authentication authentication) {
+        return ResponseEntity.ok(driverService.getReviews(authentication.getName()));
+    }
+
+    @PreAuthorize("hasRole('chofer')")
     @GetMapping("/traslados")
     public ResponseEntity<?> getTrips(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,

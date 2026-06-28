@@ -54,10 +54,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                     };
                 } else {
                     // Datos específicos del cliente
-                    endpoint = '/auth/register-cliente';
+                    endpoint = '/auth/registro';
                     payload = {
-                        ...datosBase,
-                        esEstudiante: document.getElementById('es_estudiante').checked
+                        name: document.getElementById('nombre').value,
+                        lastName: document.getElementById('apellido').value,
+                        ci: document.getElementById('cedula').value,
+                        phone: document.getElementById('telefono').value,
+                        password: document.getElementById('password').value,
+                        username: document.getElementById('cedula').value,
+                        email: document.getElementById('cedula').value + '@xpressrides.local',
+                        role: 'cliente',
+                        isStudent: document.getElementById('es_estudiante').checked
                     };
                 }
 

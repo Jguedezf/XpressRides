@@ -129,7 +129,7 @@ public class AuthController {
             AuthResponse auth = authService.refresh(request);
             response.put("success", true);
             response.put("data", Map.of(
-                "token", auth.getAccesToken(),
+                "token", auth.getAccessToken(),
                 "refreshToken", auth.getRefreshToken()
             ));
             response.put("message", "Token renovado exitosamente");
@@ -184,7 +184,7 @@ public class AuthController {
         data.put("correo", user.getEmail());
         data.put("telefono", user.getPhone());
         data.put("rol", user.getRole());
-        data.put("token", auth.getAccesToken());
+        data.put("token", auth.getAccessToken());
         data.put("refreshToken", auth.getRefreshToken());
 
         switch (user.getRole()) {

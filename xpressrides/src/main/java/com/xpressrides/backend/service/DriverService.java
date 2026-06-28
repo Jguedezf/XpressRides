@@ -254,6 +254,9 @@ public class DriverService {
         profile.put("saldoAcumuladoUsd", driver.getBalance());
         profile.put("habilitado", driver.isEnabled());
         profile.put("disponible", driver.isAvailable());
+        Double avgRating = tripRepository.findAverageRatingByDriverId(driver.getId());
+        profile.put("calificacion", avgRating != null ? avgRating : 0.0);
+        
         profile.put("contactosEmergencia", contactList);
         
         if (vehicle != null) {
@@ -284,6 +287,35 @@ public class DriverService {
         }
         
         return profile;
+    }
+
+    public List<Map<String, Object>> getReviews(String username) {
+        Driver driver = driverRepository.findByUsername_Username(username)
+            .orElseThrow(() -> new ResourceNotFoundException("Chofer no encontrado"));
+            
+        List<Trip> trips = tripRepository.findByDriver_Username_UsernameOrderByRequestDateDesc(username);
+        return trips.stream()
+            .filter(t -> t.getStarRating() != null)
+            .map(t -> {
+                Map<String, Object> map = new java.util.HashMap<>();
+                map.put("tripId", t.getId());
+                map.put("starRating", t.getStarRating());
+                map.put("comment", t.getCustomerComment());
+                map.put("date", t.getRequestDate());
+                
+                String customerName = "Desconocido";
+                if (t.getCustomer() != null && t.getCustomer().getUserId() != null) {
+                    User customerUser = t.getCustomer().getUserId();
+                    String name = customerUser.getName();
+                    String lastName = customerUser.getLastName();
+                    if (name != null && !name.trim().isEmpty()) {
+                        customerName = (lastName != null && !lastName.trim().isEmpty()) ? name + " " + lastName : name;
+                    }
+                }
+                map.put("customerName", customerName);
+                return map;
+            })
+            .collect(java.util.stream.Collectors.toList());
     }
 
     @Transactional(readOnly = true)

@@ -50,10 +50,11 @@ function cargarDatosChofer() {
         statusText.classList.toggle('offline', !disponible);
     }
 
-    // Calificación (hardcoded por ahora, sin backend)
+    // Calificación
     const driverRating = document.getElementById('driver-rating');
     if (driverRating) {
-        driverRating.innerText = '5.00 ★';
+        const calif = usuario.calificacion !== undefined ? usuario.calificacion : (usuario.rating !== undefined ? usuario.rating : 5.0);
+        driverRating.innerText = Number(calif).toFixed(2) + ' ★';
     }
 
     // Actualizar con datos reales del backend
@@ -77,6 +78,11 @@ async function actualizarDatosBackendChofer(usuario, driverBalance) {
             if (driverBalance) {
                 const saldo = updatedUser.saldoUsd != null ? Number(updatedUser.saldoUsd) : 0;
                 driverBalance.innerText = `$${saldo.toFixed(2)}`;
+            }
+
+            const driverRating = document.getElementById('driver-rating');
+            if (driverRating && profileData.calificacion !== undefined) {
+                driverRating.innerText = Number(profileData.calificacion).toFixed(2) + ' ★';
             }
 
             // Actualizar toggle switch UI

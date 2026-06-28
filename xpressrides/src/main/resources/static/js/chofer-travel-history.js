@@ -62,6 +62,11 @@ async function cargarHistorial() {
                     </div>
                     <div class="trip-amount">
                         <div class="trip-usd" style="color: ${iconColor}; font-size: 14px; font-weight: bold;">${montoDisplay}</div>
+                        ${viaje.starRating != null ? `
+                            <button class="btn-secondary" style="padding: 4px 8px; font-size: 11px; margin-top: 4px; background-color:#FFD700; color:#000; border:none;" onclick="window.location.href='/views/chofer-resenas.html'">
+                                Ver Reseña
+                            </button>
+                        ` : ''}
                     </div>
                 </div>
             `;

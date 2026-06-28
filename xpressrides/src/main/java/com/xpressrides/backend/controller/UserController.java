@@ -35,7 +35,7 @@ public class UserController {
     }
 
     // PUT /api/users/{id} — actualiza los datos del perfil de un usuario (solo admin)
-    @PreAuthorize("hasRole('administrador')")
+    @PreAuthorize("hasAnyRole('administrador', 'cliente', 'chofer', 'personal_admin')")
     @PutMapping("/{id}")
     public ResponseEntity<Map<String, Object>> updateUser(
             @PathVariable Integer id,

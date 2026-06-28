@@ -49,21 +49,39 @@ public class VehicleService {
 
     public VehicleResponse registerVehicle(VehicleRequest request){
       
-        if(vehicleRepository.existsByPlate(request.getPlate())){
-            throw new BadRequestException("Esta placa ya esta registrada");
-        }
-        
-        Driver driver= driverRepository.findById(request.getDriverId()).orElseThrow(() -> new ResourceNotFoundException("Chofer no encontrado"));
+        Driver driver = driverRepository.findById(request.getDriverId())
+                .orElseThrow(() -> new ResourceNotFoundException("Chofer no encontrado"));
 
-        Vehicle vehicle = new Vehicle();
-        vehicle.setDriver(driver);
-        vehicle.setPlate(request.getPlate());
-        vehicle.setBrand(request.getBrand());
-        vehicle.setModel(request.getModel());
-        vehicle.setYear(request.getYear());
-        vehicle.setColor(request.getColor());
-        vehicle.setActive(true);
-        vehicle.setCreatedAt(LocalDateTime.now());
+        Optional<Vehicle> existingVehicleOpt = vehicleRepository.findByDriver_Id(request.getDriverId());
+        Vehicle vehicle;
+
+        if (existingVehicleOpt.isPresent()) {
+            vehicle = existingVehicleOpt.get();
+            // Si la placa cambió, validamos que no esté duplicada con otro vehículo
+            if (!vehicle.getPlate().equalsIgnoreCase(request.getPlate())) {
+                if (vehicleRepository.existsByPlate(request.getPlate())) {
+                    throw new BadRequestException("Esta placa ya esta registrada");
+                }
+            }
+            vehicle.setPlate(request.getPlate());
+            vehicle.setBrand(request.getBrand());
+            vehicle.setModel(request.getModel());
+            vehicle.setYear(request.getYear());
+            vehicle.setColor(request.getColor());
+        } else {
+            if (vehicleRepository.existsByPlate(request.getPlate())) {
+                throw new BadRequestException("Esta placa ya esta registrada");
+            }
+            vehicle = new Vehicle();
+            vehicle.setDriver(driver);
+            vehicle.setPlate(request.getPlate());
+            vehicle.setBrand(request.getBrand());
+            vehicle.setModel(request.getModel());
+            vehicle.setYear(request.getYear());
+            vehicle.setColor(request.getColor());
+            vehicle.setActive(true);
+            vehicle.setCreatedAt(LocalDateTime.now());
+        }
 
         vehicle = vehicleRepository.save(vehicle);
 

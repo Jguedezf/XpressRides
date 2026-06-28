@@ -170,8 +170,42 @@
     </div>
 </main>
 
+<!-- MODAL DE CALIFICACIÓN -->
+<div id="rating-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+        <h2 class="h2-subtitle mb-md text-center">Califica tu Viaje</h2>
+        <p class="text-center text-muted mb-md">¿Cómo te fue con <span id="modal-driver-name" style="font-weight: bold;"></span>?</p>
+        
+        <div class="star-rating d-flex justify-center mb-md gap-sm" id="star-container">
+            <!-- Estrellas generadas por JS -->
+            <span class="star" data-value="1">★</span>
+            <span class="star" data-value="2">★</span>
+            <span class="star" data-value="3">★</span>
+            <span class="star" data-value="4">★</span>
+            <span class="star" data-value="5">★</span>
+        </div>
+        
+        <textarea id="rating-comment" class="form-input mb-md" rows="3" placeholder="Deja un comentario (opcional)..."></textarea>
+        
+        <div class="d-flex gap-sm">
+            <button class="btn btn-secondary flex-1" onclick="cerrarModalCalificacion()">Cerrar</button>
+            <button class="btn btn-primary flex-1" id="submit-rating-btn" onclick="enviarCalificacion()">Enviar</button>
+        </div>
+    </div>
+</div>
 
-<!-- NAVEGACIÓN INFERIOR MÓVIL -->
+<style>
+    .star-rating .star {
+        font-size: 32px;
+        color: #ccc;
+        cursor: pointer;
+        transition: color 0.2s;
+    }
+    .star-rating .star.selected, .star-rating .star:hover, .star-rating .star:hover ~ .star {
+        color: #FFD700;
+    }
+    /* El hover en flex no funciona así de fácil para seleccionar anteriores, lo controlaremos con JS */
+</style>
 <nav class="bottom-nav">
     <a href="/views/cliente-dashboard.html" class="bottom-nav-item">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>

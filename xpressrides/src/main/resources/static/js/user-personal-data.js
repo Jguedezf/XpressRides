@@ -132,25 +132,44 @@ function configurarFormulario() {
         const inputs = form.querySelectorAll('.input-field');
         const usuario = getUsuario() || {};
 
-        const nuevoCorreo = inputs[2] ? inputs[2].value : usuario.correo;
-        const nuevoTelefono = inputs[3] ? inputs[3].value : usuario.telefono;
+        const nuevoCorreo = inputs[2] ? inputs[2].value : (usuario.correo || usuario.email);
+        const nuevoTelefono = inputs[3] ? inputs[3].value : (usuario.telefono || usuario.phone);
 
         try {
-            // Enviar petición PUT al servidor
-            await fetchAPI('/cliente/perfil', {
-                method: 'PUT',
-                body: JSON.stringify({
+            const rol = (usuario.rol || '').toLowerCase();
+            let endpoint = '/cliente/perfil';
+            let bodyPayload;
+
+            if (rol === 'chofer') {
+                endpoint = `/users/${usuario.id}`;
+                bodyPayload = {
+                    name: usuario.nombre || usuario.name,
+                    lastName: usuario.apellido || usuario.lastName,
+                    email: nuevoCorreo,
+                    phone: nuevoTelefono,
+                    ci: usuario.cedula || usuario.ci || (inputs[1] ? inputs[1].value : '')
+                };
+            } else {
+                bodyPayload = {
                     name: usuario.nombre,
                     lastName: usuario.apellido,
                     email: nuevoCorreo,
                     phone: nuevoTelefono,
                     isStudent: usuario.esEstudiante || false
-                })
+                };
+            }
+
+            // Enviar petición PUT al servidor
+            await fetchAPI(endpoint, {
+                method: 'PUT',
+                body: JSON.stringify(bodyPayload)
             });
 
             // Si es exitoso, actualizar localStorage
             usuario.correo = nuevoCorreo;
+            usuario.email = nuevoCorreo;
             usuario.telefono = nuevoTelefono;
+            usuario.phone = nuevoTelefono;
             localStorage.setItem('xpressUsuario', JSON.stringify(usuario));
 
             // Feedback visual de éxito

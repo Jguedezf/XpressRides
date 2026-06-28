@@ -27,7 +27,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/reportes")
-@CrossOrigin(origins = "*")
 @PreAuthorize("hasAnyRole('administrador', 'personal_admin')")
 public class ReportController {
 

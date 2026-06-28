@@ -186,7 +186,7 @@ function crearIconoColor(color) {
 
 /**
  * Configura el handler del formulario de solicitud de viaje.
- * Llama al endpoint POST /api/solicitar-viaje que invoca el
+ * Llama al endpoint POST /api/traslados/solicitar que invoca el
  * Stored Procedure sp_solicitar_traslado en MySQL.
  */
 function configurarFormularioViaje() {
@@ -349,7 +349,7 @@ function mostrarPreviewTarifa(tarifa, origenId, destinoId, pasajeros, textoOrigi
                 customerCouponId: null
             };
 
-            const response = await fetchAPI('/traslado/solicitar', {
+            const response = await fetchAPI('/traslados/solicitar', {
                 method: 'POST',
                 body: JSON.stringify(payloadViaje)
             });
