@@ -19,7 +19,7 @@ import com.xpressrides.backend.model.User;
 import com.xpressrides.backend.repository.CustomerRepository;
 import com.xpressrides.backend.repository.DriverRepository;
 import com.xpressrides.backend.repository.UserRepository;
-import com.xpressrides.backend.segurity.TokenBlacklistService;
+import com.xpressrides.backend.security.TokenBlacklistService;
 import com.xpressrides.backend.service.AuthService;
 
 import jakarta.servlet.http.HttpServletRequest;

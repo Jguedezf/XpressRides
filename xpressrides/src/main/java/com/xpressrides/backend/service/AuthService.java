@@ -24,7 +24,7 @@ import com.xpressrides.backend.repository.CustomerRepository;
 import com.xpressrides.backend.repository.AdminPersonnelRepository;
 import com.xpressrides.backend.repository.BankRepository;
 import com.xpressrides.backend.repository.UserRepository;
-import com.xpressrides.backend.segurity.JwtService;
+import com.xpressrides.backend.security.JwtService;
 
 //Servicio de autenticacion para el registro de usuarios
 @Service

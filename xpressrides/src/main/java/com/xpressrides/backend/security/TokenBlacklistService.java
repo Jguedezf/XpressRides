@@ -1,4 +1,4 @@
-package com.xpressrides.backend.segurity;
+package com.xpressrides.backend.security;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
