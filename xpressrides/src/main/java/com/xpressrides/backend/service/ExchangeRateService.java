@@ -26,10 +26,12 @@ import java.util.Optional;
 public class ExchangeRateService {
 
     private final ExchangeRateRepository exchangeRateRepository;
+    private final com.xpressrides.backend.repository.UserRepository userRepository;
 
     // Inyección de dependencias por constructor
-    public ExchangeRateService(ExchangeRateRepository exchangeRateRepository) {
+    public ExchangeRateService(ExchangeRateRepository exchangeRateRepository, com.xpressrides.backend.repository.UserRepository userRepository) {
         this.exchangeRateRepository = exchangeRateRepository;
+        this.userRepository = userRepository;
     }
 
     // Retorna la tasa vigente más reciente
@@ -44,10 +46,25 @@ public class ExchangeRateService {
     }
 
     // Registra una nueva tasa BCV para la fecha indicada
-    // Validación: no se puede registrar dos veces la misma fecha (UNIQUE en BD)
+    // Si ya existe una tasa para la fecha indicada, la actualiza (Upsert)
     public ExchangeRate registerRate(ExchangeRate exchangeRate) {
         if (exchangeRate.getEffectiveDate() == null) {
             exchangeRate.setEffectiveDate(LocalDate.now());
+        }
+
+        // Resolver dinámicamente el usuario administrador autenticado
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        com.xpressrides.backend.model.User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Usuario autenticado no encontrado"));
+        exchangeRate.setRegisteredBy(user.getId());
+        exchangeRate.setCreatedAt(java.time.LocalDateTime.now());
+
+        Optional<ExchangeRate> existingOpt = exchangeRateRepository.findByEffectiveDate(exchangeRate.getEffectiveDate());
+        if (existingOpt.isPresent()) {
+            ExchangeRate existing = existingOpt.get();
+            existing.setRateVes(exchangeRate.getRateVes());
+            existing.setRegisteredBy(user.getId());
+            return exchangeRateRepository.save(existing);
         }
         return exchangeRateRepository.save(exchangeRate);
     }

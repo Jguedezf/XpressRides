@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await cargarMetricas();
     await cargarTablaConductores();
     await cargarChoferesPendientes();
+    await cargarTasaBcvActual();
 });
 
 // Función para obtener e incrementar métricas del admin
@@ -239,3 +240,72 @@ document.getElementById('evaluation-form').addEventListener('submit', async (e) 
         btn.innerText = originalText;
     }
 });
+
+// Gestión de envío de nueva/actualizada tasa BCV
+const tasaForm = document.getElementById('tasa-form');
+if (tasaForm) {
+    tasaForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const btn = document.getElementById('btn-tasa-submit');
+        const originalText = btn.innerText;
+        const successAlert = document.getElementById('tasa-success');
+        const errorAlert = document.getElementById('tasa-error');
+
+        successAlert.style.display = 'none';
+        errorAlert.style.display = 'none';
+        btn.innerText = 'Guardando...';
+        btn.disabled = true;
+
+        const effectiveDate = document.getElementById('fechaTasa').value;
+        const rateVes = parseFloat(document.getElementById('valorTasa').value);
+
+        try {
+            await fetchAPI('/tasa-bcv', {
+                method: 'POST',
+                body: JSON.stringify({ effectiveDate, rateVes })
+            });
+
+            successAlert.style.display = 'block';
+            await cargarTasaBcvActual();
+        } catch (error) {
+            errorAlert.innerText = error.message;
+            errorAlert.style.display = 'block';
+        } finally {
+            btn.disabled = false;
+            btn.innerText = originalText;
+        }
+    });
+}
+
+// Función para cargar la tasa vigente actual en pantalla
+async function cargarTasaBcvActual() {
+    const display = document.getElementById('tasa-actual-val');
+    const inputFecha = document.getElementById('fechaTasa');
+    const inputValor = document.getElementById('valorTasa');
+    if (!display) return;
+
+    if (inputFecha && !inputFecha.value) {
+        const localDate = new Date();
+        const year = localDate.getFullYear();
+        const month = String(localDate.getMonth() + 1).padStart(2, '0');
+        const day = String(localDate.getDate()).padStart(2, '0');
+        inputFecha.value = `${year}-${month}-${day}`;
+    }
+
+    try {
+        const response = await fetchAPI('/tasa-bcv/vigente');
+        if (response.success && response.data) {
+            const tasa = Number(response.data.rateVes);
+            display.innerText = `Bs. ${tasa.toFixed(2)} (Vigente: ${response.data.effectiveDate})`;
+            if (inputValor && !inputValor.value) {
+                inputValor.value = tasa;
+            }
+        } else {
+            display.innerText = 'No hay tasa registrada';
+        }
+    } catch (error) {
+        console.error('Error al cargar tasa BCV:', error);
+        display.innerText = 'Error al cargar tasa';
+    }
+}

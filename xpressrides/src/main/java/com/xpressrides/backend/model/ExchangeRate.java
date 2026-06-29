@@ -41,7 +41,6 @@ public class ExchangeRate {
     @Column(name = "tasa_ves", nullable = false, precision = 14, scale = 4)
     private BigDecimal rateVes;
 
-    @NotNull
     @Column(name = "registrado_por", nullable = false)
     private Integer registeredBy;
 

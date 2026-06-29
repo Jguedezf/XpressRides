@@ -70,8 +70,11 @@
         </div>
     </div>
 
-    <!-- Tarjeta del formulario -->
-    <div class="card" style="width: 100%; max-width: 480px; background-color: var(--color-bg-main); box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+    <!-- Contenedor para tarjetas en paralelo -->
+    <div class="d-flex justify-between gap-md mb-lg" style="width: 100%; flex-wrap: wrap; gap: var(--space-md); align-items: stretch;">
+
+        <!-- Tarjeta del formulario -->
+        <div class="card" style="flex: 1; min-width: 320px; background-color: var(--color-bg-main); box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin: 0;">
 
         <h2 class="h2-subtitle text-center" style="color: var(--color-secondary); margin-bottom: 4px; font-weight: 700;">Panel de Administración</h2>
         <p class="text-small text-center mb-md">Evaluación y Habilitación de Choferes</p>
@@ -107,6 +110,37 @@
             <button type="submit" class="btn-primary" id="btn-evaluar">Registrar Calificaciones</button>
 
         </form>
+    </div>
+
+        <!-- Gestión de Tasa BCV -->
+        <div class="card" style="flex: 1; min-width: 320px; background-color: var(--color-bg-main); box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin: 0;">
+        <h2 class="h2-subtitle text-center" style="color: var(--color-secondary); margin-bottom: 4px; font-weight: 700;">Gestión de Tasa BCV</h2>
+        <p class="text-small text-center mb-md">Definir o Actualizar la Tasa Oficial de Cambio</p>
+
+        <!-- Alertas de Tasa -->
+        <div class="alert-success" id="tasa-success" style="display: none; font-size: 13px; text-align: center;">
+            ¡Tasa BCV registrada/actualizada exitosamente!
+        </div>
+        <div class="alert-error" id="tasa-error" style="display: none; font-size: 13px; text-align: center;">
+            Error al guardar la tasa BCV.
+        </div>
+
+        <form id="tasa-form">
+            <div class="input-group">
+                <label class="input-label">Tasa Vigente Actual</label>
+                <div id="tasa-actual-val" style="font-size: 20px; font-weight: 700; color: var(--color-primary); padding: 4px 0;">Bs. --</div>
+            </div>
+            <div class="input-group">
+                <label for="fechaTasa" class="input-label">Fecha de Vigencia</label>
+                <input type="date" id="fechaTasa" class="input-field" required>
+            </div>
+            <div class="input-group">
+                <label for="valorTasa" class="input-label">Valor de la Tasa (VES)</label>
+                <input type="number" id="valorTasa" class="input-field" placeholder="Ej. 36.50" step="0.0001" min="0.01" required>
+            </div>
+            <button type="submit" class="btn-primary" id="btn-tasa-submit">Guardar Tasa BCV</button>
+        </form>
+        </div>
     </div>
 
     <!-- Gestión de Conductores -->

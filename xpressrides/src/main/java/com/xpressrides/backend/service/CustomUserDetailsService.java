@@ -3,7 +3,6 @@ package com.xpressrides.backend.service;
 import java.util.List;
 
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -26,10 +25,20 @@ public class CustomUserDetailsService implements UserDetailsService {
         com.xpressrides.backend.model.User user = userRepository.findByUsername(username)
             .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
 
-        SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + user.getRole());
+        // Avoid IllegalArgumentException or NullPointerException when constructing Spring User
+        if (user.getUsername() == null || user.getPassword() == null) {
+            throw new UsernameNotFoundException("Datos de usuario incompletos para: " + username);
+        }
+
+        // Avoid NullPointerException if role is null
+        String role = user.getRole() != null ? user.getRole() : "cliente";
+        SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
+
+        // Safe unboxing using Boolean.TRUE.equals to avoid NullPointerException
+        boolean isActive = Boolean.TRUE.equals(user.getActive());
 
         return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(),
-            user.getActive(), true, true, true,
+            isActive, true, true, true,
             List.of(authority));
     }
 }
