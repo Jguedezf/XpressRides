@@ -43,4 +43,4 @@ CONSULTA_*.txt
 commit_*.txt
 
 ### Archivos de Configuración ###
-application.properties
+src/main/resources/application.properties
