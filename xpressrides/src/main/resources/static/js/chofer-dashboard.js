@@ -205,7 +205,7 @@ function ocultarAlertaViaje() {
 window.aceptarViajeAlerta = async function() {
     if (!currentPendingTripId) return;
     try {
-        await fetchAPI(`/chofer/traslados/${currentPendingTripId}/estado`, 'PUT', { status: 'aceptado' });
+        await fetchAPI(`/chofer/traslados/${currentPendingTripId}/estado`, { method: 'PUT', body: JSON.stringify({ status: 'aceptado' }) });
         window.location.href = '/views/chofer-viaje.html';
     } catch (err) {
         alert("Error al aceptar viaje: " + err.message);
@@ -216,7 +216,7 @@ window.aceptarViajeAlerta = async function() {
 window.rechazarViajeAlerta = async function() {
     if (!currentPendingTripId) return;
     try {
-        await fetchAPI(`/chofer/traslados/${currentPendingTripId}/rechazar`, 'PUT', {});
+        await fetchAPI(`/chofer/traslados/${currentPendingTripId}/rechazar`, { method: 'PUT' });
         ocultarAlertaViaje();
     } catch (err) {
         alert("Error al rechazar viaje: " + err.message);

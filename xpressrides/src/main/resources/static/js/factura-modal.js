@@ -21,7 +21,7 @@ async function cargarYMostrarFactura(trasladoId) {
             throw new Error("No se encontraron datos fiscales para este viaje.");
         }
 
-        // 3. Inyectamos los datos reales en el HTML
+        // 3. Inyectamos los datos reales en el HTML del Modal Visual
         document.getElementById('fact-nro').innerText = factura.numeroDocumento;
         document.getElementById('fact-fecha').innerText = factura.fechaEmision + " " + factura.horaEmision;
         document.getElementById('fact-tasa').innerText = factura.tasaVes.toFixed(2);
@@ -33,14 +33,47 @@ async function cargarYMostrarFactura(trasladoId) {
         document.getElementById('fact-cedula').innerText = factura.clienteCedula;
         document.getElementById('fact-dir').innerText = factura.clienteDireccion;
 
-        // Finanzas
+        // Finanzas Modal Visual
         document.getElementById('fact-costo').innerText = factura.costoUsd.toFixed(2);
         document.getElementById('fact-subtotal').innerText = factura.costoUsd.toFixed(2);
         document.getElementById('fact-igtf').innerText = factura.montoIgtfUsd.toFixed(2);
 
-        // Totales
+        // Totales Modal Visual
         document.getElementById('fact-total-usd').innerText = factura.totalUsd.toFixed(2);
         document.getElementById('fact-total-ves').innerText = factura.totalVes.toLocaleString('es-VE', {minimumFractionDigits: 2});
+
+        // -------------------------------------------------------------
+        // 3.1. Inyectamos los datos en la Plantilla de Impresión Fiscal
+        // -------------------------------------------------------------
+        document.getElementById('print-fact-nro').innerText = factura.numeroDocumento;
+        document.getElementById('print-fact-serie').innerText = factura.serie;
+        document.getElementById('print-fact-fecha').innerText = factura.fechaEmision;
+        document.getElementById('print-fact-control').innerText = factura.control;
+        document.getElementById('print-fact-tasa').innerText = factura.tasaVes.toLocaleString('es-VE', {minimumFractionDigits: 4});
+        
+        document.getElementById('print-fact-cliente').innerText = factura.clienteNombre;
+        document.getElementById('print-fact-cedula').innerText = factura.clienteCedula;
+        document.getElementById('print-fact-dir').innerText = factura.clienteDireccion;
+
+        // Montos e Items
+        document.getElementById('print-fact-punit').innerText = factura.costoUsd.toFixed(2);
+        document.getElementById('print-fact-monto').innerText = factura.costoUsd.toFixed(2);
+
+        // Cálculos Bs
+        const baseBs = factura.costoUsd * factura.tasaVes;
+        const igtfBs = factura.montoIgtfUsd * factura.tasaVes;
+
+        document.getElementById('print-fact-base-usd').innerText = factura.costoUsd.toFixed(2);
+        document.getElementById('print-fact-base-bs').innerText = baseBs.toLocaleString('es-VE', {minimumFractionDigits: 2});
+        
+        document.getElementById('print-fact-sub-usd').innerText = factura.costoUsd.toFixed(2);
+        document.getElementById('print-fact-sub-bs').innerText = baseBs.toLocaleString('es-VE', {minimumFractionDigits: 2});
+
+        document.getElementById('print-fact-igtf-usd').innerText = factura.montoIgtfUsd.toFixed(2);
+        document.getElementById('print-fact-igtf-bs').innerText = igtfBs.toLocaleString('es-VE', {minimumFractionDigits: 2});
+
+        document.getElementById('print-fact-total-usd').innerText = factura.totalUsd.toFixed(2);
+        document.getElementById('print-fact-total-bs').innerText = factura.totalVes.toLocaleString('es-VE', {minimumFractionDigits: 2});
 
         // 4. Abrimos el modal
         document.getElementById('modalFactura').style.display = 'flex';

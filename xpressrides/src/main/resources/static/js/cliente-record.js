@@ -261,31 +261,18 @@ window.verFactura = async function (trasladoId) {
             return;
         }
 
-        // Eliminar modal previo y su estilo de impresión si existieran
+        // Eliminar modal previo y su plantilla de impresión si existieran
         const prevModal = document.getElementById('modal-factura');
         if (prevModal) prevModal.remove();
+        const prevPrint = document.getElementById('factura-impresion');
+        if (prevPrint) prevPrint.remove();
+        // Limpiar estilos viejos por compatibilidad
         const prevPrintStyle = document.getElementById('print-style-factura');
         if (prevPrintStyle) prevPrintStyle.remove();
 
-        // Inyectar estilo @media print para que solo se imprima la factura
-        const printStyle = document.createElement('style');
-        printStyle.id = 'print-style-factura';
-        printStyle.textContent = `@media print {
-            body * { visibility: hidden !important; }
-            #modal-factura, #modal-factura * { visibility: visible !important; }
-            #modal-factura {
-                position: fixed !important; top: 0 !important; left: 0 !important;
-                width: 100% !important; height: auto !important;
-                background: white !important;
-                display: flex !important; align-items: flex-start !important; justify-content: center !important;
-            }
-            #modal-factura > div {
-                box-shadow: none !important; border-radius: 0 !important;
-                max-width: 100% !important; width: 100% !important; margin: 0 !important;
-            }
-            .no-print-factura { visibility: hidden !important; }
-        }`;
-        document.head.appendChild(printStyle);
+        // Cálculos Bs
+        const baseBs = (f.costoUsd || 0) * (f.tasaVes || 0);
+        const igtfBs = (f.montoIgtfUsd || 0) * (f.tasaVes || 0);
 
         // Construir el HTML del modal con los campos de InvoiceResponseDTO
         const modalHTML = `
@@ -299,7 +286,7 @@ window.verFactura = async function (trasladoId) {
                     position: relative; font-family: inherit;">
 
                     <!-- Botón cerrar -->
-                    <button onclick="document.getElementById('modal-factura').remove()"
+                    <button onclick="document.getElementById('modal-factura').remove(); const p=document.getElementById('factura-impresion'); if(p) p.remove();"
                         style="position:absolute; top:12px; right:16px; background:none;
                                border:none; font-size:22px; cursor:pointer; color:#888;">✕</button>
 
@@ -379,11 +366,120 @@ window.verFactura = async function (trasladoId) {
                         <button onclick="window.print()" class="btn-secondary no-print-factura" style="flex:1;">
                             Imprimir / PDF
                         </button>
-                        <button onclick="document.getElementById('modal-factura').remove(); var s=document.getElementById('print-style-factura'); if(s) s.remove();"
+                        <button onclick="document.getElementById('modal-factura').remove(); const p=document.getElementById('factura-impresion'); if(p) p.remove();"
                             class="btn-primary no-print-factura" style="flex:1;">
                             Cerrar
                         </button>
                     </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- PLANTILLA FISCAL PARA IMPRESIÓN (Oculta) -->
+            <!-- ========================================== -->
+            <div id="factura-impresion">
+                <div class="print-header">
+                    <div class="print-header-top">
+                        <img src="/img/logo.png" alt="XpressRides Logo" class="print-logo">
+                        <div class="print-company-info">
+                            <strong>XpressRides, C.A.</strong><br>
+                            RIF: J-50301732-5<br>
+                            Domicilio Fiscal: Ciudad Guayana<br>
+                            Código de Actividad: 9609
+                        </div>
+                        <div class="print-fact-info">
+                            <strong>Factura</strong><br>
+                            Nº de Documento: <span>${f.numeroDocumento || '—'}</span><br>
+                            Serie: <span>${f.serie || '—'}</span><br>
+                            Fecha de Emisión: <span>${f.fechaEmision || '—'}</span><br>
+                            Nº DE CONTROL: <span>${f.control || '—'}</span><br>
+                            Condiciones de pago: Pago inmediato<br>
+                            Tasa de cambio (BCV): Bs. <span>${f.tasaVes != null ? Number(f.tasaVes).toLocaleString('es-VE', {minimumFractionDigits: 4}) : '—'}</span><br>
+                            Moneda Base: USD ($)
+                        </div>
+                    </div>
+                    <div class="print-client-info">
+                        Razón Social: <span>${f.clienteNombre || '—'}</span><br>
+                        RIF/C.I: <span>${f.clienteCedula || '—'}</span><br>
+                        Domicilio: <span>${f.clienteDireccion || '—'}</span>
+                    </div>
+                </div>
+
+                <table class="print-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%">CÓDIGO</th>
+                            <th style="width: 40%">DESCRIPCIÓN</th>
+                            <th style="width: 10%">CANT</th>
+                            <th style="width: 15%">P. UNIT</th>
+                            <th style="width: 10%">ALIC</th>
+                            <th style="width: 10%">DCTO</th>
+                            <th style="width: 15%">MONTO</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="info-row">
+                            <td colspan="7"><strong>Ventas por cuenta de terceros Art. 14 y 15 Providencia SNAT/2024/000102 y Art. 10 de la Ley del IVA</strong></td>
+                        </tr>
+                        <tr>
+                            <td>RID-02-005</td>
+                            <td>Traslado Urbano (Havers)</td>
+                            <td class="text-center">1</td>
+                            <td class="text-right">$<span>${f.costoUsd != null ? Number(f.costoUsd).toFixed(2) : '0.00'}</span></td>
+                            <td class="text-center">0%</td>
+                            <td class="text-right">$0.00</td>
+                            <td class="text-right">$<span>${f.costoUsd != null ? Number(f.costoUsd).toFixed(2) : '0.00'}</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="print-footer-totals">
+                    <div class="print-legal-notes">
+                        <p><strong>Centro de costo:</strong></p>
+                        <p>En los casos en que la base imponible de la venta o prestación de servicios estuviere expresado en moneda extranjera, se establecerá la equivalencia en moneda nacional, al tipo de cambio corriente en el mercado del día en que ocurra el hecho imponible. (Art. 25 LEY IVA, 38 Y 52 Reglamento Ley IVA). Los pagos estipulados en moneda extranjera se deben cancelar salvo convención especial, con la entrega de lo equivalente en moneda de curso legal (Bs), al tipo de cambio oficial.</p>
+                    </div>
+                    <table class="print-totals-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th class="text-right">Bolívares (Bs)</th>
+                                <th class="text-right">Dólares ($)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Descuento:</td>
+                                <td class="text-right">Bs. 0,00</td>
+                                <td class="text-right">$0.00</td>
+                            </tr>
+                            <tr>
+                                <td>Base Exenta Cuenta de Terceros:</td>
+                                <td class="text-right">Bs. <span>${baseBs.toLocaleString('es-VE', {minimumFractionDigits: 2})}</span></td>
+                                <td class="text-right">$<span>${f.costoUsd != null ? Number(f.costoUsd).toFixed(2) : '0.00'}</span></td>
+                            </tr>
+                            <tr>
+                                <td>Subtotal Factura:</td>
+                                <td class="text-right">Bs. <span>${baseBs.toLocaleString('es-VE', {minimumFractionDigits: 2})}</span></td>
+                                <td class="text-right">$<span>${f.costoUsd != null ? Number(f.costoUsd).toFixed(2) : '0.00'}</span></td>
+                            </tr>
+                            <tr>
+                                <td>Recargo IGTF (3,00% Divisas):</td>
+                                <td class="text-right">Bs. <span>${igtfBs.toLocaleString('es-VE', {minimumFractionDigits: 2})}</span></td>
+                                <td class="text-right">$<span>${f.montoIgtfUsd != null ? Number(f.montoIgtfUsd).toFixed(2) : '0.00'}</span></td>
+                            </tr>
+                            <tr class="print-total-row">
+                                <td>TOTAL A PAGAR:</td>
+                                <td class="text-right">Bs. <span>${f.totalVes != null ? Number(f.totalVes).toLocaleString('es-VE', {minimumFractionDigits: 2}) : '0.00'}</span></td>
+                                <td class="text-right">$<span>${f.totalUsd != null ? Number(f.totalUsd).toFixed(2) : '0.00'}</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="print-footer-legal">
+                    <p>* Este pago estará sujeto al cobro adicional del 3% del Impuesto a las Grandes Transacciones Financieras (IGTF), de conformidad con la Providencia Administrativa SNAT/2022/000013 publicada en la G.O. N° 42.339 del 17-03-2022, en caso de ser cancelado en divisas. No aplicara en pago en Bs.</p>
+                    <p>* Este documento se expresa en Bolívares con su equivalencia en divisas al tipo de cambio corriente del mercado a la fecha de su emisión, según lo establecido en el artículo 13 numeral 14 de la Providencia Administrativa SNAT /2011/0071 (...) en concordancia con el artículo 128 de la Ley del Banco Central de Venezuela (BCV); artículo 25 de la Ley que establece el Impuesto al valor Agregado (IVA) y 38 del Reglamento General de la Ley que establece el Impuesto al Valor Agregado (RLIVA).</p>
+                    <p class="print-center-text">Documento que se emite de acuerdo a lo establecido en la Providencia Administrativa SNAT/2024/000102 de fecha 17/10/2024</p>
                 </div>
             </div>
         `;
@@ -395,8 +491,8 @@ window.verFactura = async function (trasladoId) {
         document.getElementById('modal-factura').addEventListener('click', (e) => {
             if (e.target.id === 'modal-factura') {
                 e.target.remove();
-                const s = document.getElementById('print-style-factura');
-                if (s) s.remove();
+                const p = document.getElementById('factura-impresion');
+                if (p) p.remove();
             }
         });
 

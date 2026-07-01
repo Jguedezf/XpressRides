@@ -29,24 +29,6 @@
             margin-top: var(--space-sm); margin-bottom: var(--space-sm);
         }
 
-        @media print {
-            body > *:not(#modalFactura) { display: none !important; }
-            #modalFactura {
-                display: block !important;
-                position: static !important;
-                background: none !important;
-                padding: 0 !important;
-            }
-            .modal-content {
-                box-shadow: none !important;
-                border: none !important;
-                max-width: 100% !important;
-                margin: 0 !important;
-                padding: 0 !important;
-            }
-            .h2-subtitle { display: none !important; }
-            .btn-print, .btn-secondary { display: none !important; }
-        }
     </style>
 </head>
 <body>
@@ -144,6 +126,115 @@
             <button class="btn-primary btn-print" style="flex:1;" onclick="imprimirFactura()">Imprimir / Exportar PDF</button>
             <button class="btn-secondary" style="flex:1;" onclick="cerrarFactura()">Cerrar</button>
         </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- PLANTILLA FISCAL PARA IMPRESIÓN (Oculta) -->
+<!-- ========================================== -->
+<div id="factura-impresion">
+    <div class="print-header">
+        <div class="print-header-top">
+            <img src="/img/logo.png" alt="XpressRides Logo" class="print-logo">
+            <div class="print-company-info">
+                <strong>XpressRides, C.A.</strong><br>
+                RIF: J-50301732-5<br>
+                Domicilio Fiscal: Ciudad Guayana<br>
+                Código de Actividad: 9609
+            </div>
+            <div class="print-fact-info">
+                <strong>Factura</strong><br>
+                Nº de Documento: <span id="print-fact-nro">---</span><br>
+                Serie: <span id="print-fact-serie">---</span><br>
+                Fecha de Emisión: <span id="print-fact-fecha">---</span><br>
+                Nº DE CONTROL: <span id="print-fact-control">---</span><br>
+                Condiciones de pago: Pago inmediato<br>
+                Tasa de cambio (BCV): Bs. <span id="print-fact-tasa">---</span><br>
+                Moneda Base: USD ($)
+            </div>
+        </div>
+        <div class="print-client-info">
+            Razón Social: <span id="print-fact-cliente">---</span><br>
+            RIF/C.I: <span id="print-fact-cedula">---</span><br>
+            Domicilio: <span id="print-fact-dir">---</span>
+        </div>
+    </div>
+
+    <table class="print-table">
+        <thead>
+            <tr>
+                <th style="width: 15%">CÓDIGO</th>
+                <th style="width: 40%">DESCRIPCIÓN</th>
+                <th style="width: 10%">CANT</th>
+                <th style="width: 15%">P. UNIT</th>
+                <th style="width: 10%">ALIC</th>
+                <th style="width: 10%">DCTO</th>
+                <th style="width: 15%">MONTO</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr class="info-row">
+                <td colspan="7"><strong>Ventas por cuenta de terceros Art. 14 y 15 Providencia SNAT/2024/000102 y Art. 10 de la Ley del IVA</strong></td>
+            </tr>
+            <tr>
+                <td>RID-02-005</td>
+                <td>Traslado Urbano (Havers)</td>
+                <td class="text-center">1</td>
+                <td class="text-right">$<span id="print-fact-punit">---</span></td>
+                <td class="text-center">0%</td>
+                <td class="text-right">$0.00</td>
+                <td class="text-right">$<span id="print-fact-monto">---</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="print-footer-totals">
+        <div class="print-legal-notes">
+            <p><strong>Centro de costo:</strong></p>
+            <p>En los casos en que la base imponible de la venta o prestación de servicios estuviere expresado en moneda extranjera, se establecerá la equivalencia en moneda nacional, al tipo de cambio corriente en el mercado del día en que ocurra el hecho imponible. (Art. 25 LEY IVA, 38 Y 52 Reglamento Ley IVA). Los pagos estipulados en moneda extranjera se deben cancelar salvo convención especial, con la entrega de lo equivalente en moneda de curso legal (Bs), al tipo de cambio oficial.</p>
+        </div>
+        <table class="print-totals-table">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th class="text-right">Bolívares (Bs)</th>
+                    <th class="text-right">Dólares ($)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Descuento:</td>
+                    <td class="text-right">Bs. 0,00</td>
+                    <td class="text-right">$0.00</td>
+                </tr>
+                <tr>
+                    <td>Base Exenta Cuenta de Terceros:</td>
+                    <td class="text-right">Bs. <span id="print-fact-base-bs">---</span></td>
+                    <td class="text-right">$<span id="print-fact-base-usd">---</span></td>
+                </tr>
+                <tr>
+                    <td>Subtotal Factura:</td>
+                    <td class="text-right">Bs. <span id="print-fact-sub-bs">---</span></td>
+                    <td class="text-right">$<span id="print-fact-sub-usd">---</span></td>
+                </tr>
+                <tr>
+                    <td>Recargo IGTF (3,00% Divisas):</td>
+                    <td class="text-right">Bs. <span id="print-fact-igtf-bs">---</span></td>
+                    <td class="text-right">$<span id="print-fact-igtf-usd">---</span></td>
+                </tr>
+                <tr class="print-total-row">
+                    <td>TOTAL A PAGAR:</td>
+                    <td class="text-right">Bs. <span id="print-fact-total-bs">---</span></td>
+                    <td class="text-right">$<span id="print-fact-total-usd">---</span></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="print-footer-legal">
+        <p>* Este pago estará sujeto al cobro adicional del 3% del Impuesto a las Grandes Transacciones Financieras (IGTF), de conformidad con la Providencia Administrativa SNAT/2022/000013 publicada en la G.O. N° 42.339 del 17-03-2022, en caso de ser cancelado en divisas. No aplicara en pago en Bs.</p>
+        <p>* Este documento se expresa en Bolívares con su equivalencia en divisas al tipo de cambio corriente del mercado a la fecha de su emisión, según lo establecido en el artículo 13 numeral 14 de la Providencia Administrativa SNAT /2011/0071 (...) en concordancia con el artículo 128 de la Ley del Banco Central de Venezuela (BCV); artículo 25 de la Ley que establece el Impuesto al valor Agregado (IVA) y 38 del Reglamento General de la Ley que establece el Impuesto al Valor Agregado (RLIVA).</p>
+        <p class="print-center-text">Documento que se emite de acuerdo a lo establecido en la Providencia Administrativa SNAT/2024/000102 de fecha 17/10/2024</p>
     </div>
 </div>
 
