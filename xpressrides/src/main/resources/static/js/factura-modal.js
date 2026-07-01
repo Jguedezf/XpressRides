@@ -57,7 +57,10 @@ async function cargarYMostrarFactura(trasladoId) {
     }
 }
 
-// Función simple para ocultar el modal
+function imprimirFactura() {
+    window.print();
+}
+
 function cerrarFactura() {
     document.getElementById('modalFactura').style.display = 'none';
 }

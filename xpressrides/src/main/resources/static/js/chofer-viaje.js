@@ -57,7 +57,10 @@ function inicializarMapaChofer() {
                     weight: 1
                 }).addTo(mapaChofer);
             }
-            mapaChofer.setView([latitude, longitude], mapaChofer.getZoom());
+            const enGuayana = latitude > 7.8 && latitude < 8.7 && longitude > -63.2 && longitude < -62.1;
+            if (enGuayana) {
+                mapaChofer.setView([latitude, longitude], mapaChofer.getZoom());
+            }
         },
         (err) => console.warn('Error de geolocalización:', err.message),
         { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }

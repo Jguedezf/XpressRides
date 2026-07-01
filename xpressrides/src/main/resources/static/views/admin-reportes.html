@@ -55,6 +55,15 @@
         .form-group { margin-bottom: 15px; }
         .premium-label { display: block; font-weight: 500; margin-bottom: 5px; font-size: 13px; color: var(--color-text-main); margin-left: 2px; }
         .btn-sm { padding: 6px 12px; font-size: 12px; height: auto; margin: 0; }
+
+        @media print {
+            header { display: none !important; }
+            body { padding: 0 !important; }
+            .report-container { max-width: 100% !important; }
+            .no-print { display: none !important; }
+            .premium-card { box-shadow: none !important; border: 1px solid #ccc !important; }
+            .premium-table th { background-color: #1F4E79 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
     </style>
 </head>
 <body>
@@ -82,7 +91,7 @@
         <p class="premium-subtitle" style="margin-bottom: 20px;">Reporte de ingresos acumulados</p>
 
         <!-- Formulario para Filtrar Fechas -->
-        <div class="premium-card" style="margin-top: 20px; padding: 20px; margin-bottom: 20px;">
+        <div class="premium-card no-print" style="margin-top: 20px; padding: 20px; margin-bottom: 20px;">
             <form id="form-filtro-ganancias" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
                 <div style="flex: 1; min-width: 150px;">
                     <label class="premium-label" for="fechaInicio">Desde:</label>
@@ -94,6 +103,7 @@
                 </div>
                 <div style="display: flex; gap: 10px; height: 40px;">
                     <button type="submit" class="btn-primary" id="btn-filtrar" style="padding: 0 20px; height: 100%; margin: 0;">Filtrar Fechas</button>
+                    <button type="button" class="btn-secondary" id="btn-imprimir" style="padding: 0 20px; height: 100%; margin: 0;" onclick="window.print()">Imprimir / PDF</button>
                 </div>
             </form>
         </div>

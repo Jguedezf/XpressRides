@@ -62,7 +62,7 @@ async function cargarHistorial() {
 
             const originName = viaje.originZone ? (viaje.originZone.name || viaje.originZone.nombre) : 'Zona Origen';
             const destName = viaje.destinationZone ? (viaje.destinationZone.name || viaje.destinationZone.nombre) : 'Zona Destino';
-            const driverName = viaje.driver && viaje.driver.user ? `${viaje.driver.user.nombre} ${viaje.driver.user.apellido}` : (viaje.driverName || '');
+            const driverName = viaje.driver && viaje.driver.username ? `${viaje.driver.username.name} ${viaje.driver.username.lastName}` : '';
 
             const cardHTML = `
                 <div class="trip-card">
@@ -94,7 +94,7 @@ async function cargarHistorial() {
                         </span>
                         
                         <div class="d-flex gap-xs" style="margin-top: 5px; flex-wrap: wrap; justify-content: flex-end;">
-                            <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick='abrirModalDetalles(${JSON.stringify(viaje)})'>
+                            <button class="btn-secondary" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="abrirModalDetalles(window.viajesCache[${idx}])">
                                 Ver Detalles
                             </button>
                             ${esCompletado ? `
@@ -117,7 +117,7 @@ async function cargarHistorial() {
                     </div>
                 </div>
             `;
-            container.innerHTML += cardHTML;
+            container.insertAdjacentHTML('beforeend', cardHTML);
         });
 
         // Configurar botones de paginación si se usa Pageable en el backend
@@ -193,9 +193,9 @@ window.enviarCalificacion = async function() {
     const comment = document.getElementById('rating-comment').value;
     
     try {
-        const response = await fetchAPI(`/cliente/traslados/${currentRatingTripId}/calificar`, 'PUT', {
-            starRating: selectedStars,
-            customerComment: comment
+        const response = await fetchAPI(`/cliente/traslados/${currentRatingTripId}/calificar`, {
+            method: 'PUT',
+            body: JSON.stringify({ starRating: selectedStars, customerComment: comment })
         });
         
         if (response && response.message) {
@@ -261,9 +261,31 @@ window.verFactura = async function (trasladoId) {
             return;
         }
 
-        // Eliminar modal previo si existiera
+        // Eliminar modal previo y su estilo de impresión si existieran
         const prevModal = document.getElementById('modal-factura');
         if (prevModal) prevModal.remove();
+        const prevPrintStyle = document.getElementById('print-style-factura');
+        if (prevPrintStyle) prevPrintStyle.remove();
+
+        // Inyectar estilo @media print para que solo se imprima la factura
+        const printStyle = document.createElement('style');
+        printStyle.id = 'print-style-factura';
+        printStyle.textContent = `@media print {
+            body * { visibility: hidden !important; }
+            #modal-factura, #modal-factura * { visibility: visible !important; }
+            #modal-factura {
+                position: fixed !important; top: 0 !important; left: 0 !important;
+                width: 100% !important; height: auto !important;
+                background: white !important;
+                display: flex !important; align-items: flex-start !important; justify-content: center !important;
+            }
+            #modal-factura > div {
+                box-shadow: none !important; border-radius: 0 !important;
+                max-width: 100% !important; width: 100% !important; margin: 0 !important;
+            }
+            .no-print-factura { visibility: hidden !important; }
+        }`;
+        document.head.appendChild(printStyle);
 
         // Construir el HTML del modal con los campos de InvoiceResponseDTO
         const modalHTML = `
@@ -353,10 +375,15 @@ window.verFactura = async function (trasladoId) {
                         </tr>
                     </table>
 
-                    <button onclick="document.getElementById('modal-factura').remove()"
-                        class="btn-primary" style="margin-top:20px; width:100%;">
-                        Cerrar
-                    </button>
+                    <div style="display:flex; gap:10px; margin-top:20px;">
+                        <button onclick="window.print()" class="btn-secondary no-print-factura" style="flex:1;">
+                            Imprimir / PDF
+                        </button>
+                        <button onclick="document.getElementById('modal-factura').remove(); var s=document.getElementById('print-style-factura'); if(s) s.remove();"
+                            class="btn-primary no-print-factura" style="flex:1;">
+                            Cerrar
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -368,6 +395,8 @@ window.verFactura = async function (trasladoId) {
         document.getElementById('modal-factura').addEventListener('click', (e) => {
             if (e.target.id === 'modal-factura') {
                 e.target.remove();
+                const s = document.getElementById('print-style-factura');
+                if (s) s.remove();
             }
         });
 
@@ -401,7 +430,7 @@ window.abrirModalDetalles = function(viaje) {
 
     const icono = document.getElementById('detalle-estado-icono');
     if (viaje.driver && estadoActual !== 'solicitado') {
-        const partes = (viaje.driver.user?.nombre || '').split(' ');
+        const partes = (viaje.driver.username?.name || '').split(' ');
         icono.textContent = ((partes[0]?.[0] || '') + (partes[1]?.[0] || '')).toUpperCase() || 'CH';
         icono.style.background = 'var(--color-secondary)';
     } else {
@@ -424,8 +453,8 @@ window.abrirModalDetalles = function(viaje) {
 
     // Chofer y Vehículo
     if (viaje.driver && (estadoActual !== 'solicitado' || estadoActual === 'cancelado')) {
-        document.getElementById('detalle-chofer-nombre').textContent = viaje.driver.user ? `${viaje.driver.user.nombre} ${viaje.driver.user.apellido}` : (viaje.driverName || 'N/A');
-        document.getElementById('detalle-chofer-telefono').textContent = viaje.driver.user?.phone || '—';
+        document.getElementById('detalle-chofer-nombre').textContent = viaje.driver.username ? `${viaje.driver.username.name} ${viaje.driver.username.lastName}` : 'N/A';
+        document.getElementById('detalle-chofer-telefono').textContent = viaje.driver.username?.phone || '—';
         
         if (viaje.vehicle) {
             document.getElementById('detalle-vehiculo-modelo').textContent = `${viaje.vehicle.marca || viaje.vehicle.brand} ${viaje.vehicle.modelo || viaje.vehicle.model}`;
@@ -472,7 +501,7 @@ window.cerrarModalDetalles = function() {
 async function confirmarCancelacion(tripId) {
     if (!confirm('¿Estás seguro de que deseas cancelar este viaje?')) return;
     try {
-        await fetchAPI(`/cliente/traslados/${tripId}/cancelar`, 'PUT', { motivo: 'Cancelado por el cliente' });
+        await fetchAPI(`/cliente/traslados/${tripId}/cancelar`, { method: 'PUT', body: JSON.stringify({ motivo: 'Cancelado por el cliente' }) });
         cerrarModalDetalles();
         cargarHistorial();
     } catch (error) {

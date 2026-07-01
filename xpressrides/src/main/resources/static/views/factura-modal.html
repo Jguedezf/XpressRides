@@ -28,6 +28,25 @@
             border-top: 1px dashed var(--color-border-muted);
             margin-top: var(--space-sm); margin-bottom: var(--space-sm);
         }
+
+        @media print {
+            body > *:not(#modalFactura) { display: none !important; }
+            #modalFactura {
+                display: block !important;
+                position: static !important;
+                background: none !important;
+                padding: 0 !important;
+            }
+            .modal-content {
+                box-shadow: none !important;
+                border: none !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .h2-subtitle { display: none !important; }
+            .btn-print, .btn-secondary { display: none !important; }
+        }
     </style>
 </head>
 <body>
@@ -121,7 +140,10 @@
 
         </div>
 
-        <button class="btn-secondary mt-md" onclick="cerrarFactura()">Cerrar</button>
+        <div style="display:flex;gap:10px;margin-top:var(--space-md);">
+            <button class="btn-primary btn-print" style="flex:1;" onclick="imprimirFactura()">Imprimir / Exportar PDF</button>
+            <button class="btn-secondary" style="flex:1;" onclick="cerrarFactura()">Cerrar</button>
+        </div>
     </div>
 </div>
 

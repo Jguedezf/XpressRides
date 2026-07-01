@@ -486,6 +486,9 @@ function mostrarTarjetaViajeActivo(data) {
     ` : '';
 
     card.innerHTML = `
+        <button onclick="document.getElementById('viaje-activo-card').style.display='none'"
+            style="position:absolute; top:10px; right:12px; background:none; border:none;
+                   font-size:20px; cursor:pointer; color:#aaa; line-height:1;" title="Minimizar">×</button>
         <h3 style="margin:0 0 10px 0; color:var(--color-primary); font-size:16px;">Viaje en curso: ${estadoFormateado}</h3>
         <p style="margin:4px 0; font-size:14px;"><strong>Origen:</strong> ${data.origen}</p>
         <p style="margin:4px 0; font-size:14px;"><strong>Destino:</strong> ${data.destino}</p>
