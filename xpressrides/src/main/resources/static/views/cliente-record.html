@@ -121,10 +121,14 @@
         .desktop-nav { display: none; }
 
         @media (min-width: 768px) {
-            .desktop-nav {
+             .desktop-nav {
+                position: absolute;     
+                left: 50%;
+                transform: translateX(-50%);
                 display: flex;
                 gap: var(--space-lg);
                 align-items: center;
+                
             }
             .desktop-nav a {
                 color: var(--color-text-muted);
@@ -142,7 +146,9 @@
 
 <!-- BARRA SUPERIOR -->
 <header class="top-bar d-flex justify-between align-center">
-    <h1 class="brand-logo-small">Xpress<span class="brand-text">Rides</span></h1>
+    <div class="text-center mb-md">
+        <img src="/img/logo.png" alt="XpressRides Logo" class="brand-logo-img" width="200">
+    </div>
 
     <nav class="desktop-nav">
         <a href="../views/cliente-dashboard.html">Inicio</a>
