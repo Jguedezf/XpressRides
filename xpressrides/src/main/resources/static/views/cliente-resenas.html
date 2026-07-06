@@ -85,6 +85,14 @@
         <a href="../views/cliente-resenas.html" class="active">Mis Reseñas</a>
         <a href="../views/user-profile.html">Mi Perfil</a>
     </nav>
+
+    <div class="notification-bell" onclick="abrirNotificaciones()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <span class="notification-badge" id="badge-count" style="display:none;"></span>
+    </div>
 </header>
 
 <main class="main-content">
@@ -168,6 +176,7 @@
 </nav>
 
 <script src="../js/api.js"></script>
+<script src="../js/notifications.js"></script>
 <script src="../js/cliente-resenas.js"></script>
 </body>
 </html>
