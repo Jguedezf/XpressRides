@@ -73,7 +73,7 @@ public class ExchangeRateService {
         return exchangeRateRepository.save(exchangeRate);
     }
 
-    private void bypassSSL() {
+    private javax.net.ssl.SSLSocketFactory buildTrustAllSslSocketFactory() {
         try {
             javax.net.ssl.TrustManager[] trustAllCerts = new javax.net.ssl.TrustManager[]{
                 new javax.net.ssl.X509TrustManager() {
@@ -84,9 +84,10 @@ public class ExchangeRateService {
             };
             javax.net.ssl.SSLContext sc = javax.net.ssl.SSLContext.getInstance("SSL");
             sc.init(null, trustAllCerts, new java.security.SecureRandom());
-            javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
-            javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier((hostname, session) -> true);
-        } catch (Exception ignored) {}
+            return sc.getSocketFactory();
+        } catch (Exception e) {
+            throw new RuntimeException("Error creando SSLSocketFactory", e);
+        }
     }
 
     /**
@@ -100,11 +101,11 @@ public class ExchangeRateService {
     public BigDecimal fetchRateFromBcvWebsite() {
         try {
             // Conectar al sitio del BCV con timeout de 15 segundos
-            // Ignorar validación de certificado SSL ya que BCV suele tener problemas con eso
-            bypassSSL();
+            // Pasar SSLSocketFactory personalizado para ignorar validación de certificado SSL localmente
             Document doc = Jsoup.connect("https://www.bcv.org.ve/")
                     .userAgent("Mozilla/5.0")
                     .timeout(15000)
+                    .sslSocketFactory(buildTrustAllSslSocketFactory())
                     .get();
 
             // Buscar el div con id="dolar" y extraer el valor del <strong>

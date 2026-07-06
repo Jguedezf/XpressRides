@@ -9,15 +9,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     configurarFormularioViaje();
     configurarCalculadora();
 
-    // Esperar a que Google Maps esté disponible (carga async defer)
-    function esperarGoogleMaps() {
-        if (typeof google !== 'undefined' && google.maps) {
-            inicializarMapa();
-        } else {
-            setTimeout(esperarGoogleMaps, 100);
-        }
+    // Cargar Google Maps API dinámicamente desde el backend
+    try {
+        await cargarGoogleMaps();
+        inicializarMapa();
+    } catch (error) {
+        console.error("No se pudo cargar el mapa:", error);
     }
-    esperarGoogleMaps();
 
     // Iniciar el polling para mostrar viajes activos (ej: si fue asignado desde SQL)
     iniciarPollingViajeActivo();

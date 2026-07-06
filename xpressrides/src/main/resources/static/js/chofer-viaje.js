@@ -1,6 +1,6 @@
 // js/chofer-viaje.js — Integración real con el backend XpressRides (Google Maps)
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     if (!requireAuth()) return;
     configurarBotonesEstado();
     configurarBotonEmergencia();
@@ -8,15 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Polling cada 8 segundos para detectar nuevos viajes asignados por el SP
     setInterval(cargarViajeActivo, 8000);
 
-    // Esperar a que Google Maps esté disponible (carga async defer)
-    function esperarGoogleMaps() {
-        if (typeof google !== 'undefined' && google.maps) {
-            inicializarMapaChofer();
-        } else {
-            setTimeout(esperarGoogleMaps, 100);
-        }
+    // Cargar Google Maps API dinámicamente desde el backend
+    try {
+        await cargarGoogleMaps();
+        inicializarMapaChofer();
+    } catch (error) {
+        console.error("No se pudo cargar el mapa:", error);
     }
-    esperarGoogleMaps();
 });
 
 let mapaChofer = null;

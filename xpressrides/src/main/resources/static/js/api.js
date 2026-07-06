@@ -80,9 +80,47 @@ async function fetchAPI(endpoint, options = {}) {
 
         return result;
     } catch (error) {
-        console.error('Error en fetchAPI:', error);
+        console.error(`[API] Error en ${endpoint}:`, error);
         throw error;
     }
+}
+
+/**
+ * Carga dinámicamente el script de Google Maps obteniendo la API Key del backend.
+ * Devuelve una promesa que se resuelve cuando el script termina de cargar.
+ */
+function cargarGoogleMaps() {
+    return new Promise(async (resolve, reject) => {
+        // Si ya está cargado, resolver inmediatamente
+        if (typeof google !== 'undefined' && google.maps) {
+            resolve();
+            return;
+        }
+
+        try {
+            // Obtener la llave del backend
+            const response = await fetchAPI('/config/maps-key');
+            if (response.success && response.data) {
+                const apiKey = response.data;
+                
+                // Crear el elemento script
+                const script = document.createElement('script');
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+                script.async = true;
+                script.defer = true;
+                
+                script.onload = () => resolve();
+                script.onerror = () => reject(new Error('Fallo al cargar el script de Google Maps'));
+                
+                document.head.appendChild(script);
+            } else {
+                reject(new Error('No se pudo obtener la API Key de Google Maps'));
+            }
+        } catch (error) {
+            console.error('Error cargando configuración de mapas:', error);
+            reject(error);
+        }
+    });
 }
 
 /**
