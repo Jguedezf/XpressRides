@@ -109,4 +109,23 @@ public class ExchangeRateController {
         response.put("message", "Conversión exitosa");
         return ResponseEntity.ok(response);
     }
+
+    // GET /api/tasa-bcv/extraer-web — extrae la tasa BCV directamente de la web del BCV
+    @PreAuthorize("hasAnyRole('administrador', 'personal_admin')")
+    @GetMapping("/tasa-bcv/extraer-web")
+    public ResponseEntity<Map<String, Object>> fetchRateFromWeb() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            java.math.BigDecimal rate = exchangeRateService.fetchRateFromBcvWebsite();
+            response.put("success", true);
+            response.put("data", rate);
+            response.put("message", "Tasa BCV obtenida exitosamente desde la web.");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("data", null);
+            response.put("message", "Error al extraer la tasa del BCV: " + e.getMessage());
+            return ResponseEntity.status(500).body(response);
+        }
+    }
 }

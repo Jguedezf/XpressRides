@@ -1,14 +1,24 @@
 // dashboard.js — Lógica del dashboard del cliente
 // Carga las zonas para el formulario de solicitud de viaje
-// e inicializa el mapa Leaflet centrado en Ciudad Guayana.
+// e inicializa el mapa de Google Maps centrado en Ciudad Guayana.
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (!requireAuth()) return;
 
     await cargarZonas();
-    inicializarMapa();
     configurarFormularioViaje();
     configurarCalculadora();
+
+    // Esperar a que Google Maps esté disponible (carga async defer)
+    function esperarGoogleMaps() {
+        if (typeof google !== 'undefined' && google.maps) {
+            inicializarMapa();
+        } else {
+            setTimeout(esperarGoogleMaps, 100);
+        }
+    }
+    esperarGoogleMaps();
+
     // Iniciar el polling para mostrar viajes activos (ej: si fue asignado desde SQL)
     iniciarPollingViajeActivo();
 });
@@ -44,9 +54,10 @@ function configurarCalculadora() {
 }
 
 // ─── Variables globales del módulo ───────────────────────
-let mapaLeaflet = null;
+let mapaGoogle = null;
 let marcadores = [];
 let zonasData = [];
+let rutaPolyline = null;
 
 /**
  * Carga las zonas activas desde GET /api/zonas
@@ -79,26 +90,52 @@ async function cargarZonas() {
 }
 
 /**
- * Inicializa el mapa Leaflet centrado en Ciudad Guayana
+ * Inicializa el mapa de Google Maps centrado en Puerto Ordaz / San Félix
  * y coloca marcadores por cada zona.
  */
 function inicializarMapa() {
     // Centro de Ciudad Guayana (Puerto Ordaz / San Félix)
-    mapaLeaflet = L.map('map').setView([8.3535, -62.6328], 12);
+    const centroGuayana = { lat: 8.29, lng: -62.71 };
 
-    // Tiles de OpenStreetMap
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 18
-    }).addTo(mapaLeaflet);
+    mapaGoogle = new google.maps.Map(document.getElementById('map'), {
+        center: centroGuayana,
+        zoom: 12,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+        styles: [
+            { featureType: 'poi', stylers: [{ visibility: 'simplified' }] }
+        ],
+        restriction: {
+            latLngBounds: {
+                north: 8.55,
+                south: 7.95,
+                east: -62.20,
+                west: -63.10
+            },
+            strictBounds: false
+        }
+    });
 
     // Agregar marcadores de todas las zonas
     zonasData.forEach(zona => {
         if (zona.latitude && zona.longitude) {
-            const marcador = L.marker([zona.latitude, zona.longitude])
-                .addTo(mapaLeaflet)
-                .bindPopup(`<b>${zona.name}</b><br>${zona.parish || ''}`);
-            marcadores.push({ id: zona.id, marker: marcador });
+            const marcador = new google.maps.Marker({
+                position: { lat: zona.latitude, lng: zona.longitude },
+                map: mapaGoogle,
+                title: zona.name,
+                icon: crearIconoColor('default')
+            });
+
+            const infoWindow = new google.maps.InfoWindow({
+                content: `<b>${zona.name}</b><br>${zona.parish || ''}`
+            });
+
+            marcador.addListener('click', () => {
+                infoWindow.open(mapaGoogle, marcador);
+            });
+
+            marcadores.push({ id: zona.id, marker: marcador, infoWindow });
         }
     });
 
@@ -117,22 +154,21 @@ function resaltarRuta() {
 
     // Restaurar todos los marcadores al icono por defecto
     marcadores.forEach(m => {
-        m.marker.setIcon(L.icon({
-            iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-            iconSize: [25, 41],
-            iconAnchor: [12, 41],
-            popupAnchor: [1, -34],
-            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-            shadowSize: [41, 41]
-        }));
+        m.marker.setIcon(crearIconoColor('default'));
     });
+
+    // Limpiar polyline previo
+    if (rutaPolyline) {
+        rutaPolyline.setMap(null);
+        rutaPolyline = null;
+    }
 
     // Resaltar origen con ícono verde
     if (origenId) {
         const origenMarcador = marcadores.find(m => m.id === origenId);
         if (origenMarcador) {
             origenMarcador.marker.setIcon(crearIconoColor('green'));
-            origenMarcador.marker.openPopup();
+            origenMarcador.infoWindow.open(mapaGoogle, origenMarcador.marker);
         }
     }
 
@@ -149,38 +185,47 @@ function resaltarRuta() {
         const origenZona = zonasData.find(z => z.id === origenId);
         const destinoZona = zonasData.find(z => z.id === destinoId);
         if (origenZona && destinoZona) {
-            const bounds = L.latLngBounds(
-                [origenZona.latitude, origenZona.longitude],
-                [destinoZona.latitude, destinoZona.longitude]
-            );
-            mapaLeaflet.fitBounds(bounds, { padding: [60, 60] });
+            const bounds = new google.maps.LatLngBounds();
+            bounds.extend({ lat: origenZona.latitude, lng: origenZona.longitude });
+            bounds.extend({ lat: destinoZona.latitude, lng: destinoZona.longitude });
+            mapaGoogle.fitBounds(bounds, { top: 60, bottom: 60, left: 60, right: 60 });
+
+            // Dibujar línea entre origen y destino
+            rutaPolyline = new google.maps.Polyline({
+                path: [
+                    { lat: origenZona.latitude, lng: origenZona.longitude },
+                    { lat: destinoZona.latitude, lng: destinoZona.longitude }
+                ],
+                geodesic: true,
+                strokeColor: '#1F4E79',
+                strokeOpacity: 0.7,
+                strokeWeight: 3,
+                map: mapaGoogle
+            });
         }
     }
 }
 
 /**
- * Crea un ícono de Leaflet con un color específico usando un div personalizado.
+ * Crea un ícono SVG de Google Maps con un color específico.
  */
 function crearIconoColor(color) {
     const colores = {
         green: '#1E6B3C',
         red: '#C00000',
-        orange: '#C55A11'
+        orange: '#C55A11',
+        default: '#1F4E79'
     };
+    const hex = colores[color] || colores.default;
 
-    return L.divIcon({
-        html: `<div style="
-            background-color: ${colores[color] || color};
-            width: 24px; height: 24px;
-            border-radius: 50%;
-            border: 3px solid white;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.35);
-        "></div>`,
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
-        popupAnchor: [0, -14],
-        className: '' // Evitar clases por defecto de Leaflet
-    });
+    return {
+        path: google.maps.SymbolPath.CIRCLE,
+        fillColor: hex,
+        fillOpacity: 1,
+        strokeColor: '#FFFFFF',
+        strokeWeight: 3,
+        scale: 10
+    };
 }
 
 /**

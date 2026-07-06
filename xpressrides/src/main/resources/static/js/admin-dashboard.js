@@ -309,3 +309,45 @@ async function cargarTasaBcvActual() {
         display.innerText = 'Error al cargar tasa';
     }
 }
+
+// Sincronización automática desde la web del BCV
+const btnSync = document.getElementById('btn-tasa-sync');
+if (btnSync) {
+    btnSync.addEventListener('click', async () => {
+        btnSync.disabled = true;
+        btnSync.textContent = '⏳';
+        btnSync.title = 'Consultando al BCV...';
+
+        const successAlert = document.getElementById('tasa-success');
+        const errorAlert = document.getElementById('tasa-error');
+        successAlert.style.display = 'none';
+        errorAlert.style.display = 'none';
+
+        try {
+            const response = await fetchAPI('/tasa-bcv/extraer-web');
+            if (response.success && response.data) {
+                const tasa = Number(response.data);
+                document.getElementById('valorTasa').value = tasa;
+
+                // Actualizar fecha a hoy
+                const hoy = new Date();
+                const year = hoy.getFullYear();
+                const month = String(hoy.getMonth() + 1).padStart(2, '0');
+                const day = String(hoy.getDate()).padStart(2, '0');
+                document.getElementById('fechaTasa').value = `${year}-${month}-${day}`;
+
+                successAlert.innerText = `Tasa BCV obtenida de la web: Bs. ${tasa.toFixed(4)}. Presiona "Guardar" para registrarla.`;
+                successAlert.style.display = 'block';
+            } else {
+                throw new Error(response.message || 'No se pudo obtener la tasa');
+            }
+        } catch (error) {
+            errorAlert.innerText = 'Error al consultar BCV: ' + (error.message || 'Intenta de nuevo.');
+            errorAlert.style.display = 'block';
+        } finally {
+            btnSync.disabled = false;
+            btnSync.textContent = '🔄';
+            btnSync.title = 'Consultar tasa BCV de la web';
+        }
+    });
+}

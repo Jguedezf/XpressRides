@@ -1,13 +1,22 @@
-// js/chofer-viaje.js — Integración real con el backend XpressRides
+// js/chofer-viaje.js — Integración real con el backend XpressRides (Google Maps)
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!requireAuth()) return;
-    inicializarMapaChofer();
     configurarBotonesEstado();
     configurarBotonEmergencia();
     cargarViajeActivo();
     // Polling cada 8 segundos para detectar nuevos viajes asignados por el SP
     setInterval(cargarViajeActivo, 8000);
+
+    // Esperar a que Google Maps esté disponible (carga async defer)
+    function esperarGoogleMaps() {
+        if (typeof google !== 'undefined' && google.maps) {
+            inicializarMapaChofer();
+        } else {
+            setTimeout(esperarGoogleMaps, 100);
+        }
+    }
+    esperarGoogleMaps();
 });
 
 let mapaChofer = null;
@@ -19,47 +28,69 @@ let viajeActual = null;
 // ─── 1. MAPA ────────────────────────────────────────
 
 function inicializarMapaChofer() {
-    mapaChofer = L.map('map').setView([8.3535, -62.6328], 14);
+    const centroGuayana = { lat: 8.29, lng: -62.71 };
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 19
-    }).addTo(mapaChofer);
+    mapaChofer = new google.maps.Map(document.getElementById('map'), {
+        center: centroGuayana,
+        zoom: 14,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+        restriction: {
+            latLngBounds: {
+                north: 8.55,
+                south: 7.95,
+                east: -62.20,
+                west: -63.10
+            },
+            strictBounds: false
+        }
+    });
 
     if (!navigator.geolocation) return;
-
-    const iconoChofer = L.divIcon({
-        html: `<div style="width:20px;height:20px;background-color:#1F4E79;border:3px solid white;border-radius:50%;box-shadow:0 0 0 4px rgba(31,78,121,0.3),0 2px 6px rgba(0,0,0,0.3);"></div>`,
-        iconSize: [20, 20],
-        iconAnchor: [10, 10],
-        className: ''
-    });
 
     watchId = navigator.geolocation.watchPosition(
         (pos) => {
             const { latitude, longitude, accuracy } = pos.coords;
+            const posicion = { lat: latitude, lng: longitude };
+
             if (marcadorChofer) {
-                marcadorChofer.setLatLng([latitude, longitude]);
+                marcadorChofer.setPosition(posicion);
             } else {
-                marcadorChofer = L.marker([latitude, longitude], { icon: iconoChofer })
-                    .addTo(mapaChofer)
-                    .bindPopup('Tu ubicación');
+                marcadorChofer = new google.maps.Marker({
+                    position: posicion,
+                    map: mapaChofer,
+                    title: 'Tu ubicación',
+                    icon: {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        fillColor: '#1F4E79',
+                        fillOpacity: 1,
+                        strokeColor: '#FFFFFF',
+                        strokeWeight: 3,
+                        scale: 10
+                    }
+                });
             }
+
             if (circuloPrecision) {
-                circuloPrecision.setLatLng([latitude, longitude]);
+                circuloPrecision.setCenter(posicion);
                 circuloPrecision.setRadius(accuracy);
             } else {
-                circuloPrecision = L.circle([latitude, longitude], {
+                circuloPrecision = new google.maps.Circle({
+                    center: posicion,
                     radius: accuracy,
-                    color: '#1F4E79',
+                    strokeColor: '#1F4E79',
+                    strokeOpacity: 0.3,
+                    strokeWeight: 1,
                     fillColor: '#1F4E79',
                     fillOpacity: 0.1,
-                    weight: 1
-                }).addTo(mapaChofer);
+                    map: mapaChofer
+                });
             }
+
             const enGuayana = latitude > 7.8 && latitude < 8.7 && longitude > -63.2 && longitude < -62.1;
             if (enGuayana) {
-                mapaChofer.setView([latitude, longitude], mapaChofer.getZoom());
+                mapaChofer.setCenter(posicion);
             }
         },
         (err) => console.warn('Error de geolocalización:', err.message),
