@@ -55,8 +55,8 @@ function configurarCalculadora() {
 let mapaGoogle = null;
 let marcadores = [];
 let zonasData = [];
-let rutaPolyline = null;
-
+let directionsRenderer = null;
+let directionsService = null;
 /**
  * Carga las zonas activas desde GET /api/zonas
  * y llena los selects de origen y destino.
@@ -114,6 +114,17 @@ function inicializarMapa() {
             strictBounds: false
         }
     });
+    //Inicializar DirectionsService y DirectionsRenderer para dibujar rutas
+    directionsService = new google.maps.DirectionsService();
+        directionsRenderer = new google.maps.DirectionsRenderer({
+            map: mapaGoogle,
+            suppressMarkers: true,
+            polylineOptions: {
+                strokeColor: '#1F4E79',
+                strokeOpacity: 0.7,
+                strokeWeight: 4
+            }
+        });
 
     // Agregar marcadores de todas las zonas
     zonasData.forEach(zona => {
@@ -155,11 +166,11 @@ function resaltarRuta() {
         m.marker.setIcon(crearIconoColor('default'));
     });
 
-    // Limpiar polyline previo
-    if (rutaPolyline) {
-        rutaPolyline.setMap(null);
-        rutaPolyline = null;
+    // Limpiar la ruta previa del DirectionsRenderer
+     if (directionsRenderer) {
+        directionsRenderer.set('directions', null);
     }
+
 
     // Resaltar origen con ícono verde
     if (origenId) {
@@ -188,17 +199,19 @@ function resaltarRuta() {
             bounds.extend({ lat: destinoZona.latitude, lng: destinoZona.longitude });
             mapaGoogle.fitBounds(bounds, { top: 60, bottom: 60, left: 60, right: 60 });
 
-            // Dibujar línea entre origen y destino
-            rutaPolyline = new google.maps.Polyline({
-                path: [
-                    { lat: origenZona.latitude, lng: origenZona.longitude },
-                    { lat: destinoZona.latitude, lng: destinoZona.longitude }
-                ],
-                geodesic: true,
-                strokeColor: '#1F4E79',
-                strokeOpacity: 0.7,
-                strokeWeight: 3,
-                map: mapaGoogle
+            // Dibujar línea entre origen y destino con DirectionsService
+            const request = {
+                origin: { lat: origenZona.latitude, lng: origenZona.longitude },
+                destination: { lat: destinoZona.latitude, lng: destinoZona.longitude },
+                travelMode: google.maps.TravelMode.DRIVING
+            };
+
+            directionsService.route(request, (result, status) => {
+                if (status === google.maps.DirectionsStatus.OK) {
+                    directionsRenderer.setDirections(result);
+                } else {
+                    console.warn('No se pudo calcular la ruta:', status);
+                }
             });
         }
     }
