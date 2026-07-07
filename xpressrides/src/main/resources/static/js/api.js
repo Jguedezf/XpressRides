@@ -102,16 +102,28 @@ function cargarGoogleMaps() {
             const response = await fetchAPI('/config/maps-key');
             if (response.success && response.data) {
                 const apiKey = response.data;
-                
+
+                // Google documenta que el evento 'onload' del <script> no es confiable para
+                // saber si google.maps.* ya está listo (sobre todo en cargas frías) — el
+                // patrón recomendado es usar &callback= en la URL, que Google invoca recién
+                // cuando la API terminó de inicializarse.
+                const callbackName = '__onGoogleMapsLoaded';
+                window[callbackName] = () => {
+                    delete window[callbackName];
+                    resolve();
+                };
+
                 // Crear el elemento script
                 const script = document.createElement('script');
-                script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=${callbackName}`;
                 script.async = true;
                 script.defer = true;
-                
-                script.onload = () => resolve();
-                script.onerror = () => reject(new Error('Fallo al cargar el script de Google Maps'));
-                
+
+                script.onerror = () => {
+                    delete window[callbackName];
+                    reject(new Error('Fallo al cargar el script de Google Maps'));
+                };
+
                 document.head.appendChild(script);
             } else {
                 reject(new Error('No se pudo obtener la API Key de Google Maps'));
