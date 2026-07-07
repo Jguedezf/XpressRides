@@ -114,6 +114,9 @@ public class Trip {
     @Column(name = "fecha_solicitud")
     private LocalDateTime requestDate;
 
+    @Column(name = "fecha_asignacion_actual")
+    private LocalDateTime currentAssignmentDate;
+
     @Column(name = "fecha_aceptacion")
     private LocalDateTime acceptanceDate;
 

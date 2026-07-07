@@ -53,18 +53,54 @@ public class TripRejectionService {
             throw new BadRequestException("Este traslado no está asignado a tu cuenta");
         }
 
-        // Liberar al chofer actual y sumar rechazo
+        // Liberar al chofer actual
         currentDriver.setAvailable(true);
         driverRepository.save(currentDriver);
 
-        int rechazos = (trip.getRejections() == null ? 0 : trip.getRejections()) + 1;
-        trip.setRejections(rechazos);
+        Map<String, Object> result = reassignOrCancel(tripId, currentDriver);
+        if (result == null) {
+            throw new BadRequestException("Este traslado ya no está disponible para rechazar (puede que ya haya cambiado de estado)");
+        }
+        return result;
+    }
+
+    // Disparado por TripTimeoutScheduler cuando el chofer asignado no respondió dentro del plazo
+    @Transactional
+    public void expireTrip(Integer tripId) {
+        Trip trip = tripRepository.findById(tripId).orElse(null);
+        if (trip == null || !"solicitado".equals(trip.getStatus())) {
+            // Ya fue aceptado/cancelado/reasignado entre el barrido del scheduler y esta ejecución
+            return;
+        }
+
+        Driver currentDriver = trip.getDriver();
+        if (currentDriver != null) {
+            currentDriver.setAvailable(true);
+            driverRepository.save(currentDriver);
+        }
+
+        reassignOrCancel(tripId, currentDriver); // resultado null (nadie lo reclamó) se ignora aquí
+    }
+
+    // Lógica compartida entre rechazo explícito (rejectTrip) y no-respuesta por timeout (expireTrip):
+    // reclama el viaje atómicamente y busca el siguiente chofer disponible, o cancela +
+    // reembolsa + notifica al agotarse los 3 intentos. Devuelve null si el viaje ya no estaba
+    // en 'solicitado' cuando se intentó reclamar (otra ejecución lo procesó primero).
+    private Map<String, Object> reassignOrCancel(Integer tripId, Driver currentDriver) {
+        if (tripRepository.claimSolicitadoForReassignment(tripId) == 0) {
+            return null;
+        }
+
+        Trip trip = tripRepository.findById(tripId)
+            .orElseThrow(() -> new ResourceNotFoundException("Traslado no encontrado con ID: " + tripId));
+
+        int rechazos = trip.getRejections(); // ya viene incrementado por el claim atómico
 
         if (rechazos < 3) {
             // Buscar siguiente chofer disponible distinto al actual
             List<Driver> disponibles = driverRepository.findByEnabledTrueAndAvailableTrue()
                 .stream()
-                .filter(d -> !d.getId().equals(currentDriver.getId()))
+                .filter(d -> currentDriver == null || !d.getId().equals(currentDriver.getId()))
                 .collect(Collectors.toList());
 
             if (!disponibles.isEmpty()) {
@@ -72,6 +108,7 @@ public class TripRejectionService {
                 siguiente.setAvailable(false);
                 driverRepository.save(siguiente);
                 trip.setDriver(siguiente);
+                trip.setCurrentAssignmentDate(LocalDateTime.now());
                 tripRepository.save(trip);
 
                 Map<String, Object> result = new HashMap<>();
@@ -81,7 +118,7 @@ public class TripRejectionService {
             }
         }
 
-        // 3 rechazos o sin choferes disponibles — cancelar y notificar al cliente
+        // 3 rechazos/timeouts o sin choferes disponibles — cancelar y notificar al cliente
         trip.setStatus("cancelado");
         trip.setCancelledBy("sistema");
         trip.setCancellationReason("No hay choferes disponibles en este momento");

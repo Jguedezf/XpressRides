@@ -153,6 +153,8 @@ function configurarBalance() {
 // ─────────────────────────────────────────────────────────
 let pollingTripInterval = null;
 let currentPendingTripId = null;
+let countdownInterval = null;
+const RESPONSE_TIMEOUT_SECONDS = 30; // debe coincidir con TripTimeoutScheduler (backend)
 
 function iniciarPollingViajes() {
     verificarViajePendiente();
@@ -192,14 +194,49 @@ function mostrarAlertaViaje(trip) {
     document.getElementById('alert-trip-origin').textContent = trip.origen;
     document.getElementById('alert-trip-dest').textContent = trip.destino;
     document.getElementById('alert-trip-price').textContent = `$${trip.costoUsd ? trip.costoUsd.toFixed(2) : '0.00'}`;
-    
+
     alertContainer.style.display = 'block';
+    iniciarCuentaRegresiva(trip.fechaAsignacionActual || trip.fechaSolicitud);
 }
 
 function ocultarAlertaViaje() {
     currentPendingTripId = null;
+    detenerCuentaRegresiva();
     const alertContainer = document.getElementById('trip-alert-container');
     if (alertContainer) alertContainer.style.display = 'none';
+}
+
+// Cuenta regresiva visual de los 30s que tiene el chofer para responder antes de
+// que el backend (TripTimeoutScheduler) reasigne el viaje automáticamente.
+// No dispara ninguna acción por sí sola: solo refleja el plazo real del servidor,
+// que se aplica igual aunque esta pestaña esté cerrada.
+function iniciarCuentaRegresiva(fechaAsignacionIso) {
+    detenerCuentaRegresiva();
+    if (!fechaAsignacionIso) return;
+
+    const asignadoEnMs = new Date(fechaAsignacionIso).getTime();
+    const countdownEl = document.getElementById('alert-trip-countdown');
+    const barEl = document.getElementById('alert-trip-countdown-bar');
+
+    const actualizar = () => {
+        const transcurridoSeg = Math.floor((Date.now() - asignadoEnMs) / 1000);
+        const restante = Math.max(0, RESPONSE_TIMEOUT_SECONDS - transcurridoSeg);
+
+        if (countdownEl) countdownEl.textContent = `${restante}s`;
+        if (barEl) barEl.style.width = `${(restante / RESPONSE_TIMEOUT_SECONDS) * 100}%`;
+
+        if (restante <= 0) detenerCuentaRegresiva();
+    };
+
+    actualizar();
+    countdownInterval = setInterval(actualizar, 1000);
+}
+
+function detenerCuentaRegresiva() {
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
 }
 
 window.aceptarViajeAlerta = async function() {

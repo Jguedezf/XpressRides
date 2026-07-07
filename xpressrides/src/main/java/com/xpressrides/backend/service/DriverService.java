@@ -345,6 +345,7 @@ public class DriverService {
         data.put("distanciaKm", trip.getDistanceKm());
         data.put("nroPasajeros", trip.getPassengerCount());
         data.put("fechaSolicitud", trip.getRequestDate());
+        data.put("fechaAsignacionActual", trip.getCurrentAssignmentDate());
 
         return data;
     }

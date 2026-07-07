@@ -22,6 +22,8 @@ let marcadorChofer = null;
 let circuloPrecision = null;
 let watchId = null;
 let viajeActual = null;
+let countdownInterval = null;
+const RESPONSE_TIMEOUT_SECONDS = 30; // debe coincidir con TripTimeoutScheduler (backend)
 
 // ─── 1. MAPA ────────────────────────────────────────
 
@@ -124,6 +126,7 @@ function ocultarPaneles() {
     document.getElementById('push-notification').classList.add('hidden');
     document.getElementById('state-buttons').classList.add('hidden');
     viajeActual = null;
+    detenerCuentaRegresiva();
 }
 
 function renderizarEstado(viaje) {
@@ -132,7 +135,6 @@ function renderizarEstado(viaje) {
     // Poblar datos del viaje en la notificación
     document.getElementById('push-origen').textContent = origen;
     document.getElementById('push-destino').textContent = destino;
-    document.getElementById('push-timer-text').textContent = '';
 
     // Ocultar todo primero
     document.getElementById('push-notification').classList.add('hidden');
@@ -140,6 +142,7 @@ function renderizarEstado(viaje) {
     document.getElementById('btn-en-camino').classList.add('hidden');
     document.getElementById('btn-llegue').classList.add('hidden');
     document.getElementById('btn-completado').classList.add('hidden');
+    detenerCuentaRegresiva();
 
     const btnCancelar = document.getElementById('btn-cancelar');
     if (btnCancelar) btnCancelar.classList.add('hidden');
@@ -147,6 +150,7 @@ function renderizarEstado(viaje) {
     switch (estado) {
         case 'solicitado':
             document.getElementById('push-notification').classList.remove('hidden');
+            iniciarCuentaRegresiva(viaje.fechaAsignacionActual || viaje.fechaSolicitud);
             break;
 
         case 'aceptado':
@@ -186,7 +190,44 @@ function renderizarEstado(viaje) {
 
 window.cerrarPushNotification = function () {
     document.getElementById('push-notification').classList.add('hidden');
+    detenerCuentaRegresiva();
 };
+
+// Cuenta regresiva visual de los 30s que tiene el chofer para responder antes de
+// que el backend (TripTimeoutScheduler) reasigne el viaje automáticamente.
+// No dispara ninguna acción por sí sola: solo refleja el plazo real del servidor,
+// que se aplica igual aunque esta pestaña esté cerrada.
+function iniciarCuentaRegresiva(fechaAsignacionIso) {
+    detenerCuentaRegresiva();
+    if (!fechaAsignacionIso) return;
+
+    const asignadoEnMs = new Date(fechaAsignacionIso).getTime();
+    const barEl = document.getElementById('push-timer-bar');
+    const textEl = document.getElementById('push-timer-text');
+
+    const actualizar = () => {
+        const transcurridoSeg = Math.floor((Date.now() - asignadoEnMs) / 1000);
+        const restante = Math.max(0, RESPONSE_TIMEOUT_SECONDS - transcurridoSeg);
+
+        if (textEl) textEl.textContent = `${restante} segundos restantes`;
+        if (barEl) {
+            barEl.style.width = `${(restante / RESPONSE_TIMEOUT_SECONDS) * 100}%`;
+            barEl.classList.toggle('expired', restante <= 0);
+        }
+
+        if (restante <= 0) detenerCuentaRegresiva();
+    };
+
+    actualizar();
+    countdownInterval = setInterval(actualizar, 1000);
+}
+
+function detenerCuentaRegresiva() {
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+}
 
 // ─── 3. BOTONES DE ESTADO ───────────────────────────
 
@@ -232,6 +273,7 @@ async function rechazarViaje() {
         await fetchAPI(`/chofer/traslados/${viajeActual.idTraslado}/rechazar`, { method: 'PUT' });
         document.getElementById('push-notification').classList.add('hidden');
         viajeActual = null;
+        detenerCuentaRegresiva();
         mostrarMensaje('Viaje rechazado');
     } catch (error) {
         mostrarMensaje('Error: ' + error.message);

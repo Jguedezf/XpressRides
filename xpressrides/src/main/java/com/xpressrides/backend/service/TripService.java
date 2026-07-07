@@ -68,6 +68,9 @@ public class TripService {
         if(tripId != null){
             Trip trip = tripRepository.findById(tripId).orElseThrow(()-> new ResourceNotFoundException("Traslado no encontrado"));
 
+            trip.setCurrentAssignmentDate(java.time.LocalDateTime.now());
+            tripRepository.save(trip);
+
             Data data = new Data();
             data.setTripId(trip.getId());
             data.setState(trip.getStatus());

@@ -49,4 +49,16 @@ public interface TripRepository extends JpaRepository<Trip, Integer>, JpaSpecifi
     @org.springframework.data.jpa.repository.Modifying
     @Query("UPDATE Trip t SET t.pagadoAlChofer = true WHERE t.driver.id = :driverId AND t.status = 'completado' AND t.pagadoAlChofer = false")
     int markTripsAsPaidForDriver(@Param("driverId") Integer driverId);
+
+    // Viajes 'solicitado' cuyo chofer asignado no respondió dentro del plazo (timeout)
+    List<Trip> findByStatusAndCurrentAssignmentDateBefore(String status, LocalDateTime threshold);
+
+    // Reclama atómicamente un viaje 'solicitado' incrementando sus rechazos, solo si en este
+    // instante SIGUE en ese estado en la BD (condición evaluada por MySQL al tomar el lock de
+    // fila, no por una lectura previa en Java). Si devuelve 0, el chofer ya respondió (aceptó/
+    // rechazó) o el viaje ya fue procesado por otra ejecución justo antes — evita que el
+    // scheduler de timeout y una acción del chofer actúen sobre el mismo viaje a la vez.
+    @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("UPDATE Trip t SET t.rejections = COALESCE(t.rejections, 0) + 1 WHERE t.id = :id AND t.status = 'solicitado'")
+    int claimSolicitadoForReassignment(@Param("id") Integer id);
 }

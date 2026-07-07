@@ -237,7 +237,7 @@ CREATE TABLE traslado (
   estado                ENUM('solicitado','aceptado','en_camino',
                              'chofer_llego','en_progreso',
                              'completado','cancelado') NOT NULL DEFAULT 'solicitado',
-  cancelado_por         ENUM('cliente','chofer','empresa') NULL,
+  cancelado_por         ENUM('cliente','chofer','empresa','sistema') NULL,
   motivo_cancelacion    VARCHAR(200)  NULL,
 
   -- Calificación del cliente
@@ -249,6 +249,7 @@ CREATE TABLE traslado (
   rechazos              INT           NOT NULL DEFAULT 0,
   eta_minutos           INT           NULL,
   fecha_solicitud       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  fecha_asignacion_actual DATETIME    NULL,
   fecha_aceptacion      DATETIME      NULL,
   fecha_inicio          DATETIME      NULL,
   fecha_fin             DATETIME      NULL,
@@ -271,6 +272,10 @@ CREATE TABLE traslado (
 -- Cubre GET /api/cliente/viaje-activo y el polling de viaje activo del dashboard
 -- Evita full table scan en traslado (tabla de mayor crecimiento del sistema)
 CREATE INDEX idx_traslado_cliente_estado ON traslado(id_cliente, estado);
+
+-- Cubre el job de timeout (TripTimeoutScheduler) que busca viajes 'solicitado'
+-- vencidos por fecha_asignacion_actual, corre cada pocos segundos
+CREATE INDEX idx_traslado_estado_asignacion ON traslado(estado, fecha_asignacion_actual);
 
 CREATE TABLE pago_chofer (
   id          INT           AUTO_INCREMENT PRIMARY KEY,
