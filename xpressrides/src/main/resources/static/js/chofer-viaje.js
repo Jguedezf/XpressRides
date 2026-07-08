@@ -52,6 +52,8 @@ function inicializarMapaChofer() {
     const geocoder = new google.maps.Geocoder();
 
     mapaChofer.addListener('click', (e) => {
+        infoWindow.close(); // Cerramos cualquier ventana anterior
+
         if (e.placeId) {
             // Permitir InfoWindow nativo de Google (POI)
             return;

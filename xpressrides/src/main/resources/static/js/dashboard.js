@@ -57,6 +57,7 @@ let marcadores = [];
 let zonasData = [];
 let directionsRenderer = null;
 let directionsService = null;
+let globalInfoWindow = null;
 /**
  * Carga las zonas activas desde GET /api/zonas
  * y llena los selects de origen y destino.
@@ -127,6 +128,8 @@ function inicializarMapa() {
         });
 
     // Agregar marcadores de todas las zonas
+    globalInfoWindow = new google.maps.InfoWindow();
+
     zonasData.forEach(zona => {
         if (zona.latitude && zona.longitude) {
             const marcador = new google.maps.Marker({
@@ -136,23 +139,23 @@ function inicializarMapa() {
                 icon: crearIconoColor('default')
             });
 
-            const infoWindow = new google.maps.InfoWindow({
-                content: `<b>${zona.name}</b><br>${zona.parish || ''}`
-            });
+            const contentStr = `<b>${zona.name}</b><br>${zona.parish || ''}`;
 
             marcador.addListener('click', () => {
-                infoWindow.open(mapaGoogle, marcador);
+                globalInfoWindow.setContent(contentStr);
+                globalInfoWindow.open(mapaGoogle, marcador);
             });
 
-            marcadores.push({ id: zona.id, marker: marcador, infoWindow });
+            marcadores.push({ id: zona.id, marker: marcador, content: contentStr });
         }
     });
 
     // Interactividad al hacer click en el mapa (Geocoding Inverso)
     const geocoder = new google.maps.Geocoder();
-    const clickInfoWindow = new google.maps.InfoWindow();
 
     mapaGoogle.addListener('click', (e) => {
+        if (globalInfoWindow) globalInfoWindow.close();
+
         if (e.placeId) {
             // Permitir que el InfoWindow nativo de Google (con fotos, rating, etc.) se muestre
             return;
@@ -160,14 +163,14 @@ function inicializarMapa() {
 
         geocoder.geocode({ location: e.latLng }, (results, status) => {
             if (status === 'OK' && results[0]) {
-                clickInfoWindow.setContent(`
+                globalInfoWindow.setContent(`
                     <div style="padding: 8px; color: #333; font-family: 'Inter', sans-serif;">
                         <h4 style="margin: 0 0 4px 0; color: #1F4E79; font-size: 14px;">Ubicación seleccionada</h4>
                         <p style="margin: 0; font-size: 12px;">${results[0].formatted_address}</p>
                     </div>
                 `);
-                clickInfoWindow.setPosition(e.latLng);
-                clickInfoWindow.open(mapaGoogle);
+                globalInfoWindow.setPosition(e.latLng);
+                globalInfoWindow.open(mapaGoogle);
             }
         });
     });
@@ -201,7 +204,10 @@ function resaltarRuta() {
         const origenMarcador = marcadores.find(m => m.id === origenId);
         if (origenMarcador) {
             origenMarcador.marker.setIcon(crearIconoColor('green'));
-            origenMarcador.infoWindow.open(mapaGoogle, origenMarcador.marker);
+            if (globalInfoWindow) {
+                globalInfoWindow.setContent(origenMarcador.content);
+                globalInfoWindow.open(mapaGoogle, origenMarcador.marker);
+            }
         }
     }
 
