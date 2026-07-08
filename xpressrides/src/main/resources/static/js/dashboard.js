@@ -148,6 +148,30 @@ function inicializarMapa() {
         }
     });
 
+    // Interactividad al hacer click en el mapa (Geocoding Inverso)
+    const geocoder = new google.maps.Geocoder();
+    const clickInfoWindow = new google.maps.InfoWindow();
+
+    mapaGoogle.addListener('click', (e) => {
+        if (e.placeId) {
+            // Permitir que el InfoWindow nativo de Google (con fotos, rating, etc.) se muestre
+            return;
+        }
+
+        geocoder.geocode({ location: e.latLng }, (results, status) => {
+            if (status === 'OK' && results[0]) {
+                clickInfoWindow.setContent(`
+                    <div style="padding: 8px; color: #333; font-family: 'Inter', sans-serif;">
+                        <h4 style="margin: 0 0 4px 0; color: #1F4E79; font-size: 14px;">Ubicación seleccionada</h4>
+                        <p style="margin: 0; font-size: 12px;">${results[0].formatted_address}</p>
+                    </div>
+                `);
+                clickInfoWindow.setPosition(e.latLng);
+                clickInfoWindow.open(mapaGoogle);
+            }
+        });
+    });
+
     // Cuando el usuario selecciona origen o destino, destacamos los marcadores
     document.getElementById('origen').addEventListener('change', resaltarRuta);
     document.getElementById('destino').addEventListener('change', resaltarRuta);

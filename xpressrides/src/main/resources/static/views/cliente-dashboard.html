@@ -112,24 +112,37 @@
 
 <!-- 1. BARRA SUPERIOR (HEADER) -->
 <header class="top-bar d-flex justify-between align-center">
-    <img src="/img/logo.png" alt="XpressRides" style="height:48px;width:auto;object-fit:contain;">
+    <div class="top-bar-left d-flex align-center" style="gap: 16px;">
+        <img src="/img/logo.png" alt="XpressRides" style="height:48px;width:auto;object-fit:contain;">
+        <span id="topbar-bcv-rate" class="badge-green" style="display:none; font-size:12px;">BCV: Cargando...</span>
+    </div>
 
     <!-- Navegación de Escritorio (Solo visible en PC) -->
     <nav class="desktop-nav">
         <a href="../views/cliente-dashboard.html" class="active">Inicio</a>
         <a href="../views/cliente-record.html">Historial de Viajes</a>
         <a href="../views/cliente-resenas.html">Mis Reseñas</a>
-        <a href="/views/user-profile.html">Mi Perfil</a>
     </nav>
 
     <!-- Campanita de notificaciones -->
-    <div class="notification-bell" onclick="abrirNotificaciones()">
+    <div class="top-bar-right d-flex align-center" style="gap: 16px;">
+        <div class="user-profile-widget" onclick="toggleProfileDropdown()" style="position:relative; cursor:pointer;">
+            <div id="topbar-user-initial" style="width:32px; height:32px; border-radius:50%; background-color:var(--color-primary); color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">U</div>
+            <div id="topbar-profile-dropdown" class="card" style="position:absolute; top:100%; right:0; margin-top:12px; display:none; min-width:180px; z-index:1000; padding:12px; cursor:default;" onclick="event.stopPropagation()">
+                <p id="topbar-user-name" class="h2-subtitle" style="margin:0; font-size:14px;">Usuario</p>
+                <p id="topbar-user-role" class="text-small" style="margin-bottom:8px; text-transform:capitalize;">Rol</p>
+                <hr style="margin:8px 0; border:none; border-top:1px solid #eee;">
+                <a href="../views/user-profile.html" style="font-size:13px; color:var(--color-accent); text-decoration:none; display:block; padding:4px 0;">Ver mi perfil</a>
+            </div>
+        </div>
+        <div class="notification-bell" onclick="abrirNotificaciones()">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
             <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
         </svg>
         <span class="notification-badge" id="badge-count">2</span>
     </div>
+</div>
 </header>
 
 <!-- 2. CONTENEDOR DEL MAPA (GOOGLE MAPS) -->
@@ -191,6 +204,7 @@
 
 <!-- Google Maps API cargada dinámicamente desde el backend -->
 <script src="../js/api.js"></script>
+<script src="../js/topbar.js"></script>
 <script src="../js/notifications.js"></script>
 <script src="../js/dashboard.js"></script>
 </body>

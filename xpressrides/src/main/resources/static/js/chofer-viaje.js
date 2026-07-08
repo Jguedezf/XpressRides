@@ -47,6 +47,30 @@ function inicializarMapaChofer() {
         }
     });
 
+    // Interactividad al hacer click en el mapa
+    const infoWindow = new google.maps.InfoWindow();
+    const geocoder = new google.maps.Geocoder();
+
+    mapaChofer.addListener('click', (e) => {
+        if (e.placeId) {
+            // Permitir InfoWindow nativo de Google (POI)
+            return;
+        }
+
+        geocoder.geocode({ location: e.latLng }, (results, status) => {
+            if (status === 'OK' && results[0]) {
+                infoWindow.setContent(`
+                    <div style="padding: 8px; color: #333; font-family: 'Inter', sans-serif;">
+                        <h4 style="margin: 0 0 4px 0; color: #1F4E79; font-size: 14px;">Ubicación seleccionada</h4>
+                        <p style="margin: 0; font-size: 12px;">${results[0].formatted_address}</p>
+                    </div>
+                `);
+                infoWindow.setPosition(e.latLng);
+                infoWindow.open(mapaChofer);
+            }
+        });
+    });
+
     if (!navigator.geolocation) return;
 
     watchId = navigator.geolocation.watchPosition(

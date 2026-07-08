@@ -395,8 +395,8 @@ input:checked + .toggle-slider:before {
 }
 
 @media print {
-    /* Ocultar todo el sitio web normal */
-    body > *:not(#factura-impresion) { 
+    /* Ocultar todo el sitio web normal excepto los contenedores de impresión explícitos */
+    body > *:not(#factura-impresion):not(#reporte-impresion) { 
         display: none !important; 
     }
     
@@ -523,5 +523,18 @@ input:checked + .toggle-slider:before {
     .print-center-text {
         text-align: center;
         margin-top: 10px;
+    }
+}
+
+/* --- FIX: Centrado Absoluto del Nav Desktop --- */
+.top-bar {
+    position: relative;
+}
+
+@media (min-width: 768px) {
+    .top-bar .desktop-nav {
+        position: absolute !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
     }
 }

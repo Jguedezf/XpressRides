@@ -64,3 +64,103 @@ document.getElementById('form-filtro-ganancias').addEventListener('submit', asyn
         btn.disabled = false;
     }
 });
+
+/* ==========================================
+   MÓDULO: IMPRESIÓN DEL REPORTE
+========================================== */
+document.getElementById('btn-imprimir').addEventListener('click', () => {
+    // 1. Eliminar versiones previas de impresión
+    const prevPrint = document.getElementById('reporte-impresion');
+    if (prevPrint) prevPrint.remove();
+    const prevPrintStyle = document.getElementById('print-style-reporte');
+    if (prevPrintStyle) prevPrintStyle.remove();
+
+    // 2. Extraer datos actuales
+    const fechaInicio = document.getElementById('fechaInicio').value || '---';
+    const fechaFin = document.getElementById('fechaFin').value || '---';
+    const tbodyHTML = document.getElementById('tbody-ganancias').innerHTML;
+    const totalGanancias = document.getElementById('total-ganancias').innerText;
+
+    // 3. Crear estilo de impresión aislado
+    const printStyles = `
+        <style id="print-style-reporte">
+            @media print {
+                body { display: block !important; height: auto !important; min-height: 0 !important; background: white !important; padding: 0 !important; }
+                body * { visibility: hidden; }
+                #reporte-impresion, #reporte-impresion * { visibility: visible; }
+                #reporte-impresion { display: block !important; position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 20px; box-sizing: border-box; }
+                
+                .print-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1F4E79; padding-bottom: 20px; margin-bottom: 20px; }
+                .print-logo { height: 60px; object-fit: contain; }
+                .print-company-info { text-align: center; font-size: 14px; }
+                .print-doc-info { text-align: right; font-size: 14px; }
+                
+                .print-title { text-align: center; color: #1F4E79; margin: 20px 0; font-size: 22px; font-weight: bold; }
+                
+                .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+                .print-table th { background-color: #1F4E79 !important; color: white !important; padding: 10px; text-align: left; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                .print-table td { border-bottom: 1px solid #ccc; padding: 10px; }
+                
+                .print-footer { margin-top: 30px; text-align: right; font-size: 18px; font-weight: bold; color: #1F4E79; }
+                
+                @page { margin: 1cm; size: auto; }
+            }
+        </style>
+    `;
+
+    document.head.insertAdjacentHTML('beforeend', printStyles);
+
+    // 4. Construir contenedor de impresión
+    const printContainer = document.createElement('div');
+    printContainer.id = 'reporte-impresion';
+    printContainer.style.display = 'none'; // Oculto en pantalla normal
+    
+    const fechaActual = new Date().toLocaleDateString('es-VE', { year: 'numeric', month: '2-digit', day: '2-digit' });
+
+    printContainer.innerHTML = `
+        <div class="print-header">
+            <img src="/img/logo.png" alt="XpressRides Logo" class="print-logo">
+            <div class="print-company-info">
+                <strong>XpressRides, C.A.</strong><br>
+                RIF: J-50301732-5<br>
+                Domicilio Fiscal: Ciudad Guayana
+            </div>
+            <div class="print-doc-info">
+                <strong>Reporte Administrativo</strong><br>
+                Generado: ${fechaActual}<br>
+                Periodo: ${fechaInicio} al ${fechaFin}
+            </div>
+        </div>
+        
+        <div class="print-title">Reporte de Ingresos de la Empresa (30%)</div>
+        
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th>Viaje ID</th>
+                    <th>Fecha</th>
+                    <th>Costo Bruto</th>
+                    <th>Descuento</th>
+                    <th>Ganancia Empresa</th>
+                    <th>Concepto</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${tbodyHTML}
+            </tbody>
+        </table>
+        
+        <div class="print-footer">
+            Total Ganancias: ${totalGanancias}
+        </div>
+    `;
+
+    document.body.appendChild(printContainer);
+
+    // 5. Ejecutar impresión y limpieza
+    setTimeout(() => {
+        window.print();
+        printContainer.remove();
+        document.getElementById('print-style-reporte').remove();
+    }, 300);
+});

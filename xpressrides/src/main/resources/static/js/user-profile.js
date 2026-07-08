@@ -23,6 +23,8 @@ function cargarPerfil() {
         profileName.innerText = `${nombre} ${apellido}`.trim() || 'Usuario';
     }
 
+    // Renderizar Navegación Dinámica ahora se maneja globalmente en topbar.js
+
     // 3. Crear avatar con iniciales (Ej: Freddy Salazar → FS)
     const profileAvatar = document.getElementById('profile-avatar');
     if (profileAvatar) {

@@ -60,14 +60,26 @@
 <body>
 
 <header style="position:fixed;top:0;left:0;right:0;z-index:1000;background:#1F4E79;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
-    <span style="color:white;font-weight:700;font-size:18px;">Xpress<span style="color:#C55A11;">Rides</span><span style="font-weight:400;font-size:13px;opacity:0.75;"> | Admin</span></span>
+    <div class="top-bar-left d-flex align-center" style="gap: 16px;">
+        <span style="color:white;font-weight:700;font-size:18px;">Xpress<span style="color:#C55A11;">Rides</span><span style="font-weight:400;font-size:13px;opacity:0.75;"> | Admin</span></span>
+        <span id="topbar-bcv-rate" class="badge-green" style="display:none; font-size:12px;">BCV: Cargando...</span>
+    </div>
     <nav style="display:flex;gap:8px;">
         <a href="/views/admin-dashboard.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Panel Principal</a>
         <a href="/views/admin-reportes.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Reporte de Ingresos</a>
         <a href="/views/admin-pagos.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;background:#C55A11;">Control de Pagos</a>
         <a href="/views/admin-notificaciones.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Notificaciones</a>
     </nav>
-    <a href="/views/user-logout.html" style="color:white;text-decoration:none;font-size:13px;opacity:0.75;">Cerrar sesión</a>
+    <div class="top-bar-right d-flex align-center" style="gap: 16px;">
+        <div class="user-profile-widget" onclick="toggleProfileDropdown()" style="position:relative; cursor:pointer;">
+            <div id="topbar-user-initial" style="width:32px; height:32px; border-radius:50%; background-color:var(--color-primary); color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">U</div>
+            <div id="topbar-profile-dropdown" class="card" style="position:absolute; top:100%; right:0; margin-top:12px; display:none; min-width:180px; z-index:1000; padding:12px; cursor:default;" onclick="event.stopPropagation()">
+                <p id="topbar-user-name" class="h2-subtitle" style="margin:0; font-size:14px; color:var(--color-text-main);">Usuario</p>
+                <p id="topbar-user-role" class="text-small" style="margin-bottom:8px; text-transform:capitalize; color:var(--color-text-muted);">Rol</p>
+            </div>
+        </div>
+        <a href="/views/user-logout.html" style="color:white;text-decoration:none;font-size:13px;opacity:0.75;">Cerrar sesión</a>
+</div>
 </header>
 
 <main class="report-container">
@@ -202,6 +214,7 @@
 
 <!-- IMPORTACIÓN DE SCRIPTS -->
 <script src="/js/api.js"></script>
+<script src="/js/topbar.js"></script>
 <script src="/js/admin-pagos.js"></script>
 </body>
 </html>
