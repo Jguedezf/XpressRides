@@ -72,8 +72,21 @@ CREATE TABLE cliente (
   es_estudiante      TINYINT(1)    NOT NULL DEFAULT 0,
   primer_viaje_usado TINYINT(1)    NOT NULL DEFAULT 0,
   creado_en          TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  -- Programa de referidos: código propio (generado en Java, no derivado del ID),
+  -- quién lo refirió (si aplica) y si esa referencia ya generó la recompensa de
+  -- $5 para el referente. Ver trg_recompensa_referido más abajo.
+  codigo_referido               VARCHAR(10) NOT NULL UNIQUE,
+  referido_por                  INT         NULL,
+  recompensa_referido_otorgada  TINYINT(1)  NOT NULL DEFAULT 0,
+
   CONSTRAINT chk_saldo_cliente CHECK (saldo_usd >= 0),
-  CONSTRAINT fk_cliente_usuario FOREIGN KEY (id_usuario) REFERENCES usuario(id) ON DELETE CASCADE
+  CONSTRAINT fk_cliente_usuario FOREIGN KEY (id_usuario) REFERENCES usuario(id) ON DELETE CASCADE,
+  -- La protección "no puede referirse a sí mismo" NO puede ser un CHECK aquí:
+  -- MySQL prohíbe (error 3823) que una columna con CHECK sea a la vez el lado
+  -- hijo de un FK con ON DELETE SET NULL en la misma tabla. Se aplica en su
+  -- lugar con trg_cliente_no_autoreferido_insert/_update (BLOQUE 8C, más abajo).
+  CONSTRAINT fk_cliente_referido_por FOREIGN KEY (referido_por) REFERENCES cliente(id) ON DELETE SET NULL
 );
 
 CREATE TABLE chofer (
@@ -164,7 +177,7 @@ CREATE TABLE revision_vehiculo (
 CREATE TABLE cupon (
   id               INT           AUTO_INCREMENT PRIMARY KEY,
   codigo           VARCHAR(30)   NOT NULL UNIQUE,
-  tipo             ENUM('bienvenida','estudiante','promocional') NOT NULL,
+  tipo             ENUM('bienvenida','estudiante','promocional','referido') NOT NULL,
   descuento_usd    DECIMAL(8,2)  NOT NULL DEFAULT 0.00,
   distancia_max_km INT           NULL,
   activo           TINYINT(1)    NOT NULL DEFAULT 1,
@@ -173,15 +186,20 @@ CREATE TABLE cupon (
 );
 
 CREATE TABLE cupon_cliente (
-  id          INT       AUTO_INCREMENT PRIMARY KEY,
-  id_cupon    INT       NOT NULL,
-  id_cliente  INT       NOT NULL,
-  usado       TINYINT(1) NOT NULL DEFAULT 0,
-  fecha_uso   DATETIME  NULL,
-  creado_en   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  id                INT       AUTO_INCREMENT PRIMARY KEY,
+  id_cupon          INT       NOT NULL,
+  id_cliente        INT       NOT NULL,
+  usado             TINYINT(1) NOT NULL DEFAULT 0,
+  fecha_uso         DATETIME  NULL,
+  -- Traslado del REFERIDO que generó este cupón de recompensa (solo aplica a
+  -- cupones tipo 'referido'; NULL para el resto) — trazabilidad para la defensa.
+  id_traslado_origen INT      NULL,
+  creado_en         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT uq_cupon_cliente  UNIQUE (id_cupon, id_cliente),
-  CONSTRAINT fk_cuponcli_cupon   FOREIGN KEY (id_cupon)   REFERENCES cupon(id),
-  CONSTRAINT fk_cuponcli_cliente FOREIGN KEY (id_cliente) REFERENCES cliente(id)
+  CONSTRAINT fk_cuponcli_cupon    FOREIGN KEY (id_cupon)          REFERENCES cupon(id),
+  CONSTRAINT fk_cuponcli_cliente  FOREIGN KEY (id_cliente)        REFERENCES cliente(id)
+  -- fk_cupon_cliente_traslado se agrega más abajo vía ALTER TABLE, después de
+  -- CREATE TABLE traslado (que todavía no existe en este punto del script)
 );
 
 -- ================================================================
@@ -277,6 +295,11 @@ CREATE INDEX idx_traslado_cliente_estado ON traslado(id_cliente, estado);
 -- vencidos por fecha_asignacion_actual, corre cada pocos segundos
 CREATE INDEX idx_traslado_estado_asignacion ON traslado(estado, fecha_asignacion_actual);
 
+-- cupon_cliente.id_traslado_origen no pudo llevar su FK inline porque cupon_cliente
+-- (BLOQUE 4) se crea antes que traslado (BLOQUE 5) en este script — se agrega aquí.
+ALTER TABLE cupon_cliente
+  ADD CONSTRAINT fk_cupon_cliente_traslado FOREIGN KEY (id_traslado_origen) REFERENCES traslado(id);
+
 CREATE TABLE pago_chofer (
   id          INT           AUTO_INCREMENT PRIMARY KEY,
   id_chofer   INT           NOT NULL,
@@ -338,7 +361,8 @@ CREATE TABLE notificacion (
   id_traslado   INT           NULL,
   tipo          ENUM('viaje_solicitado','chofer_asignado','chofer_en_camino',
                       'chofer_llego','viaje_iniciado','viaje_completado','factura_emitida',
-                      'pago_recibido','recarga_acreditada','viaje_cancelado','sin_chofer','emergencia')
+                      'pago_recibido','recarga_acreditada','viaje_cancelado','sin_chofer','emergencia',
+                      'recompensa_referido')
                               NOT NULL,
   mensaje       VARCHAR(200)  NOT NULL,
   leida         TINYINT(1)    NOT NULL DEFAULT 0,
@@ -397,6 +421,10 @@ sp_solicitar_traslado: BEGIN
   DECLARE RADIO_1          DECIMAL(5,1)  DEFAULT 5.0;
   DECLARE RADIO_2          DECIMAL(5,1)  DEFAULT 10.0;
   DECLARE RADIO_3          DECIMAL(5,1)  DEFAULT 15.0;
+  -- Piso de tarifa cuando se aplica un cupón de referido: nunca puede dejar
+  -- el viaje en $0 (es una promoción de $5, no un viaje gratis). Otros tipos
+  -- de cupón (bienvenida, promocional) conservan el piso de $0.00 de siempre.
+  DECLARE TARIFA_MIN_CUPON_REFERIDO DECIMAL(8,2) DEFAULT 1.00;
 
   DECLARE v_lat1 DECIMAL(10,7); DECLARE v_lon1 DECIMAL(10,7);
   DECLARE v_lat2 DECIMAL(10,7); DECLARE v_lon2 DECIMAL(10,7);
@@ -424,6 +452,7 @@ sp_solicitar_traslado: BEGIN
   DECLARE v_id_zona_dest    INT;
   DECLARE v_desc_estudiante DECIMAL(8,2)  DEFAULT 0.00;
   DECLARE v_tarifa_original DECIMAL(10,2) DEFAULT 0.00;
+  DECLARE v_tipo_cupon      VARCHAR(20);
 
   -- Validar pasajeros
   IF p_nro_pasajeros < 1 OR p_nro_pasajeros > 3 THEN
@@ -499,8 +528,8 @@ sp_solicitar_traslado: BEGIN
   ELSE
     -- Cupón de descuento
     IF p_id_cupon_cliente IS NOT NULL THEN
-      SELECT c.descuento_usd, c.distancia_max_km
-        INTO v_descuento, v_dist_max
+      SELECT c.descuento_usd, c.distancia_max_km, c.tipo
+        INTO v_descuento, v_dist_max, v_tipo_cupon
         FROM cupon_cliente cc
         JOIN cupon c ON cc.id_cupon = c.id
        WHERE cc.id = p_id_cupon_cliente
@@ -511,6 +540,12 @@ sp_solicitar_traslado: BEGIN
         SET v_descuento = 0.00;
         SET p_id_cupon_cliente = NULL;
         SET p_mensaje = 'AVISO: Cupón no aplicado (distancia excedida). ';
+      END IF;
+      -- Cupón de referido: descuento = MIN(descuento_usd, tarifa - piso).
+      -- Los demás tipos (bienvenida, promocional) no pasan por aquí y
+      -- conservan el comportamiento genérico de siempre (puede llegar a $0).
+      IF v_tipo_cupon = 'referido' THEN
+        SET v_descuento = LEAST(IFNULL(v_descuento,0), GREATEST(v_tarifa - TARIFA_MIN_CUPON_REFERIDO, 0.00));
       END IF;
     END IF;
     SET v_costo_cli = GREATEST(v_tarifa - IFNULL(v_descuento,0), 0.00);
@@ -850,6 +885,131 @@ BEGIN
       VALUES (v_id_usuario_chofer, NEW.id, 'viaje_cancelado',
         'El viaje asignado fue cancelado.');
     END IF;
+  END IF;
+
+END$$
+
+DELIMITER ;
+
+-- ================================================================
+-- BLOQUE 8C: PROGRAMA DE REFERIDOS
+-- ================================================================
+-- Vista de ranking (mismo patrón que las demás vistas del BLOQUE 8) y
+-- trigger de recompensa, deliberadamente SEPARADO de trg_traslado_eventos:
+-- ese trigger ya reacciona a todos los cambios de estado del traslado con
+-- fines de notificación/facturación y es bastante largo. La recompensa de
+-- referidos es una regla de negocio distinta — depende también de la tabla
+-- cliente, no solo de traslado — y con su propio ciclo de vida. Separarlo
+-- evita que una futura modificación a uno de los dos obligue a tocar el
+-- otro, y permite explicar cada trigger de forma independiente en la
+-- defensa del proyecto.
+-- ================================================================
+
+CREATE OR REPLACE VIEW v_top_referentes AS
+  SELECT
+    r.id                          AS id_referente,
+    CONCAT(u.nombre,' ',u.apellido) AS referente,
+    COUNT(c.id)                   AS total_referidos
+  FROM cliente r
+  JOIN usuario u ON r.id_usuario = u.id
+  JOIN cliente c ON c.referido_por = r.id
+  GROUP BY r.id, u.nombre, u.apellido
+  ORDER BY total_referidos DESC;
+
+-- Reemplaza al CHECK que MySQL no permite junto al FK con ON DELETE SET NULL
+-- de referido_por (ver comentario en CREATE TABLE cliente). BEFORE INSERT es
+-- más bien defensivo: con id AUTO_INCREMENT, NEW.id normalmente no se conoce
+-- todavía en el INSERT, así que la auto-referencia real solo es alcanzable en
+-- la práctica vía UPDATE — pero se cubren ambos casos por completitud.
+DELIMITER $$
+
+CREATE TRIGGER trg_cliente_no_autoreferido_insert
+BEFORE INSERT ON cliente
+FOR EACH ROW
+BEGIN
+  IF NEW.referido_por IS NOT NULL AND NEW.referido_por = NEW.id THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Un cliente no puede tener su propio código como referido_por';
+  END IF;
+END$$
+
+CREATE TRIGGER trg_cliente_no_autoreferido_update
+BEFORE UPDATE ON cliente
+FOR EACH ROW
+BEGIN
+  IF NEW.referido_por IS NOT NULL AND NEW.referido_por = NEW.id THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Un cliente no puede tener su propio código como referido_por';
+  END IF;
+END$$
+
+DELIMITER ;
+
+DELIMITER $$
+
+CREATE TRIGGER trg_recompensa_referido
+AFTER UPDATE ON traslado
+FOR EACH ROW
+BEGIN
+  DECLARE v_id_referente         INT;
+  DECLARE v_id_usuario_referente INT;
+  DECLARE v_codigo_cupon         VARCHAR(30);
+  DECLARE v_id_cupon             INT;
+  DECLARE v_filas_marcadas       INT;
+
+  -- Solo interesa el instante en que el viaje se completa y tuvo costo real:
+  -- un viaje 100% cubierto por descuento no genera recompensa, para que nadie
+  -- pueda encadenar viajes gratuitos entre cuentas propias y farmear cupones
+  -- sin que la empresa reciba ingreso real por ese viaje.
+  IF NEW.estado = 'completado' AND OLD.estado <> 'completado' AND NEW.costo_cliente_usd > 0 THEN
+
+    SELECT referido_por INTO v_id_referente
+      FROM cliente
+      WHERE id = NEW.id_cliente;
+
+    IF v_id_referente IS NOT NULL THEN
+
+      -- Reclamo atómico de la recompensa: UPDATE condicionado por
+      -- recompensa_referido_otorgada = 0, verificando ROW_COUNT(), en vez de
+      -- un SELECT seguido de un UPDATE por separado (mismo patrón que
+      -- TripRejectionService.claimSolicitadoForReassignment usa en el backend
+      -- Java para el mismo tipo de problema). Así, si este cliente referido
+      -- llegara a disparar el trigger dos veces para "su primer viaje pagado"
+      -- por cualquier motivo, la segunda vez encuentra 0 filas afectadas y no
+      -- se genera un cupón duplicado.
+      UPDATE cliente
+        SET recompensa_referido_otorgada = 1
+        WHERE id = NEW.id_cliente
+          AND recompensa_referido_otorgada = 0;
+
+      SET v_filas_marcadas = ROW_COUNT();
+
+      IF v_filas_marcadas = 1 THEN
+
+        -- Cupón INDIVIDUAL (no uno compartido tipo 'BIENVENIDO'): cada
+        -- recompensa es su propia fila en cupon con código único, para poder
+        -- trazar en cupon_cliente.id_traslado_origen exactamente qué viaje
+        -- del referido generó cada cupón del referente.
+        SET v_codigo_cupon = CONCAT('REF-', LPAD(NEW.id, 8, '0'));
+
+        INSERT INTO cupon (codigo, tipo, descuento_usd, distancia_max_km, activo)
+        VALUES (v_codigo_cupon, 'referido', 5.00, NULL, 1);
+
+        SET v_id_cupon = LAST_INSERT_ID();
+
+        INSERT INTO cupon_cliente (id_cupon, id_cliente, usado, id_traslado_origen)
+        VALUES (v_id_cupon, v_id_referente, 0, NEW.id);
+
+        SELECT u.id INTO v_id_usuario_referente
+          FROM cliente cl JOIN usuario u ON cl.id_usuario = u.id
+          WHERE cl.id = v_id_referente;
+
+        INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+        VALUES (v_id_usuario_referente, NEW.id, 'recompensa_referido',
+          CONCAT('¡Ganaste un cupón de $5 porque tu referido completó su primer viaje pagado! Código: ', v_codigo_cupon));
+
+      END IF;
+
+    END IF;
+
   END IF;
 
 END$$

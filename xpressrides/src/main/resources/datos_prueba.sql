@@ -367,8 +367,8 @@ VALUES ('V20123456', 'Laura', 'Pérez', 'laurap',
         'laura.perez@test.ve', '0416-1234567', 'cliente');
 SET @id_usuario_cliente = LAST_INSERT_ID();
 
-INSERT INTO cliente (id_usuario, saldo_usd, es_estudiante, primer_viaje_usado)
-VALUES (@id_usuario_cliente, 20.00, 1, 0);
+INSERT INTO cliente (id_usuario, saldo_usd, es_estudiante, primer_viaje_usado, codigo_referido)
+VALUES (@id_usuario_cliente, 20.00, 1, 0, 'LAURAP01');
 
 -- ----------------------------------------------------------------
 -- TASA BCV — necesaria para calcular tarifa y mostrar precio en VES
@@ -902,9 +902,9 @@ INSERT INTO usuario (cedula, nombre, apellido, username, password_hash, email, t
 SET @u_jose = (SELECT id FROM usuario WHERE username = 'josecl');
 SET @u_mary = (SELECT id FROM usuario WHERE username = 'marycl');
 
-INSERT INTO cliente (id_usuario, saldo_usd, es_estudiante, primer_viaje_usado) VALUES
-(@u_jose, 15.00, 0, 0),
-(@u_mary,  5.50, 1, 0);
+INSERT INTO cliente (id_usuario, saldo_usd, es_estudiante, primer_viaje_usado, codigo_referido) VALUES
+(@u_jose, 15.00, 0, 0, 'JOSECL01'),
+(@u_mary,  5.50, 1, 0, 'MARYCL01');
 
 -- ----------------------------------------------------------------
 -- VERIFICACIÓN — panel de Ángel

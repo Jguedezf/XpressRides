@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.xpressrides.backend.dto.request.CustomerProfileRequest;
 import com.xpressrides.backend.dto.request.RatingRequest;
+import com.xpressrides.backend.dto.request.ReferralCodeRequest;
 import com.xpressrides.backend.dto.response.CustomerProfileResponse;
 import com.xpressrides.backend.service.CustomerService;
 
@@ -42,6 +43,33 @@ public class CustomerController {
             @Valid @RequestBody CustomerProfileRequest request,
             Authentication authentication) {
         return ResponseEntity.ok(customerService.updateProfile(authentication.getName(), request));
+    }
+
+    // PUT /api/cliente/perfil/referido — agrega tardíamente el código de quien lo refirió.
+    // Se responde en formato {success, data, message} en vez de dejar que
+    // GlobalExceptionHandler maneje la excepción: ese handler serializa el mensaje bajo
+    // la clave "error", pero fetchAPI() en el frontend solo lee "message" — para que el
+    // usuario vea el motivo exacto (código inválido, ya tiene uno, plazo vencido), este
+    // endpoint captura la excepción y arma la respuesta él mismo, igual que
+    // DriverController.rejectTrip.
+    @PreAuthorize("hasRole('cliente')")
+    @PutMapping("/perfil/referido")
+    public ResponseEntity<Map<String, Object>> addReferralCode(
+            @Valid @RequestBody ReferralCodeRequest request,
+            Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            customerService.addReferralCode(authentication.getName(), request.getCodigoReferido());
+            response.put("success", true);
+            response.put("data", null);
+            response.put("message", "Código de referido asignado correctamente.");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("data", null);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(400).body(response);
+        }
     }
 
     @PreAuthorize("hasRole('cliente')")

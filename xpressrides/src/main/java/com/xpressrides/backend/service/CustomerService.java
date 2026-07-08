@@ -1,12 +1,14 @@
 package com.xpressrides.backend.service;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,13 +44,20 @@ public class CustomerService {
     private final DriverRepository driverRepository;
     private final NotificationRepository notificationRepository;
 
+    // Ventana de tiempo (en minutos) tras el registro durante la cual un cliente
+    // puede agregar el código de quien lo refirió si no lo hizo antes. Vive en
+    // application.properties (no hardcodeada) para poder acortarla el día de la
+    // defensa y demostrar el vencimiento del plazo sin esperar 24h reales.
+    private final long ventanaMinutosReferido;
+
     public CustomerService(CustomerRepository customerRepository,
                            UserRepository userRepository,
                            TripRepository tripRepository,
                            CustomerCouponRepository customerCouponRepository,
                            TopUpRepository topUpRepository,
                            DriverRepository driverRepository,
-                           NotificationRepository notificationRepository) {
+                           NotificationRepository notificationRepository,
+                           @Value("${referidos.ventana-minutos:1440}") long ventanaMinutosReferido) {
         this.customerRepository      = customerRepository;
         this.userRepository          = userRepository;
         this.tripRepository          = tripRepository;
@@ -56,6 +65,7 @@ public class CustomerService {
         this.topUpRepository         = topUpRepository;
         this.driverRepository        = driverRepository;
         this.notificationRepository  = notificationRepository;
+        this.ventanaMinutosReferido  = ventanaMinutosReferido;
     }
 
     public CustomerProfileResponse getProfile(String username) {
@@ -223,6 +233,42 @@ public class CustomerService {
             .collect(java.util.stream.Collectors.toList());
     }
 
+    // PUT /api/cliente/perfil/referido — agrega tardíamente el código de quien
+    // refirió a este cliente, dentro de la ventana de tiempo permitida.
+    @Transactional
+    public void addReferralCode(String username, String codigoReferidoIngresado) {
+        Customer customer = customerRepository.findByUserId_Username(username)
+            .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
+
+        String codigo = codigoReferidoIngresado == null ? "" : codigoReferidoIngresado.trim().toUpperCase();
+
+        Customer referente = customerRepository.findByCodigoReferido(codigo)
+            .orElseThrow(() -> new BadRequestException("Código de referido inválido."));
+
+        if (referente.getId().equals(customer.getId())) {
+            throw new BadRequestException("No puedes usar tu propio código.");
+        }
+
+        // Se valida el motivo específico ANTES de intentar el UPDATE para poder
+        // devolver un mensaje preciso ("ya tienes código" vs "venció el plazo").
+        // El UPDATE condicionado de abajo sigue siendo la fuente de verdad real
+        // (por si el estado cambió entre esta lectura y el intento).
+        if (customer.getReferidoPor() != null) {
+            throw new BadRequestException("Ya tienes un código de referido asignado.");
+        }
+
+        LocalDateTime limiteVentana = customer.getCreatedAt().plusMinutes(ventanaMinutosReferido);
+        if (LocalDateTime.now().isAfter(limiteVentana)) {
+            throw new BadRequestException("El plazo para agregar un código de referido ya venció.");
+        }
+
+        LocalDateTime corteMinimo = LocalDateTime.now().minusMinutes(ventanaMinutosReferido);
+        int filasAfectadas = customerRepository.asignarReferidoPor(customer.getId(), referente, corteMinimo);
+        if (filasAfectadas == 0) {
+            throw new BadRequestException("No se pudo asignar el código de referido, intenta de nuevo.");
+        }
+    }
+
     public List<CustomerCoupon> getCoupons(String username) {
         Customer customer = customerRepository.findByUserId_Username(username)
             .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
@@ -288,6 +334,40 @@ public class CustomerService {
         response.setBalance(customer.getBalance());
         response.setStudent(customer.isStudent());
         response.setFirstTripUsed(customer.isFirstTripUsed());
+
+        response.setCodigoReferido(customer.getCodigoReferido());
+        response.setCuponesDisponibles(
+            (int) customerCouponRepository.countByCustomer_IdAndUsedFalse(customer.getId()));
+        response.setHistorialCuponesUsados(
+            customerCouponRepository.findByCustomer_IdAndUsedTrue(customer.getId())
+                .stream()
+                .map(cc -> {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("codigo", cc.getCoupon().getCode());
+                    item.put("tipo", cc.getCoupon().getType());
+                    item.put("montoUsd", cc.getCoupon().getDiscountUsd());
+                    item.put("fechaUso", cc.getUsedDate());
+                    return item;
+                })
+                .collect(java.util.stream.Collectors.toList())
+        );
+
+        // El frontend solo debe mostrar/ocultar el campo "agregar código" según este
+        // flag ya calculado en el backend — no debe calcular fechas en JS (la hora
+        // del navegador del usuario no es una fuente confiable para esta regla).
+        boolean yaTieneReferido = customer.getReferidoPor() != null;
+        LocalDateTime limiteVentana = customer.getCreatedAt().plusMinutes(ventanaMinutosReferido);
+        boolean dentroDeVentana = LocalDateTime.now().isBefore(limiteVentana);
+        boolean puedeAgregar = !yaTieneReferido && dentroDeVentana;
+        response.setPuedeAgregarReferido(puedeAgregar);
+
+        if (puedeAgregar) {
+            long minutosRestantes = Duration.between(LocalDateTime.now(), limiteVentana).toMinutes();
+            response.setHorasRestantesReferido(Math.round((minutosRestantes / 60.0) * 10) / 10.0);
+        } else {
+            response.setHorasRestantesReferido(null);
+        }
+
         return response;
     }
 }

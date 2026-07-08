@@ -89,6 +89,8 @@ public class AuthService {
                 customer.setStudent(Boolean.TRUE.equals(request.getIsStudent()));
                 customer.setFirstTripUsed(false);
                 customer.setCreatedAt(LocalDateTime.now());
+                customer.setCodigoReferido(generarCodigoReferidoUnico());
+                customer.setRecompensaReferidoOtorgada(false);
                 customerRepository.save(customer);
             }
             case "chofer" -> {
@@ -149,6 +151,25 @@ public class AuthService {
         String newAccess = jwtService.generateToken(username);
         String newRefresh = jwtService.generateRefreshToken(username);
         return new AuthResponse(username, null, newAccess, newRefresh, "Token renovado exitosamente");
+    }
+
+    private static final String ALFABETO_CODIGO_REFERIDO = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private static final int LONGITUD_CODIGO_REFERIDO = 8;
+
+    // Genera el código de referido propio del cliente: aleatorio, no derivado del
+    // ID (para no revelar cuántos clientes hay registrados ni hacerlo adivinable),
+    // reintentando ante una colisión improbable con un código ya existente.
+    private String generarCodigoReferidoUnico() {
+        java.util.concurrent.ThreadLocalRandom random = java.util.concurrent.ThreadLocalRandom.current();
+        String codigo;
+        do {
+            StringBuilder sb = new StringBuilder(LONGITUD_CODIGO_REFERIDO);
+            for (int i = 0; i < LONGITUD_CODIGO_REFERIDO; i++) {
+                sb.append(ALFABETO_CODIGO_REFERIDO.charAt(random.nextInt(ALFABETO_CODIGO_REFERIDO.length())));
+            }
+            codigo = sb.toString();
+        } while (customerRepository.existsByCodigoReferido(codigo));
+        return codigo;
     }
 
     public void changePassword(ChangePasswordRequest request){

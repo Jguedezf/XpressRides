@@ -160,6 +160,48 @@
         </div>
     </div>
 
+    <!-- Programa de Referidos -->
+    <div class="card" id="referidos-card">
+        <h3 class="h2-subtitle mb-sm" style="color: var(--color-secondary);">Programa de Referidos</h3>
+        <p class="text-small" style="color: var(--color-text-muted); margin-bottom: var(--space-md);">
+            Comparte tu código. Cuando tu referido complete su primer viaje pagado, ganas un cupón de $5.
+        </p>
+
+        <div class="d-flex align-center gap-sm" style="margin-bottom: var(--space-md);">
+            <div id="referido-codigo" style="flex:1; min-width:0; background: var(--color-bg-main); border-radius: var(--radius-input); padding: 10px 14px; font-weight:700; letter-spacing: 1px; text-align:center;">------</div>
+            <!-- .btn-secondary trae width:100% (pensado para botones de ancho completo);
+                 sin width:auto + flex-shrink:0 aquí, ese 100% se vuelve su flex-basis y
+                 se come casi todo el espacio de la fila, aplastando #referido-codigo.
+                 Empieza disabled: se habilita en renderizarReferidos() solo cuando el
+                 código real ya cargó, para que un clic antes de eso no quede en silencio. -->
+            <button class="btn-secondary" id="btn-compartir-referido" style="width:auto; flex-shrink:0;" onclick="compartirCodigoReferido()" disabled>Compartir código</button>
+        </div>
+
+        <div class="d-flex justify-between" style="margin-bottom: var(--space-sm);">
+            <span class="text-small" style="color: var(--color-text-muted);">Cupones disponibles</span>
+            <strong id="referido-cupones-disponibles">0</strong>
+        </div>
+
+        <div id="referido-historial-container" style="display:none;">
+            <h4 class="text-small" style="font-weight:600; margin-bottom: var(--space-xs);">Historial de cupones usados</h4>
+            <div id="referido-historial-lista"></div>
+        </div>
+
+        <!-- Solo visible si el backend indica puedeAgregarReferido=true: el frontend
+             no calcula fechas ni ventanas, solo obedece el flag ya calculado. -->
+        <div id="agregar-referido-container" style="display:none; margin-top: var(--space-md); border-top: 1px solid #eee; padding-top: var(--space-md);">
+            <p class="text-small" style="margin-bottom: var(--space-xs);">
+                ¿Alguien te refirió? Tienes <strong id="referido-horas-restantes">--</strong> para agregar su código.
+            </p>
+            <div class="d-flex gap-sm">
+                <input type="text" id="input-codigo-referido" class="input-field" placeholder="Código de quien te refirió" maxlength="10" style="flex:1; min-width:0;">
+                <!-- Mismo problema que el botón de arriba: .btn-primary trae width:100%,
+                     que sin corregir se convierte en el flex-basis y deja el input en ~30px. -->
+                <button class="btn-primary" style="width:auto; flex-shrink:0;" onclick="agregarCodigoReferido()">Agregar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Menú de Opciones -->
     <h3 class="text-small mb-sm" style="font-weight: 600; padding-left: 8px;">Opciones de Cuenta</h3>
     <div class="menu-list">

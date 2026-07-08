@@ -1,6 +1,8 @@
 package com.xpressrides.backend.dto.response;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
 
 public class CustomerProfileResponse {
     private Integer id;
@@ -13,6 +15,14 @@ public class CustomerProfileResponse {
     private BigDecimal balance;
     private boolean isStudent;
     private boolean firstTripUsed;
+
+    // Sistema de referidos — ver CustomerService.mapToProfileResponse
+    private String codigoReferido;
+    private int cuponesDisponibles;
+    private List<Map<String, Object>> historialCuponesUsados;
+    private boolean puedeAgregarReferido;
+    // null si puedeAgregarReferido es false (ya tiene código o venció el plazo)
+    private Double horasRestantesReferido;
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
@@ -43,4 +53,19 @@ public class CustomerProfileResponse {
 
     public boolean isFirstTripUsed() { return firstTripUsed; }
     public void setFirstTripUsed(boolean firstTripUsed) { this.firstTripUsed = firstTripUsed; }
+
+    public String getCodigoReferido() { return codigoReferido; }
+    public void setCodigoReferido(String codigoReferido) { this.codigoReferido = codigoReferido; }
+
+    public int getCuponesDisponibles() { return cuponesDisponibles; }
+    public void setCuponesDisponibles(int cuponesDisponibles) { this.cuponesDisponibles = cuponesDisponibles; }
+
+    public List<Map<String, Object>> getHistorialCuponesUsados() { return historialCuponesUsados; }
+    public void setHistorialCuponesUsados(List<Map<String, Object>> historialCuponesUsados) { this.historialCuponesUsados = historialCuponesUsados; }
+
+    public boolean isPuedeAgregarReferido() { return puedeAgregarReferido; }
+    public void setPuedeAgregarReferido(boolean puedeAgregarReferido) { this.puedeAgregarReferido = puedeAgregarReferido; }
+
+    public Double getHorasRestantesReferido() { return horasRestantesReferido; }
+    public void setHorasRestantesReferido(Double horasRestantesReferido) { this.horasRestantesReferido = horasRestantesReferido; }
 }
