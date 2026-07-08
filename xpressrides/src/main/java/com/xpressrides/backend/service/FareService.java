@@ -21,8 +21,10 @@ import com.xpressrides.backend.dto.request.FareRequest;
 import com.xpressrides.backend.dto.response.FareResponse;
 import com.xpressrides.backend.exception.ResourceNotFoundException;
 import com.xpressrides.backend.model.Customer;
+import com.xpressrides.backend.model.CustomerCoupon;
 import com.xpressrides.backend.model.ExchangeRate;
 import com.xpressrides.backend.model.Zone;
+import com.xpressrides.backend.repository.CustomerCouponRepository;
 import com.xpressrides.backend.repository.CustomerRepository;
 import com.xpressrides.backend.repository.ExchangeRateRepository;
 import com.xpressrides.backend.repository.ZoneRepository;
@@ -35,6 +37,7 @@ import java.math.RoundingMode;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -49,6 +52,10 @@ public class FareService {
     private static final BigDecimal FACTOR_PEAK_17   = new BigDecimal("1.25");
     private static final BigDecimal STUDENT_FACTOR   = new BigDecimal("0.70");
 
+    // Piso de tarifa cuando se aplica un cupón de referido — mismo valor que
+    // TARIFA_MIN_CUPON_REFERIDO en sp_solicitar_traslado.
+    private static final BigDecimal REFERRAL_COUPON_MIN_FARE = new BigDecimal("1.00");
+
     // Zonas universitarias con descuento estudiantil — igual que el SP
     private static final Set<String> UNIVERSITY_ZONES = Set.of(
         "UNEG Sede Atlántico", "UNEG Sede Villa Asia", "UNEXPO"
@@ -60,13 +67,16 @@ public class FareService {
     private final ZoneRepository zoneRepository;
     private final CustomerRepository customerRepository;
     private final ExchangeRateRepository exchangeRateRepository;
+    private final CustomerCouponRepository customerCouponRepository;
 
     public FareService(ZoneRepository zoneRepository,
                        CustomerRepository customerRepository,
-                       ExchangeRateRepository exchangeRateRepository) {
+                       ExchangeRateRepository exchangeRateRepository,
+                       CustomerCouponRepository customerCouponRepository) {
         this.zoneRepository       = zoneRepository;
         this.customerRepository   = customerRepository;
         this.exchangeRateRepository = exchangeRateRepository;
+        this.customerCouponRepository = customerCouponRepository;
     }
 
     public FareResponse calculateFare(FareRequest request, String username) {
@@ -133,11 +143,54 @@ public class FareService {
         // 8. Conversión a bolívares
         BigDecimal finalCostVes = finalCostUsd.multiply(rate.getRateVes()).setScale(2, RoundingMode.HALF_UP);
 
+        // 9. Cupón de referido — oferta proactiva del preview, NO lógica de
+        // negocio duplicada por descuido: es una RÉPLICA INTENCIONAL del mismo
+        // cálculo que hace sp_solicitar_traslado (bloque de cupón, con el piso
+        // de $1 exclusivo de tipo 'referido'), igual que calculateDistanceKm ya
+        // replica fn_distancia_km más arriba para que el preview coincida con lo
+        // que el SP cobrará realmente. El SP sigue siendo la única fuente de
+        // verdad y quien de verdad marca el cupón como usado — este bloque solo
+        // anticipa el resultado para poder ofrecerlo en pantalla antes de
+        // confirmar el viaje.
+        //
+        // Solo aplica si NO es primer viaje gratis: un primer viaje ya cuesta
+        // $0, y sp_solicitar_traslado ni siquiera entra al bloque de cupón en
+        // ese caso (está en el ELSE de "primer viaje"), así que ofrecerlo aquí
+        // sería engañoso — el cliente lo vería "disponible" pero el SP jamás lo
+        // consumiría en ese viaje.
+        boolean referralCouponAvailable    = false;
+        Integer referralCouponClienteId    = null;
+        BigDecimal referralCouponDiscount  = BigDecimal.ZERO;
+        BigDecimal costWithCouponUsd       = finalCostUsd;
+        BigDecimal costWithCouponVes       = finalCostVes;
+
+        if (!firstTripFree) {
+            List<CustomerCoupon> referralCoupons = customerCouponRepository
+                .findByCustomer_IdAndUsedFalseAndCoupon_TypeOrderByCreatedAtAsc(customer.getId(), "referido");
+
+            for (CustomerCoupon candidate : referralCoupons) {
+                Integer maxDistanceKm = candidate.getCoupon().getMaxDistanceKm();
+                if (maxDistanceKm != null && distanceKm.compareTo(BigDecimal.valueOf(maxDistanceKm)) > 0) {
+                    continue;
+                }
+                BigDecimal cap = finalCostUsd.subtract(REFERRAL_COUPON_MIN_FARE).max(BigDecimal.ZERO);
+                referralCouponDiscount = candidate.getCoupon().getDiscountUsd().min(cap)
+                    .setScale(2, RoundingMode.HALF_UP);
+                referralCouponClienteId = candidate.getId();
+                referralCouponAvailable = true;
+                costWithCouponUsd = finalCostUsd.subtract(referralCouponDiscount).setScale(2, RoundingMode.HALF_UP);
+                costWithCouponVes = costWithCouponUsd.multiply(rate.getRateVes()).setScale(2, RoundingMode.HALF_UP);
+                break;
+            }
+        }
+
         return new FareResponse(
             distanceKm, BASE_FARE, distanceCost,
             peakHourSurcharge, nightWeekendSurcharge,
             discountApplied, finalCostUsd, finalCostVes,
-            rate.getId(), firstTripFree, studentDiscount
+            rate.getId(), firstTripFree, studentDiscount,
+            referralCouponAvailable, referralCouponClienteId,
+            referralCouponDiscount, costWithCouponUsd, costWithCouponVes
         );
     }
 

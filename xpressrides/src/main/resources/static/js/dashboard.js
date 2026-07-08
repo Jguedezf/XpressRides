@@ -359,16 +359,33 @@ function mostrarPreviewTarifa(tarifa, origenId, destinoId, pasajeros, textoOrigi
                             -$${tarifa.descuentoAplicado.toFixed(2)}
                         </td>
                     </tr>` : ''}
+                </table>
+
+                ${tarifa.cuponReferidoDisponible ? `
+                <div id="oferta-cupon-referido" style="
+                    background: #eafaf0; border: 2px solid var(--color-success);
+                    border-radius: 10px; padding: 12px 14px; margin-bottom: 18px;">
+                    <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; font-size:14px;">
+                        <input type="checkbox" id="chk-cupon-referido" checked style="margin-top:3px;">
+                        <span>
+                            🎁 <strong>Tienes un cupón de referido de $${tarifa.descuentoCuponReferido.toFixed(2)} de descuento.</strong>
+                            Con el cupón pagarías <strong>$${tarifa.costoConCuponUsd.toFixed(2)}</strong> en vez de $${tarifa.costoFinalUsd.toFixed(2)}.
+                            Desmarca para no usarlo en este viaje.
+                        </span>
+                    </label>
+                </div>` : ''}
+
+                <table style="width:100%; border-collapse:collapse; font-size:14px; margin-bottom: 20px;">
                     <tr style="border-top:2px solid var(--color-primary);">
                         <td style="padding:10px 0; font-weight:700;">Costo Final USD</td>
                         <td style="padding:10px 0; text-align:right; font-weight:700; color:var(--color-primary);">
-                            $${tarifa.costoFinalUsd.toFixed(2)}
+                            <span id="costo-final-usd">$${(tarifa.cuponReferidoDisponible ? tarifa.costoConCuponUsd : tarifa.costoFinalUsd).toFixed(2)}</span>
                         </td>
                     </tr>
                     <tr>
                         <td style="padding:6px 0; font-weight:600;">Costo Final Bs</td>
                         <td style="padding:6px 0; text-align:right; font-weight:600;">
-                            Bs ${tarifa.costoFinalVes.toFixed(2)}
+                            Bs <span id="costo-final-ves">${(tarifa.cuponReferidoDisponible ? tarifa.costoConCuponVes : tarifa.costoFinalVes).toFixed(2)}</span>
                         </td>
                     </tr>
                 </table>
@@ -384,7 +401,21 @@ function mostrarPreviewTarifa(tarifa, origenId, destinoId, pasajeros, textoOrigi
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 
     const modal = document.getElementById('modal-tarifa');
-    
+
+    // El cupón de referido viene pre-marcado (oferta proactiva) — si el
+    // cliente lo desmarca, el total vuelve al costo sin cupón sin volver a
+    // pedirle la tarifa al backend (ambos valores ya vienen en la respuesta).
+    const chkCuponReferido = document.getElementById('chk-cupon-referido');
+    if (chkCuponReferido) {
+        chkCuponReferido.addEventListener('change', () => {
+            const usarCupon = chkCuponReferido.checked;
+            document.getElementById('costo-final-usd').textContent =
+                '$' + (usarCupon ? tarifa.costoConCuponUsd : tarifa.costoFinalUsd).toFixed(2);
+            document.getElementById('costo-final-ves').textContent =
+                (usarCupon ? tarifa.costoConCuponVes : tarifa.costoFinalVes).toFixed(2);
+        });
+    }
+
     document.getElementById('btn-cancelar-viaje').addEventListener('click', () => {
         modal.remove();
         btnSolicitar.disabled = false;
@@ -395,13 +426,14 @@ function mostrarPreviewTarifa(tarifa, origenId, destinoId, pasajeros, textoOrigi
         const btnConfirmar = document.getElementById('btn-confirmar-viaje');
         btnConfirmar.disabled = true;
         btnConfirmar.textContent = 'Solicitando...';
-        
+
         try {
+            const usarCuponReferido = chkCuponReferido ? chkCuponReferido.checked : false;
             const payloadViaje = {
                 idZoneOrigin: origenId,
                 idZoneDestiny: destinoId,
                 passengerCount: pasajeros,
-                customerCouponId: null
+                customerCouponId: usarCuponReferido ? tarifa.idCuponReferido : null
             };
 
             const response = await fetchAPI('/traslados/solicitar', {

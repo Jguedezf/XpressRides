@@ -60,4 +60,21 @@ public class FareResponse {
 
     @JsonProperty("descuentoEstudiantil")
     private boolean studentDiscount;
+
+    // Oferta proactiva de cupón de referido — el frontend debe mostrarla
+    // visible junto al estimado, no como selector oculto (ver FareService).
+    @JsonProperty("cuponReferidoDisponible")
+    private boolean referralCouponAvailable;
+
+    @JsonProperty("idCuponReferido")
+    private Integer referralCouponClienteId;
+
+    @JsonProperty("descuentoCuponReferido")
+    private BigDecimal referralCouponDiscount;
+
+    @JsonProperty("costoConCuponUsd")
+    private BigDecimal costWithCouponUsd;
+
+    @JsonProperty("costoConCuponVes")
+    private BigDecimal costWithCouponVes;
 }
