@@ -15,8 +15,10 @@
  */
 package com.xpressrides.backend.service;
 
+import com.xpressrides.backend.exception.ResourceNotFoundException;
 import com.xpressrides.backend.model.DriverPayment;
 import com.xpressrides.backend.model.TopUp;
+import com.xpressrides.backend.repository.CustomerRepository;
 import com.xpressrides.backend.repository.DriverPaymentRepository;
 import com.xpressrides.backend.repository.TopUpRepository;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PaymentService {
 
     private final TopUpRepository topUpRepository;
+    private final CustomerRepository customerRepository;
     private final DriverPaymentRepository driverPaymentRepository;
     private final AdminPersonnelRepository adminRepository;
     private final DriverRepository driverRepository;
@@ -47,12 +50,14 @@ public class PaymentService {
 
     // Inyección de dependencias por constructor
     public PaymentService(TopUpRepository topUpRepository,
+                          CustomerRepository customerRepository,
                           DriverPaymentRepository driverPaymentRepository,
                           AdminPersonnelRepository adminRepository,
                           DriverRepository driverRepository,
                           TripRepository tripRepository,
                           ExchangeRateRepository rateRepository) {
         this.topUpRepository = topUpRepository;
+        this.customerRepository = customerRepository;
         this.driverPaymentRepository = driverPaymentRepository;
         this.adminRepository = adminRepository;
         this.driverRepository = driverRepository;
@@ -60,7 +65,12 @@ public class PaymentService {
         this.rateRepository = rateRepository;
     }
 
-    // Registra una recarga de saldo — calcula IGTF si el pago es en USD
+    // Registra una recarga de saldo y acredita el monto al cliente — calcula
+    // IGTF si el pago es en USD. Ambas escrituras (recarga_saldo y saldo_usd)
+    // van en la misma transacción: si acreditarSaldo falla o afecta 0 filas,
+    // el UPDATE se revierte junto con el INSERT de la recarga, para no volver
+    // a dejar una recarga registrada sin saldo acreditado.
+    @Transactional
     public TopUp registerTopUp(TopUp topUp) {
         // Si el frontend no envía moneda_pago, se asume pago en bolívares
         if (topUp.getPaymentCurrency() == null) {
@@ -78,7 +88,17 @@ public class PaymentService {
             topUp.setIgtfAmountUsd(BigDecimal.ZERO);
         }
 
-        return topUpRepository.save(topUp);
+        TopUp nueva = topUpRepository.save(topUp);
+
+        // UPDATE atómico (saldo_usd = saldo_usd + :monto), no lectura-suma-guardado
+        // en Java: así dos recargas casi simultáneas del mismo cliente no se pisan
+        // (mismo patrón que CustomerRepository.asignarReferidoPor).
+        int filasAcreditadas = customerRepository.acreditarSaldo(topUp.getCustomerId(), topUp.getAmountUsd());
+        if (filasAcreditadas == 0) {
+            throw new ResourceNotFoundException("Cliente no encontrado, no se pudo acreditar el saldo.");
+        }
+
+        return nueva;
     }
 
     // Retorna el historial de recargas de un cliente específico
