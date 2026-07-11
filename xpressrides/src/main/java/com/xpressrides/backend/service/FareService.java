@@ -19,6 +19,7 @@ package com.xpressrides.backend.service;
 
 import com.xpressrides.backend.dto.request.FareRequest;
 import com.xpressrides.backend.dto.response.FareResponse;
+import com.xpressrides.backend.exception.BadRequestException;
 import com.xpressrides.backend.exception.ResourceNotFoundException;
 import com.xpressrides.backend.model.Customer;
 import com.xpressrides.backend.model.CustomerCoupon;
@@ -81,24 +82,50 @@ public class FareService {
 
     public FareResponse calculateFare(FareRequest request, String username) {
 
-        // 1. Obtener zonas con coordenadas
-        Zone origin = zoneRepository.findById(request.getIdZoneOrigin())
-            .orElseThrow(() -> new ResourceNotFoundException("Zona de origen no encontrada"));
-        Zone destiny = zoneRepository.findById(request.getIdZoneDestiny())
-            .orElseThrow(() -> new ResourceNotFoundException("Zona de destino no encontrada"));
+        // 1. Resolver coordenadas de origen
+        Double originLat = request.getOriginLat();
+        Double originLng = request.getOriginLng();
+        Zone originZone = null;
+        if (originLat == null || originLng == null) {
+            if (request.getIdZoneOrigin() == null) {
+                throw new BadRequestException("Debe proporcionar coordenadas de origen o una zona de origen válida");
+            }
+            originZone = zoneRepository.findById(request.getIdZoneOrigin())
+                .orElseThrow(() -> new ResourceNotFoundException("Zona de origen no encontrada"));
+            originLat = originZone.getLatitude().doubleValue();
+            originLng = originZone.getLongitude().doubleValue();
+        } else if (request.getIdZoneOrigin() != null) {
+            originZone = zoneRepository.findById(request.getIdZoneOrigin()).orElse(null);
+        }
 
-        // 2. Distancia con fn_distancia_km — misma función que usa el SP
-        BigDecimal distanceKm = calculateDistanceKm(origin, destiny);
+        // 2. Resolver coordenadas de destino
+        Double destLat = request.getDestinationLat();
+        Double destLng = request.getDestinationLng();
+        Zone destinyZone = null;
+        if (destLat == null || destLng == null) {
+            if (request.getIdZoneDestiny() == null) {
+                throw new BadRequestException("Debe proporcionar coordenadas de destino o una zona de destino válida");
+            }
+            destinyZone = zoneRepository.findById(request.getIdZoneDestiny())
+                .orElseThrow(() -> new ResourceNotFoundException("Zona de destino no encontrada"));
+            destLat = destinyZone.getLatitude().doubleValue();
+            destLng = destinyZone.getLongitude().doubleValue();
+        } else if (request.getIdZoneDestiny() != null) {
+            destinyZone = zoneRepository.findById(request.getIdZoneDestiny()).orElse(null);
+        }
 
-        // 3. Datos del cliente autenticado
+        // 3. Distancia con fn_distancia_km — misma función que usa el SP
+        BigDecimal distanceKm = calculateDistanceKm(originLat, originLng, destLat, destLng);
+
+        // 4. Datos del cliente autenticado
         Customer customer = customerRepository.findByUserId_Username(username)
             .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
 
-        // 4. Tasa BCV vigente (cubre fines de semana y feriados)
+        // 5. Tasa BCV vigente (cubre fines de semana y feriados)
         ExchangeRate rate = exchangeRateRepository.findCurrentRate()
             .orElseThrow(() -> new RuntimeException("No hay tasa BCV registrada. Contacte al administrador."));
 
-        // 5. Recargo nocturno/fin de semana y factor hora pico (mutuamente excluyentes)
+        // 6. Recargo nocturno/fin de semana y factor hora pico (mutuamente excluyentes)
         int hour   = LocalTime.now().getHour();
         int minute = LocalTime.now().getMinute();
         DayOfWeek day = LocalDate.now().getDayOfWeek();
@@ -115,15 +142,25 @@ public class FareService {
             peakFactor = resolvePeakFactor(hour, minute);
         }
 
-        // 6. Fórmula: (BASE + distancia*0.45 + recargoNocturno) × factorPico
+        // 7. Fórmula: (BASE + distancia*0.45 + recargoNocturno) × factorPico
         BigDecimal distanceCost   = distanceKm.multiply(COST_PER_KM).setScale(2, RoundingMode.HALF_UP);
         BigDecimal subtotal       = BASE_FARE.add(distanceCost).add(nightWeekendSurcharge);
         BigDecimal rawFare        = subtotal.multiply(peakFactor).setScale(2, RoundingMode.HALF_UP);
         BigDecimal peakHourSurcharge = rawFare.subtract(subtotal).setScale(2, RoundingMode.HALF_UP);
 
-        // 7. Descuentos — primer viaje tiene prioridad sobre descuento estudiantil
+        // 8. Descuentos — primer viaje tiene prioridad sobre descuento estudiantil
         boolean firstTripFree   = !customer.isFirstTripUsed();
-        boolean studentDiscount = customer.isStudent() && UNIVERSITY_ZONES.contains(destiny.getName());
+        boolean studentDiscount = false;
+        if (customer.isStudent()) {
+            boolean coordinatesNull = (request.getOriginLat() == null || request.getOriginLng() == null
+                || request.getDestinationLat() == null || request.getDestinationLng() == null);
+            if (coordinatesNull) {
+                studentDiscount = (originZone != null && UNIVERSITY_ZONES.contains(originZone.getName()))
+                    || (destinyZone != null && UNIVERSITY_ZONES.contains(destinyZone.getName()));
+            } else {
+                studentDiscount = isCloseToCampus(originLat, originLng) || isCloseToCampus(destLat, destLng);
+            }
+        }
 
         BigDecimal discountApplied;
         BigDecimal finalCostUsd;
@@ -140,24 +177,10 @@ public class FareService {
             finalCostUsd    = rawFare;
         }
 
-        // 8. Conversión a bolívares
+        // 9. Conversión a bolívares
         BigDecimal finalCostVes = finalCostUsd.multiply(rate.getRateVes()).setScale(2, RoundingMode.HALF_UP);
 
-        // 9. Cupón de referido — oferta proactiva del preview, NO lógica de
-        // negocio duplicada por descuido: es una RÉPLICA INTENCIONAL del mismo
-        // cálculo que hace sp_solicitar_traslado (bloque de cupón, con el piso
-        // de $1 exclusivo de tipo 'referido'), igual que calculateDistanceKm ya
-        // replica fn_distancia_km más arriba para que el preview coincida con lo
-        // que el SP cobrará realmente. El SP sigue siendo la única fuente de
-        // verdad y quien de verdad marca el cupón como usado — este bloque solo
-        // anticipa el resultado para poder ofrecerlo en pantalla antes de
-        // confirmar el viaje.
-        //
-        // Solo aplica si NO es primer viaje gratis: un primer viaje ya cuesta
-        // $0, y sp_solicitar_traslado ni siquiera entra al bloque de cupón en
-        // ese caso (está en el ELSE de "primer viaje"), así que ofrecerlo aquí
-        // sería engañoso — el cliente lo vería "disponible" pero el SP jamás lo
-        // consumiría en ese viaje.
+        // 10. Cupón de referido
         boolean referralCouponAvailable    = false;
         Integer referralCouponClienteId    = null;
         BigDecimal referralCouponDiscount  = BigDecimal.ZERO;
@@ -195,22 +218,37 @@ public class FareService {
     }
 
     // Llama a fn_distancia_km de MySQL — garantiza el mismo resultado que el SP
-    private BigDecimal calculateDistanceKm(Zone origin, Zone destiny) {
+    private BigDecimal calculateDistanceKm(Double lat1, Double lon1, Double lat2, Double lon2) {
         Object result = entityManager
             .createNativeQuery("SELECT fn_distancia_km(:lat1, :lon1, :lat2, :lon2)")
-            .setParameter("lat1", origin.getLatitude())
-            .setParameter("lon1", origin.getLongitude())
-            .setParameter("lat2", destiny.getLatitude())
-            .setParameter("lon2", destiny.getLongitude())
+            .setParameter("lat1", lat1)
+            .setParameter("lon1", lon1)
+            .setParameter("lat2", lat2)
+            .setParameter("lon2", lon2)
             .getSingleResult();
 
         return new BigDecimal(result.toString()).setScale(2, RoundingMode.HALF_UP);
     }
 
+    private boolean isCloseToCampus(Double lat, Double lng) {
+        double[][] campuses = {
+            {8.2721185, -62.7357291},
+            {8.2822200, -62.7233869},
+            {8.2797000, -62.7303000}
+        };
+        for (double[] campus : campuses) {
+            BigDecimal dist = calculateDistanceKm(lat, lng, campus[0], campus[1]);
+            if (dist.compareTo(new BigDecimal("0.3")) <= 0) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Resuelve el factor de hora pico — misma lógica que el SP
     private BigDecimal resolvePeakFactor(int hour, int minute) {
-        if (hour >= 7 && hour <= 9)                           return FACTOR_PEAK_7_9;
-        if ((hour == 11 && minute >= 30) || hour == 12)       return FACTOR_PEAK_1130;
+        if (hour >= 7 && hour < 9)                            return FACTOR_PEAK_7_9;
+        if (hour >= 11 && hour < 13)                          return FACTOR_PEAK_1130;
         if (hour >= 17 && hour < 19)                          return FACTOR_PEAK_17;
         return BigDecimal.ONE;
     }

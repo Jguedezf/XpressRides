@@ -42,9 +42,27 @@ public class Trip {
     @JoinColumn(name = "id_zona_origen")
     private Zone originZone;
 
+    @Column(name = "origen_direccion")
+    private String originAddress;
+
+    @Column(name = "origen_lat")
+    private BigDecimal originLat;
+
+    @Column(name = "origen_lng")
+    private BigDecimal originLng;
+
     @ManyToOne
     @JoinColumn(name = "id_zona_destino")
     private Zone destinationZone;
+
+    @Column(name = "destino_direccion")
+    private String destinationAddress;
+
+    @Column(name = "destino_lat")
+    private BigDecimal destinationLat;
+
+    @Column(name = "destino_lng")
+    private BigDecimal destinationLng;
 
     @ManyToOne
     @JoinColumn(name = "id_tasa")

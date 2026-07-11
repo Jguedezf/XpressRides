@@ -1,23 +1,28 @@
 // dashboard.js — Lógica del dashboard del cliente
-// Carga las zonas para el formulario de solicitud de viaje
-// e inicializa el mapa de Google Maps centrado en Ciudad Guayana.
+// Usa Google Maps y Places Autocomplete para seleccionar origen y destino libre.
+
+let mapaGoogle = null;
+let originMarker = null;
+let destinationMarker = null;
+let directionsService = null;
+let directionsRenderer = null;
+let originPlace = null;
+let destinationPlace = null;
+let origenAutocomplete = null;
+let destinoAutocomplete = null;
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (!requireAuth()) return;
-
-    await cargarZonas();
-    configurarFormularioViaje();
     configurarCalculadora();
 
-    // Cargar Google Maps API dinámicamente desde el backend
     try {
         await cargarGoogleMaps();
         inicializarMapa();
+        configurarFormularioViaje();
     } catch (error) {
-        console.error("No se pudo cargar el mapa:", error);
+        console.error("No se pudo cargar Google Maps:", error);
     }
-
-    // Iniciar el polling para mostrar viajes activos (ej: si fue asignado desde SQL)
+    
     iniciarPollingViajeActivo();
 });
 
@@ -37,11 +42,11 @@ function configurarCalculadora() {
 
         debounceTimer = setTimeout(async () => {
             try {
-                const response = await fetchAPI(`/tasa-bcv/convertir?monto=${monto}&moneda=USD`);
+                const response = await fetchAPI('/tasa-bcv/convertir?monto=' + monto + '&moneda=USD');
                 if (response && response.ves) {
-                    spanVes.textContent = `Bs ${response.ves.toFixed(2)}`;
+                    spanVes.textContent = 'Bs ' + response.ves.toFixed(2);
                 } else if (response && response.data && response.data.ves) {
-                    spanVes.textContent = `Bs ${response.data.ves.toFixed(2)}`;
+                    spanVes.textContent = 'Bs ' + response.data.ves.toFixed(2);
                 }
             } catch (err) {
                 console.error('Error calculando conversión:', err);
@@ -51,60 +56,15 @@ function configurarCalculadora() {
     });
 }
 
-// ─── Variables globales del módulo ───────────────────────
-let mapaGoogle = null;
-let marcadores = [];
-let zonasData = [];
-let directionsRenderer = null;
-let directionsService = null;
-let globalInfoWindow = null;
-/**
- * Carga las zonas activas desde GET /api/zonas
- * y llena los selects de origen y destino.
- */
-async function cargarZonas() {
-    try {
-        const response = await fetchAPI('/zonas');
-        zonasData = response.data || [];
-
-        const selectOrigen = document.getElementById('origen');
-        const selectDestino = document.getElementById('destino');
-
-        selectOrigen.innerHTML = '<option value="" disabled selected>Selecciona un punto de origen</option>';
-        selectDestino.innerHTML = '<option value="" disabled selected>Selecciona un punto de destino</option>';
-
-        zonasData.forEach(zona => {
-            // Los campos del modelo Java Zone usan nombres en inglés
-            selectOrigen.add(new Option(zona.name, zona.id));
-            selectDestino.add(new Option(zona.name, zona.id));
-        });
-
-    } catch (error) {
-        console.error('Error cargando zonas:', error);
-        const selectOrigen = document.getElementById('origen');
-        if (selectOrigen) {
-            selectOrigen.innerHTML = '<option value="">Error al cargar zonas</option>';
-        }
-    }
-}
-
-/**
- * Inicializa el mapa de Google Maps centrado en Puerto Ordaz / San Félix
- * y coloca marcadores por cada zona.
- */
 function inicializarMapa() {
-    // Centro de Ciudad Guayana (Puerto Ordaz / San Félix)
     const centroGuayana = { lat: 8.29, lng: -62.71 };
 
     mapaGoogle = new google.maps.Map(document.getElementById('map'), {
         center: centroGuayana,
         zoom: 12,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: false,
-        styles: [
-            { featureType: 'poi', stylers: [{ visibility: 'simplified' }] }
-        ],
+        mapTypeControl: true,
+        streetViewControl: true,
+        fullscreenControl: true,
         restriction: {
             latLngBounds: {
                 north: 8.55,
@@ -113,196 +73,166 @@ function inicializarMapa() {
                 west: -63.10
             },
             strictBounds: false
-        }
+        },
+        styles: [
+            { featureType: 'poi', stylers: [{ visibility: 'simplified' }] }
+        ]
     });
-    //Inicializar DirectionsService y DirectionsRenderer para dibujar rutas
+
     directionsService = new google.maps.DirectionsService();
-        directionsRenderer = new google.maps.DirectionsRenderer({
-            map: mapaGoogle,
-            suppressMarkers: true,
-            polylineOptions: {
-                strokeColor: '#1F4E79',
-                strokeOpacity: 0.7,
-                strokeWeight: 4
-            }
-        });
-
-    // Agregar marcadores de todas las zonas
-    globalInfoWindow = new google.maps.InfoWindow();
-
-    zonasData.forEach(zona => {
-        if (zona.latitude && zona.longitude) {
-            const marcador = new google.maps.Marker({
-                position: { lat: zona.latitude, lng: zona.longitude },
-                map: mapaGoogle,
-                title: zona.name,
-                icon: crearIconoColor('default')
-            });
-
-            const contentStr = `<b>${zona.name}</b><br>${zona.parish || ''}`;
-
-            marcador.addListener('click', () => {
-                globalInfoWindow.setContent(contentStr);
-                globalInfoWindow.open(mapaGoogle, marcador);
-            });
-
-            marcadores.push({ id: zona.id, marker: marcador, content: contentStr });
+    directionsRenderer = new google.maps.DirectionsRenderer({
+        map: mapaGoogle,
+        suppressMarkers: true,
+        polylineOptions: {
+            strokeColor: '#1F4E79',
+            strokeOpacity: 0.7,
+            strokeWeight: 4
         }
     });
 
-    // Interactividad al hacer click en el mapa (Geocoding Inverso)
     const geocoder = new google.maps.Geocoder();
+    const infoWindow = new google.maps.InfoWindow();
+
+    const placesService = new google.maps.places.PlacesService(mapaGoogle);
 
     mapaGoogle.addListener('click', (e) => {
-        if (globalInfoWindow) globalInfoWindow.close();
-
+        const modeEl = document.querySelector('input[name="map_click_mode"]:checked');
+        const mode = modeEl ? modeEl.value : 'info';
+        
+        // En caso de que se haga click en un POI
         if (e.placeId) {
-            // Permitir que el InfoWindow nativo de Google (con fotos, rating, etc.) se muestre
-            return;
+            // Si estamos en modo origen o destino, prevenimos que se abra el infowindow por defecto
+            // Si estamos en info, queremos que se abra el default de Google (como el chofer)
+            if (mode !== 'info') {
+                e.stop(); 
+            } else {
+                // Dejamos que Google Maps haga lo suyo
+                return;
+            }
         }
 
-        geocoder.geocode({ location: e.latLng }, (results, status) => {
-            if (status === 'OK' && results[0]) {
-                globalInfoWindow.setContent(`
+        const clickedLat = e.latLng.lat();
+        const clickedLng = e.latLng.lng();
+
+        const handleLocationSelection = (direccion, latLng) => {
+            if (mode === 'info') {
+                infoWindow.setContent(`
                     <div style="padding: 8px; color: #333; font-family: 'Inter', sans-serif;">
                         <h4 style="margin: 0 0 4px 0; color: #1F4E79; font-size: 14px;">Ubicación seleccionada</h4>
-                        <p style="margin: 0; font-size: 12px;">${results[0].formatted_address}</p>
+                        <p style="margin: 0 0 8px 0; font-size: 12px;">${direccion}</p>
                     </div>
                 `);
-                globalInfoWindow.setPosition(e.latLng);
-                globalInfoWindow.open(mapaGoogle);
-            }
-        });
-    });
-
-    // Cuando el usuario selecciona origen o destino, destacamos los marcadores
-    document.getElementById('origen').addEventListener('change', resaltarRuta);
-    document.getElementById('destino').addEventListener('change', resaltarRuta);
-}
-
-/**
- * Resalta los marcadores de origen (verde) y destino (rojo)
- * cuando el usuario selecciona zonas en los selects.
- */
-function resaltarRuta() {
-    const origenId = parseInt(document.getElementById('origen').value);
-    const destinoId = parseInt(document.getElementById('destino').value);
-
-    // Restaurar todos los marcadores al icono por defecto
-    marcadores.forEach(m => {
-        m.marker.setIcon(crearIconoColor('default'));
-    });
-
-    // Limpiar la ruta previa del DirectionsRenderer
-     if (directionsRenderer) {
-        directionsRenderer.set('directions', null);
-    }
-
-
-    // Resaltar origen con ícono verde
-    if (origenId) {
-        const origenMarcador = marcadores.find(m => m.id === origenId);
-        if (origenMarcador) {
-            origenMarcador.marker.setIcon(crearIconoColor('green'));
-            if (globalInfoWindow) {
-                globalInfoWindow.setContent(origenMarcador.content);
-                globalInfoWindow.open(mapaGoogle, origenMarcador.marker);
-            }
-        }
-    }
-
-    // Resaltar destino con ícono rojo
-    if (destinoId) {
-        const destinoMarcador = marcadores.find(m => m.id === destinoId);
-        if (destinoMarcador) {
-            destinoMarcador.marker.setIcon(crearIconoColor('red'));
-        }
-    }
-
-    // Si ambos están seleccionados, ajustar el zoom para verlos ambos
-    if (origenId && destinoId) {
-        const origenZona = zonasData.find(z => z.id === origenId);
-        const destinoZona = zonasData.find(z => z.id === destinoId);
-        if (origenZona && destinoZona) {
-            const bounds = new google.maps.LatLngBounds();
-            bounds.extend({ lat: origenZona.latitude, lng: origenZona.longitude });
-            bounds.extend({ lat: destinoZona.latitude, lng: destinoZona.longitude });
-            mapaGoogle.fitBounds(bounds, { top: 60, bottom: 60, left: 60, right: 60 });
-
-            // Dibujar línea entre origen y destino con DirectionsService
-            const request = {
-                origin: { lat: origenZona.latitude, lng: origenZona.longitude },
-                destination: { lat: destinoZona.latitude, lng: destinoZona.longitude },
-                travelMode: google.maps.TravelMode.DRIVING
-            };
-
-            directionsService.route(request, (result, status) => {
-                if (status === google.maps.DirectionsStatus.OK) {
-                    directionsRenderer.setDirections(result);
+                infoWindow.setPosition(latLng);
+                infoWindow.open(mapaGoogle);
+            } else {
+                const place = {
+                    geometry: { location: latLng },
+                    name: direccion
+                };
+                
+                if (mode === 'origen') {
+                    originPlace = place;
+                    document.getElementById('origen').value = direccion;
                 } else {
-                    console.warn('No se pudo calcular la ruta:', status);
+                    destinationPlace = place;
+                    document.getElementById('destino').value = direccion;
+                }
+                actualizarMarcadoresYRuta();
+            }
+        };
+
+        if (e.placeId) {
+            placesService.getDetails({ placeId: e.placeId, fields: ['name', 'geometry', 'formatted_address'] }, (placeResult, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && placeResult.geometry) {
+                    const placeName = placeResult.name || placeResult.formatted_address;
+                    handleLocationSelection(placeName, placeResult.geometry.location);
+                } else {
+                    fallbackGeocoder();
                 }
             });
+        } else {
+            fallbackGeocoder();
         }
-    }
+
+        function fallbackGeocoder() {
+            geocoder.geocode({ location: e.latLng }, (results, status) => {
+                const direccion = (status === 'OK' && results[0])
+                    ? results[0].formatted_address
+                    : `${clickedLat.toFixed(5)}, ${clickedLng.toFixed(5)}`;
+                handleLocationSelection(direccion, e.latLng);
+            });
+        }
+    });
 }
 
-/**
- * Crea un ícono SVG de Google Maps con un color específico.
- */
-function crearIconoColor(color) {
-    const colores = {
-        green: '#1E6B3C',
-        red: '#C00000',
-        orange: '#C55A11',
-        default: '#1F4E79'
-    };
-    const hex = colores[color] || colores.default;
-
-    return {
-        path: google.maps.SymbolPath.CIRCLE,
-        fillColor: hex,
-        fillOpacity: 1,
-        strokeColor: '#FFFFFF',
-        strokeWeight: 3,
-        scale: 10
-    };
-}
-
-/**
- * Configura el handler del formulario de solicitud de viaje.
- * Llama al endpoint POST /api/traslados/solicitar que invoca el
- * Stored Procedure sp_solicitar_traslado en MySQL.
- */
 function configurarFormularioViaje() {
-    const form = document.getElementById('form-solicitar-viaje');
-    if (!form) return;
+    const inputOrigen = document.getElementById('origen');
+    const inputDestino = document.getElementById('destino');
+    const inputUsd = document.getElementById('conv-usd');
+    
+    // Evitar que el navegador auto-complete con "null" de sesiones anteriores rotas
+    if (inputOrigen.value === 'null') inputOrigen.value = '';
+    if (inputDestino.value === 'null') inputDestino.value = '';
+    if (inputUsd && inputUsd.value === 'null') inputUsd.value = '';
 
+    // Configurar Autocomplete para Puerto Ordaz / San Félix
+    const guayanaBounds = new google.maps.LatLngBounds(
+        new google.maps.LatLng(7.95, -63.10),
+        new google.maps.LatLng(8.55, -62.20)
+    );
+
+    const autocompleteOptions = {
+        bounds: guayanaBounds,
+        strictBounds: true,
+        fields: ["geometry", "name", "formatted_address"],
+        componentRestrictions: { country: "VE" }
+    };
+
+    origenAutocomplete = new google.maps.places.Autocomplete(inputOrigen, autocompleteOptions);
+    destinoAutocomplete = new google.maps.places.Autocomplete(inputDestino, autocompleteOptions);
+
+    origenAutocomplete.addListener("place_changed", () => {
+        const place = origenAutocomplete.getPlace();
+        if (!place.geometry || !place.geometry.location) {
+            originPlace = null;
+            if(originMarker) originMarker.setMap(null);
+            inputOrigen.value = "";
+            return;
+        }
+        originPlace = place;
+        inputOrigen.value = place.name;
+        actualizarMarcadoresYRuta();
+    });
+
+    destinoAutocomplete.addListener("place_changed", () => {
+        const place = destinoAutocomplete.getPlace();
+        if (!place.geometry || !place.geometry.location) {
+            destinationPlace = null;
+            if(destinationMarker) destinationMarker.setMap(null);
+            inputDestino.value = "";
+            return;
+        }
+        destinationPlace = place;
+        inputDestino.value = place.name;
+        actualizarMarcadoresYRuta();
+    });
+
+    const form = document.getElementById('form-solicitar-viaje');
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const origen = document.getElementById('origen').value;
-        const destino = document.getElementById('destino').value;
-        const pasajeros = parseInt(document.getElementById('pasajeros').value) || 1;
-
-        if (!origen || !destino) {
-            mostrarMensajeTemporal('Selecciona un punto de origen y destino.', 'warning');
+        const pasajeros = parseInt(document.getElementById('pasajeros').value);
+        if (!originPlace || !destinationPlace) {
+            mostrarMensajeTemporal('Debe seleccionar origen y destino de la lista.', 'error');
             return;
         }
 
-        if (origen === destino) {
-            mostrarMensajeTemporal('El origen y destino no pueden ser iguales.', 'warning');
-            return;
-        }
-
-        // Obtener usuario autenticado
-        const usuario = getUsuario();
+        const usuario = JSON.parse(localStorage.getItem('xpressUsuario'));
         if (!usuario) {
             window.location.href = '../views/login.html';
             return;
         }
 
-        // Fase 1: Calcular tarifa
         const btnSolicitar = document.getElementById('btn-solicitar');
         const textoOriginal = btnSolicitar.textContent;
         btnSolicitar.disabled = true;
@@ -310,8 +240,12 @@ function configurarFormularioViaje() {
 
         try {
             const payloadTarifa = {
-                idZoneOrigin: parseInt(origen),
-                idZoneDestiny: parseInt(destino),
+                originLat: originPlace.geometry.location.lat(),
+                originLng: originPlace.geometry.location.lng(),
+                destinationLat: destinationPlace.geometry.location.lat(),
+                destinationLng: destinationPlace.geometry.location.lng(),
+                origenStr: inputOrigen.value,
+                destinoStr: inputDestino.value,
                 passengerCount: pasajeros
             };
 
@@ -321,27 +255,81 @@ function configurarFormularioViaje() {
             });
 
             const tarifa = responseTarifa.data;
-
-            // Mostrar el modal de confirmación
-            mostrarPreviewTarifa(tarifa, parseInt(origen), parseInt(destino), pasajeros, textoOriginal, btnSolicitar, form);
-            
+            mostrarPreviewTarifa(tarifa, inputOrigen.value, inputDestino.value, pasajeros, payloadTarifa, textoOriginal, btnSolicitar);
         } catch (error) {
             console.error('Error calculando tarifa:', error);
-            mostrarMensajeTemporal(
-                error.message || 'No se pudo calcular la tarifa. Intenta de nuevo.',
-                'error'
-            );
+            mostrarMensajeTemporal(error.message || 'No se pudo calcular la tarifa.', 'error');
             btnSolicitar.disabled = false;
             btnSolicitar.textContent = textoOriginal;
         }
     });
 }
 
-function mostrarPreviewTarifa(tarifa, origenId, destinoId, pasajeros, textoOriginalBtn, btnSolicitar, form) {
-    const origenNombre = document.getElementById('origen').options[document.getElementById('origen').selectedIndex].text;
-    const destinoNombre = document.getElementById('destino').options[document.getElementById('destino').selectedIndex].text;
+function actualizarMarcadoresYRuta() {
+    if (directionsRenderer) directionsRenderer.set('directions', null);
 
-    // Construir el modal
+    if (originPlace && originPlace.geometry) {
+        if (!originMarker) {
+            originMarker = new google.maps.Marker({
+                map: mapaGoogle,
+                title: 'Origen',
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    fillColor: '#4CAF50',
+                    fillOpacity: 1,
+                    strokeColor: '#FFFFFF',
+                    strokeWeight: 2,
+                    scale: 8
+                }
+            });
+        }
+        originMarker.setPosition(originPlace.geometry.location);
+        mapaGoogle.setCenter(originPlace.geometry.location);
+    } else if (originMarker) {
+        originMarker.setMap(null);
+        originMarker = null;
+    }
+
+    if (destinationPlace && destinationPlace.geometry) {
+        if (!destinationMarker) {
+            destinationMarker = new google.maps.Marker({
+                map: mapaGoogle,
+                title: 'Destino',
+                icon: {
+                    path: google.maps.SymbolPath.CIRCLE,
+                    fillColor: '#F44336',
+                    fillOpacity: 1,
+                    strokeColor: '#FFFFFF',
+                    strokeWeight: 2,
+                    scale: 8
+                }
+            });
+        }
+        destinationMarker.setPosition(destinationPlace.geometry.location);
+    } else if (destinationMarker) {
+        destinationMarker.setMap(null);
+        destinationMarker = null;
+    }
+
+    if (originPlace && destinationPlace) {
+        const bounds = new google.maps.LatLngBounds();
+        bounds.extend(originPlace.geometry.location);
+        bounds.extend(destinationPlace.geometry.location);
+        mapaGoogle.fitBounds(bounds, { top: 60, bottom: 60, left: 60, right: 60 });
+
+        directionsService.route({
+            origin: originPlace.geometry.location,
+            destination: destinationPlace.geometry.location,
+            travelMode: google.maps.TravelMode.DRIVING
+        }, (result, status) => {
+            if (status === google.maps.DirectionsStatus.OK) {
+                directionsRenderer.setDirections(result);
+            }
+        });
+    }
+}
+
+function mostrarPreviewTarifa(tarifa, origenNombre, destinoNombre, pasajeros, payloadTarifa, textoOriginalBtn, btnSolicitar) {
     const modalHTML = `
         <div id="modal-tarifa" style="
             position: fixed; inset: 0; z-index: 9999;
@@ -431,14 +419,12 @@ function mostrarPreviewTarifa(tarifa, origenId, destinoId, pasajeros, textoOrigi
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 
     const modal = document.getElementById('modal-tarifa');
+    let usarCupon = tarifa.cuponReferidoDisponible ? true : false;
 
-    // El cupón de referido viene pre-marcado (oferta proactiva) — si el
-    // cliente lo desmarca, el total vuelve al costo sin cupón sin volver a
-    // pedirle la tarifa al backend (ambos valores ya vienen en la respuesta).
     const chkCuponReferido = document.getElementById('chk-cupon-referido');
     if (chkCuponReferido) {
         chkCuponReferido.addEventListener('change', () => {
-            const usarCupon = chkCuponReferido.checked;
+            usarCupon = chkCuponReferido.checked;
             document.getElementById('costo-final-usd').textContent =
                 '$' + (usarCupon ? tarifa.costoConCuponUsd : tarifa.costoFinalUsd).toFixed(2);
             document.getElementById('costo-final-ves').textContent =
@@ -453,213 +439,78 @@ function mostrarPreviewTarifa(tarifa, origenId, destinoId, pasajeros, textoOrigi
     });
 
     document.getElementById('btn-confirmar-viaje').addEventListener('click', async () => {
-        const btnConfirmar = document.getElementById('btn-confirmar-viaje');
-        btnConfirmar.disabled = true;
-        btnConfirmar.textContent = 'Solicitando...';
+        const btnConfirm = document.getElementById('btn-confirmar-viaje');
+        btnConfirm.disabled = true;
+        btnConfirm.textContent = 'Solicitando...';
 
         try {
-            const usarCuponReferido = chkCuponReferido ? chkCuponReferido.checked : false;
-            const payloadViaje = {
-                idZoneOrigin: origenId,
-                idZoneDestiny: destinoId,
-                passengerCount: pasajeros,
-                customerCouponId: usarCuponReferido ? tarifa.idCuponReferido : null
+            const finalPayload = {
+                originAddress: payloadTarifa.origenStr,
+                destinationAddress: payloadTarifa.destinoStr,
+                originLat: payloadTarifa.originLat,
+                originLng: payloadTarifa.originLng,
+                destinationLat: payloadTarifa.destinationLat,
+                destinationLng: payloadTarifa.destinationLng,
+                passengerCount: payloadTarifa.passengerCount,
+                customerCouponId: usarCupon ? tarifa.idCuponUsado : null
             };
 
-            const response = await fetchAPI('/traslados/solicitar', {
+            const responseSolicitud = await fetchAPI('/traslados/solicitar', {
                 method: 'POST',
-                body: JSON.stringify(payloadViaje)
+                body: JSON.stringify(finalPayload)
             });
 
-            const data = response.data || {};
-            let mensaje = '🚗 ¡Viaje solicitado exitosamente!';
-            if (data.choferNombre) {
-                mensaje += ` Tu chofer ${data.choferNombre} va en camino.`;
+            if (responseSolicitud.success) {
+                window.location.href = '../views/cliente-viaje-activo.html';
+            } else {
+                throw new Error(responseSolicitud.message);
             }
-
-            mostrarMensajeTemporal(mensaje, 'info');
-
-            // Resetear
-            form.reset();
-            document.getElementById('origen').selectedIndex = 0;
-            document.getElementById('destino').selectedIndex = 0;
-            resaltarRuta();
-            
         } catch (error) {
             console.error('Error solicitando viaje:', error);
-            
-            let errMsg = error.message || 'No se pudo solicitar el viaje. Intenta de nuevo.';
-            if (errMsg.includes('viaje activo en curso')) {
-                errMsg = '⚠️ Ya tienes un viaje activo en curso. Por favor, finalízalo antes de solicitar otro.';
-            }
-            // Limpiar "ERROR: " del mensaje si viene del backend
-            errMsg = errMsg.replace(/^ERROR:\s*/i, '');
-
-            mostrarMensajeTemporal(errMsg, 'error');
-        } finally {
-            modal.remove();
-            btnSolicitar.disabled = false;
-            btnSolicitar.textContent = textoOriginalBtn;
+            mostrarMensajeTemporal(error.message || 'No se pudo solicitar el viaje.', 'error');
+            btnConfirm.disabled = false;
+            btnConfirm.textContent = 'Confirmar y Solicitar';
         }
     });
 }
 
-/**
- * Muestra un mensaje temporal estilizado sobre la tarjeta flotante.
- * Se auto-oculta después de 4 segundos.
- */
-function mostrarMensajeTemporal(texto, tipo) {
-    // Remover mensajes anteriores
-    const previo = document.getElementById('msg-temporal');
-    if (previo) previo.remove();
-
-    const colores = {
-        info: { bg: '#E8F4FD', border: '#1F4E79', text: '#1F4E79' },
-        warning: { bg: '#FFF3E0', border: '#C55A11', text: '#C55A11' },
-        error: { bg: '#FDEDED', border: '#C00000', text: '#C00000' }
-    };
-    const c = colores[tipo] || colores.info;
-
-    const div = document.createElement('div');
-    div.id = 'msg-temporal';
-    div.style.cssText = `
-        position: fixed; top: 70px; left: 50%; transform: translateX(-50%);
-        z-index: 2000; padding: 12px 20px; border-radius: 8px;
-        background: ${c.bg}; border: 1px solid ${c.border}; color: ${c.text};
-        font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        animation: slideDown 0.3s ease-out; max-width: 90%;
-    `;
-    div.textContent = texto;
-    document.body.appendChild(div);
-
-    setTimeout(() => {
-        div.style.transition = 'opacity 0.3s ease';
-        div.style.opacity = '0';
-        setTimeout(() => div.remove(), 300);
-    }, 4000);
-}
-
-// ─── Polling de Viaje Activo ───────────────────────────────
-let viajeActivoInterval = null;
-let viajeEstadoPrevio = null;
-
 function iniciarPollingViajeActivo() {
-    // Primera llamada inmediata
-    consultarViajeActivo();
-    
-    // Polling cada 5 segundos
-    viajeActivoInterval = setInterval(consultarViajeActivo, 5000);
-}
-
-async function consultarViajeActivo() {
-    try {
-        const response = await fetchAPI('/cliente/viaje-activo');
-        const data = response.data;
-
-        if (data) {
-            viajeEstadoPrevio = data.estado;
-            mostrarTarjetaViajeActivo(data);
-            bloquearFormulario(true);
-        } else {
-            if (viajeEstadoPrevio) {
-                ocultarTarjetaViajeActivo();
-                viajeEstadoPrevio = null;
-                bloquearFormulario(false);
-                mostrarMensajeTemporal('Tu viaje ha finalizado. Puedes ver tu historial.', 'info');
-            } else {
-                ocultarTarjetaViajeActivo();
+    const verificarViaje = async () => {
+        try {
+            const res = await fetchAPI('/cliente/viaje-activo');
+            if (res.data) {
+                window.location.href = '../views/cliente-viaje-activo.html';
             }
+        } catch (e) {
+            console.warn('Error verificando viaje activo:', e);
         }
-    } catch (error) {
-        console.error('Error al consultar viaje activo:', error);
-    }
+    };
+
+    verificarViaje();
+    setInterval(verificarViaje, 10000);
 }
 
-function mostrarTarjetaViajeActivo(data) {
-    let card = document.getElementById('viaje-activo-card');
-    if (!card) {
-        card = document.createElement('div');
-        card.id = 'viaje-activo-card';
-        card.style.cssText = `
-            position: fixed; bottom: 20px; right: 20px; z-index: 2000;
-            background: #fff; border-radius: 12px; padding: 20px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.15); width: 320px;
-            border-left: 5px solid var(--color-primary);
-        `;
-        document.body.appendChild(card);
+function mostrarMensajeTemporal(mensaje, tipo) {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 10000;';
+        document.body.appendChild(container);
     }
-
-    card.style.display = 'block';
-    
-    const estadoFormateado = data.estado.replace('_', ' ').toUpperCase();
-    const tiempoLlegadaHTML = data.tiempoEstimadoLlegadaMinutos 
-        ? `<p style="margin:8px 0 0 0; font-size:14px; font-weight:bold; color:var(--color-accent);">Llegada en ~${data.tiempoEstimadoLlegadaMinutos} min</p>` 
-        : '';
-        
-    const choferHTML = data.chofer ? `
-        <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
-        <p style="margin:4px 0; font-size:14px;"><strong>Chofer:</strong> ${data.chofer.nombre}</p>
-        <p style="margin:4px 0; font-size:14px;"><strong>Vehículo:</strong> ${data.chofer.vehiculo} (${data.chofer.color})</p>
-        <p style="margin:4px 0; font-size:14px;"><strong>Placa:</strong> ${data.chofer.placa}</p>
-    ` : '';
-
-    card.innerHTML = `
-        <button onclick="document.getElementById('viaje-activo-card').style.display='none'"
-            style="position:absolute; top:10px; right:12px; background:none; border:none;
-                   font-size:20px; cursor:pointer; color:#aaa; line-height:1;" title="Minimizar">×</button>
-        <h3 style="margin:0 0 10px 0; color:var(--color-primary); font-size:16px;">Viaje en curso: ${estadoFormateado}</h3>
-        <p style="margin:4px 0; font-size:14px;"><strong>Origen:</strong> ${data.origen}</p>
-        <p style="margin:4px 0; font-size:14px;"><strong>Destino:</strong> ${data.destino}</p>
-        ${choferHTML}
-        ${tiempoLlegadaHTML}
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        background: ${tipo === 'error' ? '#F44336' : '#4CAF50'};
+        color: white; padding: 12px 24px; border-radius: 8px;
+        margin-top: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        font-family: inherit; font-size: 14px; opacity: 0; transition: opacity 0.3s;
     `;
-
-    const puedeCancelar = (data.estado === 'solicitado' || data.estado === 'aceptado');
-
-    const btnVerDetalles = document.createElement('a');
-    btnVerDetalles.href = '/views/cliente-viaje-activo.html';
-    btnVerDetalles.className = 'btn-primary';
-    btnVerDetalles.style.cssText = 'display:block; width:100%; margin-top:10px; text-align:center; text-decoration:none; box-sizing:border-box;';
-    btnVerDetalles.textContent = 'Ver detalles del viaje';
-    card.appendChild(btnVerDetalles);
-
-    if (puedeCancelar) {
-        const btnCancelar = document.createElement('button');
-        btnCancelar.className = 'btn-secondary';
-        btnCancelar.style.cssText = 'width:100%; margin-top:10px; border-color:var(--color-error); color:var(--color-error);';
-        btnCancelar.textContent = 'Cancelar Viaje';
-        btnCancelar.onclick = async () => {
-            if (confirm('¿Estás seguro de que deseas cancelar este viaje?')) {
-                btnCancelar.disabled = true;
-                btnCancelar.textContent = 'Cancelando...';
-                try {
-                    await fetchAPI(`/cliente/traslados/${data.idTraslado}/cancelar`, {
-                        method: 'PUT',
-                        body: JSON.stringify({ motivo: 'Cancelado por el cliente' })
-                    });
-                    mostrarMensajeTemporal('Viaje cancelado', 'info');
-                    ocultarTarjetaViajeActivo();
-                    window.location.href = '/views/cliente-record.html';
-                } catch (error) {
-                    console.error('Error al cancelar viaje:', error);
-                    mostrarMensajeTemporal(error.message || 'Error al cancelar', 'error');
-                    btnCancelar.disabled = false;
-                    btnCancelar.textContent = 'Cancelar Viaje';
-                }
-            }
-        };
-        card.appendChild(btnCancelar);
-    }
-}
-
-function ocultarTarjetaViajeActivo() {
-    const card = document.getElementById('viaje-activo-card');
-    if (card) card.style.display = 'none';
-}
-
-function bloquearFormulario(bloqueado) {
-    const btn = document.getElementById('btn-solicitar');
-    if (!btn) return;
-    btn.disabled = bloqueado;
-    btn.textContent = bloqueado ? 'Ya tienes un viaje activo' : 'Solicitar Viaje';
+    toast.textContent = mensaje;
+    container.appendChild(toast);
+    
+    requestAnimationFrame(() => toast.style.opacity = '1');
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
 }

@@ -22,11 +22,16 @@ import lombok.Data;
 @Data
 public class FareRequest {
 
-    @NotNull(message = "La zona de origen es obligatoria")
     private Integer idZoneOrigin;
 
-    @NotNull(message = "La zona de destino es obligatoria")
     private Integer idZoneDestiny;
+
+    private String originAddress;
+    private Double originLat;
+    private Double originLng;
+    private String destinationAddress;
+    private Double destinationLat;
+    private Double destinationLng;
 
     @NotNull(message = "El número de pasajeros es obligatorio")
     @Min(value = 1, message = "Mínimo 1 pasajero")

@@ -8,10 +8,22 @@ async function cargarResenas() {
     
     try {
         const response = await fetchAPI('/chofer/resenas');
-        const resenas = response.data || response;
+        let resenas = response.data || response;
         
+        const urlParams = new URLSearchParams(window.location.search);
+        const tripIdParam = urlParams.get('tripId');
+        
+        if (tripIdParam) {
+            resenas = resenas.filter(r => r.tripId == tripIdParam);
+            // Optionally add a back button to return to history
+            const header = document.querySelector('h2') || document.querySelector('h1');
+            if (header && !document.getElementById('btn-volver-historial')) {
+                header.insertAdjacentHTML('afterend', '<button id="btn-volver-historial" class="btn-secondary mb-md" onclick="window.location.href=\'/views/chofer-travel-history.html\'">← Volver al Historial</button>');
+            }
+        }
+
         if (!resenas || resenas.length === 0) {
-            container.innerHTML = '<p class="text-center text-muted mt-lg">No has recibido ninguna reseña aún.</p>';
+            container.innerHTML = '<p class="text-center text-muted mt-lg">No se encontraron reseñas.</p>';
             return;
         }
 

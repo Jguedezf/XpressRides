@@ -248,6 +248,9 @@
         <a href="../views/chofer-resenas.html">Mis Reseñas</a>
     </nav>
     <div class="top-bar-right d-flex align-center" style="gap: 16px;">
+        <a href="../views/chofer-viaje-offline.html" class="btn-mode-switch" title="Cambiar a mapa sin conexión"
+           style="font-size: 12px; padding: 4px 10px; background: #f0f0f0; border-radius: 6px;
+                  color: #555; text-decoration: none; font-weight: 600; white-space: nowrap;">🗺️ Offline</a>
         <div class="user-profile-widget" onclick="toggleProfileDropdown()" style="position:relative; cursor:pointer;">
             <div id="topbar-user-initial" style="width:32px; height:32px; border-radius:50%; background-color:var(--color-primary); color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">U</div>
             <div id="topbar-profile-dropdown" class="card" style="position:absolute; top:100%; right:0; margin-top:12px; display:none; min-width:180px; z-index:1000; padding:12px; cursor:default;" onclick="event.stopPropagation()">
@@ -287,12 +290,14 @@
     </div>
 </div>
 
-<!-- Botones de estado -->
+<!-- Botones de Simulación -->
 <div id="state-buttons" class="hidden">
-    <button id="btn-en-camino" class="btn-primary">En camino</button>
-    <button id="btn-llegue" class="btn-primary hidden">Llegué</button>
-    <button id="btn-completado" class="btn-primary hidden">Completado</button>
-    <button id="btn-cancelar" class="btn-secondary" style="border-color:var(--color-error); color:var(--color-error); margin-top:5px;">Cancelar Viaje</button>
+    <p style="margin:0 0 6px 0; font-size:12px; text-align:center; color:#555;">Simulación de Movimiento</p>
+    <div style="display:flex; gap:8px;">
+        <button id="btn-sim-realista" class="btn-primary" style="flex:1; font-size:12px; padding:8px;">🚗 Realista</button>
+        <button id="btn-sim-rapida" class="btn-primary" style="flex:1; font-size:12px; padding:8px; background:#e67e22; border-color:#e67e22;">🏎️ Rápida</button>
+    </div>
+    <button id="btn-cancelar" class="btn-secondary" style="border-color:var(--color-error); color:var(--color-error); margin-top:8px;">Cancelar Viaje</button>
 </div>
 
 <!-- Botón SOS -->

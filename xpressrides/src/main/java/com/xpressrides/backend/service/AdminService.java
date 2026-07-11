@@ -139,8 +139,8 @@ public class AdminService {
             item.put("chofer", t.getDriver() != null
                 ? t.getDriver().getUsername().getName() + " " + t.getDriver().getUsername().getLastName()
                 : null);
-            item.put("zonaOrigen", t.getOriginZone() != null ? t.getOriginZone().getName() : null);
-            item.put("zonaDestino", t.getDestinationZone() != null ? t.getDestinationZone().getName() : null);
+            item.put("zonaOrigen", t.getOriginZone() != null ? t.getOriginZone().getName() : t.getOriginAddress());
+            item.put("zonaDestino", t.getDestinationZone() != null ? t.getDestinationZone().getName() : t.getDestinationAddress());
             item.put("costoClienteUsd", t.getCustomerCostUsd());
             item.put("fechaSolicitud", t.getRequestDate());
             return item;

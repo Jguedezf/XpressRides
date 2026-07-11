@@ -186,6 +186,9 @@
         <a href="../views/cliente-resenas.html">Mis Reseñas</a>
     </nav>
     <div class="top-bar-right d-flex align-center" style="gap: 16px;">
+        <a href="../views/cliente-viaje-activo-offline.html" class="btn-mode-switch" title="Cambiar a mapa sin conexión"
+           style="font-size: 12px; padding: 4px 10px; background: #f0f0f0; border-radius: 6px;
+                  color: #555; text-decoration: none; font-weight: 600; white-space: nowrap;">🗺️ Offline</a>
         <div class="user-profile-widget" onclick="toggleProfileDropdown()" style="position:relative; cursor:pointer;">
             <div id="topbar-user-initial" style="width:32px; height:32px; border-radius:50%; background-color:var(--color-primary); color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">U</div>
             <div id="topbar-profile-dropdown" class="card" style="position:absolute; top:100%; right:0; margin-top:12px; display:none; min-width:180px; z-index:1000; padding:12px; cursor:default;" onclick="event.stopPropagation()">
@@ -215,6 +218,9 @@
         </div>
         <p class="ruta-texto" id="ruta-texto"></p>
     </div>
+
+    <!-- Mapa en tiempo real -->
+    <div id="map" class="info-card" style="height: 300px; width: 100%; padding: 0; position: relative; overflow: hidden; z-index: 1; margin-bottom: var(--space-md); border: 1px solid #EAEAEA;"></div>
 
     <!-- Tarjeta del chofer -->
     <div class="info-card hidden" id="chofer-card">
@@ -292,7 +298,138 @@ const ESTADOS = {
 
 let pollingId = null;
 let estadoPrevio = null;
-let idTrasladoActual = null;
+
+// --- Mapa Google Maps ---
+let map = null;
+let driverMarker = null;
+let originMarker = null;
+let destinationMarker = null;
+let directionsService = null;
+let directionsRenderer = null;
+
+async function inicializarMapa(origenLat, origenLng, destinoLat, destinoLng) {
+    if (map) return; // ya inicializado
+
+    const mapEl = document.getElementById('map');
+    mapEl.style.display = 'block';
+
+    try {
+        await cargarGoogleMaps();
+    } catch (e) {
+        console.error("Error al cargar Google Maps:", e);
+        return;
+    }
+
+    map = new google.maps.Map(mapEl, {
+        zoomControl: true,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+        styles: [
+            { featureType: 'poi', stylers: [{ visibility: 'simplified' }] }
+        ]
+    });
+
+    directionsService = new google.maps.DirectionsService();
+    directionsRenderer = new google.maps.DirectionsRenderer({
+        map: map,
+        suppressMarkers: true, // We will draw our own markers
+        polylineOptions: {
+            strokeColor: '#1565C0',
+            strokeWeight: 3,
+            strokeOpacity: 0.7
+        }
+    });
+
+    const originPos = { lat: origenLat, lng: origenLng };
+    const destPos = { lat: destinoLat, lng: destinoLng };
+
+    originMarker = new google.maps.Marker({
+        position: originPos,
+        map: map,
+        title: 'Origen',
+        icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            fillColor: '#4CAF50',
+            fillOpacity: 1,
+            strokeColor: '#FFFFFF',
+            strokeWeight: 2,
+            scale: 8
+        }
+    });
+
+    destinationMarker = new google.maps.Marker({
+        position: destPos,
+        map: map,
+        title: 'Destino',
+        icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            fillColor: '#F44336',
+            fillOpacity: 1,
+            strokeColor: '#FFFFFF',
+            strokeWeight: 2,
+            scale: 8
+        }
+    });
+
+    const request = {
+        origin: originPos,
+        destination: destPos,
+        travelMode: 'DRIVING'
+    };
+
+    directionsService.route(request, (result, status) => {
+        if (status === 'OK') {
+            directionsRenderer.setDirections(result);
+        } else {
+            // Si falla la ruta, al menos centrar en los puntos
+            const bounds = new google.maps.LatLngBounds();
+            bounds.extend(originPos);
+            bounds.extend(destPos);
+            map.fitBounds(bounds);
+        }
+    });
+}
+
+function actualizarMarcadorChofer(lat, lng) {
+    if (!map || lat == null || lng == null) return;
+    
+    const pos = { lat: lat, lng: lng };
+    
+    if (!driverMarker) {
+        driverMarker = new google.maps.Marker({
+            position: pos,
+            map: map,
+            title: 'Chofer',
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                fillColor: '#1565C0',
+                fillOpacity: 1,
+                strokeColor: '#FFFFFF',
+                strokeWeight: 3,
+                scale: 10
+            },
+            zIndex: 999
+        });
+    } else {
+        driverMarker.setPosition(pos);
+    }
+}
+
+function limpiarMapa() {
+    if (map) {
+        if (directionsRenderer) directionsRenderer.setMap(null);
+        if (driverMarker) driverMarker.setMap(null);
+        if (originMarker) originMarker.setMap(null);
+        if (destinationMarker) destinationMarker.setMap(null);
+        map = null;
+        driverMarker = null;
+        originMarker = null;
+        destinationMarker = null;
+        directionsRenderer = null;
+        directionsService = null;
+    }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!requireAuth()) return;
@@ -308,6 +445,7 @@ async function cargarViajeActivo() {
 
         if (!data || !data.estado) {
             // El viaje terminó
+            limpiarMapa();
             if (estadoPrevio) {
                 clearInterval(pollingId);
                 window.location.href = '/views/cliente-record.html';
@@ -374,6 +512,14 @@ function renderizarViaje(data) {
         btnCancelar.classList.remove('hidden');
     } else {
         btnCancelar.classList.add('hidden');
+    }
+
+    // --- Mapa ---
+    if (data.origenLat != null && data.origenLng != null && data.destinoLat != null && data.destinoLng != null) {
+        inicializarMapa(data.origenLat, data.origenLng, data.destinoLat, data.destinoLng);
+    }
+    if (data.chofer && data.chofer.latActual != null && data.chofer.lngActual != null) {
+        actualizarMarcadorChofer(data.chofer.latActual, data.chofer.lngActual);
     }
 }
 

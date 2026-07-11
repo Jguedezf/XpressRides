@@ -48,11 +48,8 @@ async function cargarResenas() {
             const html = `
                 <div class="review-card">
                     <div class="d-flex justify-between align-center mb-sm">
-                        <span style="font-weight: 600; font-size: 14px;">${route}</span>
+                        <span style="font-weight: 600; font-size: 14px;">Para: ${driverName}</span>
                         <span style="font-size: 12px; color: var(--color-text-muted);">${timeStr}</span>
-                    </div>
-                    <div class="d-flex justify-between align-center mb-sm">
-                        <span style="font-size: 14px; color: var(--color-text-muted);">Chofer: ${driverName}</span>
                     </div>
                     <div class="stars mb-sm">${starsHtml}</div>
                     <p style="font-size: 14px; margin: 0; margin-bottom: 15px;">${comment}</p>

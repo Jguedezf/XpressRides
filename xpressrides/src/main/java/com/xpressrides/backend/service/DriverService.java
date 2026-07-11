@@ -339,8 +339,12 @@ public class DriverService {
         data.put("idTraslado", trip.getId());
         data.put("estado", trip.getStatus());
         data.put("cliente", clienteData);
-        data.put("origen", trip.getOriginZone().getName());
-        data.put("destino", trip.getDestinationZone().getName());
+        data.put("origen", trip.getOriginZone() != null ? trip.getOriginZone().getName() : trip.getOriginAddress());
+        data.put("destino", trip.getDestinationZone() != null ? trip.getDestinationZone().getName() : trip.getDestinationAddress());
+        data.put("origenLat", trip.getOriginLat());
+        data.put("origenLng", trip.getOriginLng());
+        data.put("destinoLat", trip.getDestinationLat());
+        data.put("destinoLng", trip.getDestinationLng());
         data.put("costoUsd", trip.getCustomerCostUsd());
         data.put("distanciaKm", trip.getDistanceKm());
         data.put("nroPasajeros", trip.getPassengerCount());
@@ -401,5 +405,24 @@ public class DriverService {
             notification.setUser(admin);
             notificationRepository.save(notification);
         }
+    }
+
+    @Transactional
+    public void updateLocation(String username, Double lat, Double lng) {
+        if (lat == null || lng == null) {
+            throw new BadRequestException("Las coordenadas están fuera de Ciudad Guayana.");
+        }
+        if (Double.isNaN(lat) || Double.isNaN(lng)) {
+            throw new BadRequestException("Las coordenadas no pueden ser valores no numéricos (NaN).");
+        }
+        if (lat <= 7.8 || lat >= 8.7 || lng <= -63.2 || lng >= -62.1) {
+            throw new BadRequestException("Las coordenadas están fuera de Ciudad Guayana.");
+        }
+        Driver driver = driverRepository.findByUsername_Username(username)
+            .orElseThrow(() -> new ResourceNotFoundException("Chofer no encontrado"));
+        driver.setLatActual(java.math.BigDecimal.valueOf(lat));
+        driver.setLngActual(java.math.BigDecimal.valueOf(lng));
+        driver.setUbicacionActualizadaEn(LocalDateTime.now());
+        driverRepository.save(driver);
     }
 }

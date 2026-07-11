@@ -58,6 +58,15 @@ public class Driver {
     @Column(name = "disponible")
     private boolean available;
 
+    @Column(name = "lat_actual")
+    private BigDecimal latActual;
+
+    @Column(name = "lng_actual")
+    private BigDecimal lngActual;
+
+    @Column(name = "ubicacion_actualizada_en")
+    private LocalDateTime ubicacionActualizadaEn;
+
     @Column(name = "creado_en", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 

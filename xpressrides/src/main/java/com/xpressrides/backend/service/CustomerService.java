@@ -190,8 +190,8 @@ public class CustomerService {
                 map.put("comment", t.getCustomerComment());
                 map.put("date", t.getRequestDate());
                 
-                String origin = t.getOriginZone() != null ? t.getOriginZone().getName() : "Origen";
-                String dest = t.getDestinationZone() != null ? t.getDestinationZone().getName() : "Destino";
+                String origin = t.getOriginZone() != null ? t.getOriginZone().getName() : t.getOriginAddress();
+                String dest = t.getDestinationZone() != null ? t.getDestinationZone().getName() : t.getDestinationAddress();
                 map.put("route", origin + " → " + dest);
 
                 String driverName = "Desconocido";
@@ -304,19 +304,25 @@ public class CustomerService {
             choferData.put("vehiculo", vehicle.getBrand() + " " + vehicle.getModel() + " " + vehicle.getYear());
             choferData.put("placa", vehicle.getPlate());
             choferData.put("color", vehicle.getColor());
+            choferData.put("latActual", driver.getLatActual());
+            choferData.put("lngActual", driver.getLngActual());
         }
 
         Map<String, Object> data = new HashMap<>();
         data.put("idTraslado", trip.getId());
         data.put("estado", trip.getStatus());
-        data.put("origen", trip.getOriginZone().getName());
-        data.put("destino", trip.getDestinationZone().getName());
+        data.put("origen", trip.getOriginZone() != null ? trip.getOriginZone().getName() : trip.getOriginAddress());
+        data.put("destino", trip.getDestinationZone() != null ? trip.getDestinationZone().getName() : trip.getDestinationAddress());
         data.put("costoEstimadoUsd", trip.getCustomerCostUsd());
         data.put("costoEstimadoVes", trip.getCustomerCostVes());
         data.put("chofer", choferData);
         data.put("tiempoEstimadoLlegadaMinutos", trip.getEtaMinutes() != null ? trip.getEtaMinutes() : 8);
         data.put("fechaSolicitud", trip.getRequestDate());
         data.put("fechaAceptacion", trip.getAcceptanceDate());
+        data.put("origenLat", trip.getOriginLat());
+        data.put("origenLng", trip.getOriginLng());
+        data.put("destinoLat", trip.getDestinationLat());
+        data.put("destinoLng", trip.getDestinationLng());
 
         return data;
     }

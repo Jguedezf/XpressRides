@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Inicio - XpressRides (Offline)</title>
+
+    <!-- Fuente oficial del sistema (Inter) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Hoja de estilos global XpressRides -->
+    <link rel="stylesheet" href="../css/estilos.css">
+
+    <!-- Leaflet CSS & JS (reemplazo open-source de Google Maps) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <style>
+        /* Estilos específicos para el layout tipo "App Móvil" del Dashboard */
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden; /* Evita el scroll en toda la página, el mapa ocupa el resto */
+        }
+
+        /* Barra Superior */
+        .top-bar {
+            background-color: var(--color-bg-main);
+            padding: var(--space-md) var(--space-lg);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            z-index: 1000; /* Por encima del mapa */
+            position: relative;
+        }
+
+        .brand-logo-small {
+            color: var(--color-primary);
+            font-weight: 800;
+            font-size: var(--font-size-h2);
+            margin: 0;
+        }
+
+        .brand-text { color: var(--color-secondary); }
+
+        /* Navegación de Escritorio (Oculta en móviles por defecto) */
+        .desktop-nav {
+            display: none;
+        }
+
+        /* Contenedor del Mapa */
+        #map {
+            flex-grow: 1; /* Toma todo el espacio disponible */
+            width: 100%;
+            z-index: 1; /* Nivel base */
+        }
+
+        /* Tarjeta Flotante de Solicitud de Viaje (Base Móvil) */
+        .floating-request-card {
+            position: absolute;
+            bottom: 80px; /* Justo por encima de la barra inferior */
+            left: 50%;
+            transform: translateX(-50%); /* Centrado perfecto */
+            width: 90%;
+            max-width: 400px;
+            z-index: 1000; /* Por encima del mapa */
+            margin-bottom: 0;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+        }
+
+        .floating-request-card .input-group {
+            margin-bottom: var(--space-sm);
+        }
+
+        /* =========================================================
+           ADAPTACIÓN PARA LAPTOPS Y PANTALLAS GRANDES (RESPONSIVE)
+           ========================================================= */
+        @media (min-width: 768px) {
+            /* 1. Mostrar menú de escritorio en la barra superior */
+            .desktop-nav {
+                display: flex;
+                gap: var(--space-lg);
+                align-items: center;
+            }
+
+            .desktop-nav a {
+                color: var(--color-text-muted);
+                text-decoration: none;
+                font-weight: 600;
+                font-size: var(--font-size-normal);
+                transition: color 0.2s ease;
+            }
+
+            .desktop-nav a:hover, .desktop-nav a.active {
+                color: var(--color-primary);
+            }
+
+            /* 2. Ocultar la barra de navegación inferior de móviles */
+            .bottom-nav {
+                display: none !important;
+            }
+
+            /* 3. Mover la tarjeta de solicitud a la izquierda (Estilo Dashboard Web) */
+            .floating-request-card {
+                top: 100px; /* Separación desde arriba */
+                bottom: auto; /* Quitamos el anclaje inferior */
+                left: 32px;   /* Anclado a la izquierda */
+                transform: none; /* Quitamos el centrado */
+                width: 380px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 1. BARRA SUPERIOR (HEADER) -->
+<header class="top-bar d-flex justify-between align-center">
+    <div class="top-bar-left d-flex align-center" style="gap: 16px;">
+        <img src="/img/logo.png" alt="XpressRides" style="height:48px;width:auto;object-fit:contain;">
+        <span id="topbar-bcv-rate" class="badge-green" style="display:none; font-size:12px;">BCV: Cargando...</span>
+    </div>
+
+    <!-- Navegación de Escritorio (Solo visible en PC) -->
+    <nav class="desktop-nav">
+        <a href="../views/cliente-dashboard-offline.html" class="active">Inicio</a>
+        <a href="../views/cliente-record.html">Historial de Viajes</a>
+        <a href="../views/cliente-resenas.html">Mis Reseñas</a>
+    </nav>
+
+    <!-- Widget de usuario, botón online y campanita -->
+    <div class="top-bar-right d-flex align-center" style="gap: 16px;">
+        <a href="./cliente-dashboard.html" class="btn-mode-switch" title="Cambiar a mapa con conexión"
+           style="font-size: 12px; padding: 4px 10px; background: #E2EFDA; border-radius: 6px;
+                  color: #1E6B3C; text-decoration: none; font-weight: 600; white-space: nowrap;">🌐 Online</a>
+        <div class="user-profile-widget" onclick="toggleProfileDropdown()" style="position:relative; cursor:pointer;">
+            <div id="topbar-user-initial" style="width:32px; height:32px; border-radius:50%; background-color:var(--color-primary); color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">U</div>
+            <div id="topbar-profile-dropdown" class="card" style="position:absolute; top:100%; right:0; margin-top:12px; display:none; min-width:180px; z-index:1000; padding:12px; cursor:default;" onclick="event.stopPropagation()">
+                <p id="topbar-user-name" class="h2-subtitle" style="margin:0; font-size:14px;">Usuario</p>
+                <p id="topbar-user-role" class="text-small" style="margin-bottom:8px; text-transform:capitalize;">Rol</p>
+                <hr style="margin:8px 0; border:none; border-top:1px solid #eee;">
+                <a href="../views/user-profile.html" style="font-size:13px; color:var(--color-accent); text-decoration:none; display:block; padding:4px 0;">Ver mi perfil</a>
+            </div>
+        </div>
+        <div class="notification-bell" onclick="abrirNotificaciones()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <span class="notification-badge" id="badge-count">2</span>
+    </div>
+</div>
+</header>
+
+<!-- 2. CONTENEDOR DEL MAPA (LEAFLET) -->
+<main id="map"></main>
+
+<div class="card floating-request-card">
+    <h2 class="h2-subtitle" style="color: var(--color-secondary); font-size: 18px; margin:0 0 12px 0;">¿A dónde vamos hoy?</h2>
+    
+    <div class="converter-widget" style="background:#f8f9fa; border: 1px solid #eee; padding:8px 12px; border-radius:8px; display:flex; justify-content: space-between; align-items:center; margin-bottom: 16px;">
+        <span style="font-size:12px; color:#555; font-weight:600;">💰 Conversor BCV</span>
+        <div style="display:flex; align-items:center; gap:6px;">
+            <input type="number" id="conv-usd" placeholder="USD" style="width:55px; border:1px solid #ccc; border-radius:4px; font-size:12px; padding:3px 6px; text-align: center; outline: none;" min="1">
+            <span style="font-size:12px; color:#888;">=</span>
+            <span id="conv-ves" style="font-size:13px; color:var(--color-primary); font-weight:700; min-width: 60px; text-align: right;">Bs 0.00</span>
+        </div>
+    </div>
+
+    <form id="form-solicitar-viaje">
+        <div class="input-group">
+            <label for="origen" class="input-label">Punto de Origen</label>
+            <select id="origen" class="input-field" required>
+                <option value="">Cargando zonas...</option>
+            </select>
+        </div>
+
+        <div class="d-flex gap-sm">
+            <div class="input-group" style="flex: 2;">
+                <label for="destino" class="input-label">Punto de Destino</label>
+                <select id="destino" class="input-field" required>
+                    <option value="">Cargando zonas...</option>
+                </select>
+            </div>
+
+            <div class="input-group" style="flex: 1;">
+                <label for="pasajeros" class="input-label">Pasajeros</label>
+                <input type="number" id="pasajeros" class="input-field" min="1" max="3" value="1" required>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-primary mt-sm" id="btn-solicitar">Solicitar viaje</button>
+    </form>
+</div>
+
+<!-- 4. NAVEGACIÓN INFERIOR (Solo visible en Móviles) -->
+<nav class="bottom-nav">
+    <a href="../views/cliente-dashboard-offline.html" class="bottom-nav-item active">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        <span class="mt-xs">Inicio</span>
+    </a>
+    <a href="../views/cliente-record.html" class="bottom-nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span class="mt-xs">Historial</span>
+    </a>
+    <a href="../views/user-profile.html" class="bottom-nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <span class="mt-xs">Perfil</span>
+    </a>
+</nav>
+
+<script src="../js/api.js"></script>
+<script src="../js/topbar.js"></script>
+<script src="../js/notifications.js"></script>
+<script src="../js/dashboard-offline.js"></script>
+</body>
+</html>

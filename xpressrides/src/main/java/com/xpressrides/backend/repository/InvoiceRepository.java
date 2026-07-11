@@ -37,8 +37,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Integer> {
               f.rif_cedula       AS clienteCedula,
               f.direccion_fiscal AS clienteDireccion,
               CONCAT(u.nombre, ' ', u.apellido) AS choferNombre,
-              zo.nombre          AS zonaOrigen,
-              zd.nombre          AS zonaDestino,
+              COALESCE(zo.nombre, t.origen_direccion)   AS zonaOrigen,
+              COALESCE(zd.nombre, t.destino_direccion)  AS zonaDestino,
               t.distancia_km     AS distanciaKm,
               t.descuento_usd    AS descuentoUsd,
               t.costo_cliente_usd AS costoUsd,
@@ -49,8 +49,8 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Integer> {
             JOIN tasa_bcv tb ON t.id_tasa = tb.id
             JOIN chofer ch   ON t.id_chofer = ch.id
             JOIN usuario u   ON ch.id_usuario = u.id
-            JOIN zona zo     ON t.id_zona_origen = zo.id
-            JOIN zona zd     ON t.id_zona_destino = zd.id
+            LEFT JOIN zona zo ON t.id_zona_origen = zo.id
+            LEFT JOIN zona zd ON t.id_zona_destino = zd.id
             WHERE f.id_traslado = :trasladoId
             """, nativeQuery = true)
     List<Object[]> findInvoiceDataByTripId(@Param("trasladoId") Integer trasladoId);

@@ -1,11 +1,20 @@
 // js/chofer-dashboard.js
 // Carga los datos del chofer desde localStorage y maneja el panel
 
+let watchId = null;
+let daemonIntervalId = null;
+let ultimaPosicion = null;
+
 document.addEventListener('DOMContentLoaded', () => {
     if (!requireAuth()) return;
     cargarDatosChofer();
     configurarToggle();
     configurarBalance();
+
+    // Arrancar tracking GPS si el chofer ya está disponible al cargar la página
+    const toggleInput = document.getElementById('availability-toggle');
+    const disponible = toggleInput && toggleInput.checked;
+    controlarTrackingUbicacion(disponible);
 });
 
 function requireAuth() {
@@ -128,6 +137,9 @@ function configurarToggle() {
             method: 'PUT',
             body: JSON.stringify({ available: disponible })
         }).catch(err => console.warn('Error actualizando disponibilidad:', err));
+
+        // Iniciar o detener tracking GPS según disponibilidad
+// Tracking manual desactivado
     });
 }
 
@@ -195,7 +207,7 @@ function mostrarAlertaViaje(trip) {
     document.getElementById('alert-trip-dest').textContent = trip.destino;
     document.getElementById('alert-trip-price').textContent = `$${trip.costoUsd ? trip.costoUsd.toFixed(2) : '0.00'}`;
 
-    alertContainer.style.display = 'block';
+    alertContainer.style.display = 'flex';
     iniciarCuentaRegresiva(trip.fechaAsignacionActual || trip.fechaSolicitud);
 }
 

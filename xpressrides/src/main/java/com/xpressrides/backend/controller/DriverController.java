@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import com.xpressrides.backend.dto.request.AvailabilityRequest;
 import com.xpressrides.backend.dto.request.EnableRequest;
 import com.xpressrides.backend.dto.request.TripStatusRequest;
+import com.xpressrides.backend.dto.request.DriverLocationRequest;
 import com.xpressrides.backend.dto.response.DriverStatusResponse;
 import com.xpressrides.backend.service.DriverService;
 import com.xpressrides.backend.service.PaymentService;
@@ -193,6 +194,24 @@ public class DriverController {
             driverService.requestWithdrawal(authentication.getName());
             response.put("success", true);
             response.put("message", "Solicitud de retiro enviada correctamente. El administrador procesará su pago.");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @PreAuthorize("hasRole('chofer')")
+    @PutMapping("/ubicacion")
+    public ResponseEntity<Map<String, Object>> updateLocation(
+            @Valid @RequestBody DriverLocationRequest request,
+            Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            driverService.updateLocation(authentication.getName(), request.getLat(), request.getLng());
+            response.put("success", true);
+            response.put("message", "Ubicación actualizada correctamente");
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("success", false);
