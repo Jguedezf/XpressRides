@@ -214,9 +214,13 @@ sp_solicitar_traslado: BEGIN
     LEAVE sp_solicitar_traslado;
   END IF;
 
-  -- Distribución 70/30 sobre tarifa original
+  -- Distribución 70/30 sobre tarifa original. La empresa absorbe el descuento del
+  -- cliente hasta un piso de $0 en su propio 30% (nunca queda en negativo) — mismo
+  -- patrón GREATEST que ya usa este SP para v_costo_cli (línea 191) y el cupón
+  -- (línea 188). Decisión confirmada por Freddy el 15/07/2026 — ver
+  -- Propuesta_Reconciliacion_Algoritmo_Tarifas.md en la raíz del repo.
   SET v_monto_ch  = ROUND(v_tarifa_original * 0.70, 2);
-  SET v_monto_emp = ROUND((v_tarifa_original * 0.30) - v_desc_estudiante - IFNULL(v_descuento,0), 2);
+  SET v_monto_emp = GREATEST(ROUND((v_tarifa_original * 0.30) - v_desc_estudiante - IFNULL(v_descuento,0), 2), 0.00);
   SET v_costo_ves = ROUND(v_costo_cli * v_tasa_ves, 2);
 
   -- Asignación por proximidad (radio 5 → 10 → 15 km)
