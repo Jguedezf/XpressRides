@@ -4,16 +4,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!requireAuth()) return;
     configurarBotonesEstado();
     configurarBotonEmergencia();
+    configurarModoUbicacion();
     cargarViajeActivo();
     // Polling cada 8 segundos para detectar nuevos viajes asignados por el SP
     setInterval(cargarViajeActivo, 8000);
 
-    // Iniciar tracking manual
-    // (GPS tracking automático fue removido debido a problemas de visualización y testing)
+    // Modo de ubicación por defecto: Manual (ver configurarModoUbicacion).
+    // El chofer activa el GPS automático con el switch si lo prefiere.
 
     // Cargar Google Maps API dinámicamente desde el backend
     try {
-        await cargarGoogleMaps();
+        await Promise.all([cargarGoogleMaps(), cargarImagenAutoBase()]);
         inicializarMapaChofer();
     } catch (error) {
         console.error("No se pudo cargar el mapa:", error);
@@ -33,6 +34,7 @@ let directionsService = null;
 let directionsRenderer = null;
 let originMarker = null;
 let destinationMarker = null;
+let idTrasladoConViewportAjustado = null; // idTraslado ya ajustado una vez en dibujarRutaViaje()
 const RESPONSE_TIMEOUT_SECONDS = 30; // debe coincidir con TripTimeoutScheduler (backend)
 
 function setUltimaPosicion(pos) {
@@ -54,6 +56,48 @@ function getUltimaPosicionGuardada() {
 }
 
 // ─── 1. MAPA ────────────────────────────────────────
+
+// Ícono del vehículo — imagen diseñada por Johanna (docs referencias/auto-icono-johanna.png),
+// vista desde arriba con el frente apuntando "hacia arriba" (heading=0). Un PNG no puede
+// llevar transform="rotate()" como el SVG anterior, así que se rota dinámicamente dibujándolo
+// en un <canvas> oculto en cada paso de la simulación (ver calcularRumbo() más abajo).
+let imagenAutoBase = null;
+
+function cargarImagenAutoBase() {
+    return new Promise((resolve, reject) => {
+        if (imagenAutoBase) return resolve(imagenAutoBase);
+        const img = new Image();
+        img.onload = () => { imagenAutoBase = img; resolve(img); };
+        img.onerror = reject;
+        img.src = '/img/auto-icono.png';
+    });
+}
+
+function crearIconoAutoRotado(headingDegrees = 0) {
+    const size = 40;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.translate(size / 2, size / 2);
+    ctx.rotate(headingDegrees * Math.PI / 180);
+    ctx.drawImage(imagenAutoBase, -size / 2, -size / 2, size, size);
+    return {
+        url: canvas.toDataURL(),
+        scaledSize: new google.maps.Size(size, size),
+        anchor: new google.maps.Point(size / 2, size / 2)
+    };
+}
+
+// Rumbo (bearing) inicial entre 2 coordenadas, en grados 0-360 (0 = norte) — usado para
+// rotar el ícono del auto durante la simulación, recalculado en cada paso de la ruta.
+function calcularRumbo(lat1, lng1, lat2, lng2) {
+    const toRad = deg => deg * Math.PI / 180;
+    const y = Math.sin(toRad(lng2 - lng1)) * Math.cos(toRad(lat2));
+    const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
+              Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(toRad(lng2 - lng1));
+    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
 
 function inicializarMapaChofer() {
     const centroGuayana = ultimaPosicion || { lat: 8.29, lng: -62.71 };
@@ -129,14 +173,8 @@ function inicializarMapaChofer() {
                                 position: nuevaPos,
                                 map: mapaChofer,
                                 title: 'Tu ubicación',
-                                icon: {
-                                    path: google.maps.SymbolPath.CIRCLE,
-                                    fillColor: '#1F4E79',
-                                    fillOpacity: 1,
-                                    strokeColor: '#FFFFFF',
-                                    strokeWeight: 3,
-                                    scale: 10
-                                }
+                                icon: crearIconoAutoRotado(),
+                                animation: google.maps.Animation.DROP
                             });
                         }
 
@@ -166,19 +204,76 @@ function inicializarMapaChofer() {
             position: ultimaPosicion,
             map: mapaChofer,
             title: 'Tu ubicación',
-            icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                fillColor: '#1F4E79',
-                fillOpacity: 1,
-                strokeColor: '#FFFFFF',
-                strokeWeight: 3,
-                scale: 10
-            }
+            icon: crearIconoAutoRotado(),
+            animation: google.maps.Animation.DROP
         });
     }
 }
 
-// Tracking automático removido
+let modoUbicacion = 'manual'; // 'manual' | 'automatico'
+
+function configurarModoUbicacion() {
+    const toggle = document.getElementById('ubicacion-mode-toggle');
+    const label = document.getElementById('ubicacion-mode-label');
+    if (!toggle) return;
+
+    toggle.addEventListener('change', () => {
+        detenerTrackingAutomatico();
+        if (toggle.checked) {
+            modoUbicacion = 'automatico';
+            if (label) label.textContent = 'GPS automático';
+            iniciarTrackingAutomatico();
+        } else {
+            modoUbicacion = 'manual';
+            if (label) label.textContent = 'Manual';
+        }
+    });
+}
+
+// watchPosition actualiza la posición y el marcador en cada callback; ya no aplica la
+// cautela de "nunca tocar el mapa" del commit 9386be4 (ese bug era por los controles
+// nativos de Google Maps deshabilitados, ya reactivados en inicializarMapaChofer()) —
+// no se toca el zoom/centro del mapa aquí, solo se mueve el marcador. El reporte al
+// backend sigue aparte, cada 15s, con la última posición conocida.
+function iniciarTrackingAutomatico() {
+    if (!navigator.geolocation) return;
+    if (!watchId) {
+        watchId = navigator.geolocation.watchPosition(
+            (pos) => {
+                ultimaPosicion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                if (marcadorChofer) {
+                    marcadorChofer.setPosition(ultimaPosicion);
+                } else {
+                    marcadorChofer = new google.maps.Marker({
+                        position: ultimaPosicion,
+                        map: mapaChofer,
+                        title: 'Tu ubicación',
+                        icon: crearIconoAutoRotado(),
+                        animation: google.maps.Animation.DROP
+                    });
+                    mapaChofer.setCenter(ultimaPosicion);
+                }
+            },
+            (err) => console.warn('Error de geolocalización:', err.message),
+            { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+        );
+    }
+    if (!daemonIntervalId) {
+        reportarUbicacion();
+        daemonIntervalId = setInterval(reportarUbicacion, 15000);
+    }
+}
+
+function detenerTrackingAutomatico() {
+    if (watchId) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+    }
+    if (daemonIntervalId) {
+        clearInterval(daemonIntervalId);
+        daemonIntervalId = null;
+    }
+}
 
 async function reportarUbicacion() {
     if (!ultimaPosicion) return;
@@ -327,6 +422,14 @@ function dibujarRutaViaje() {
         });
     }
 
+    // Solo la primera vez que se dibuja la ruta de ESTE viaje dejamos que el mapa
+    // ajuste zoom/centro para mostrarla completa. En redibujos posteriores del mismo
+    // viaje (cambios de estado: en_camino, chofer_llego, en_progreso), el chofer
+    // mantiene el encuadre que tenía — no se vuelve a mover el zoom.
+    const esPrimerDibujo = idTrasladoConViewportAjustado !== viajeActual.idTraslado;
+    directionsRenderer.setOptions({ preserveViewport: !esPrimerDibujo });
+    if (esPrimerDibujo) idTrasladoConViewportAjustado = viajeActual.idTraslado;
+
     const orgLatLng = { lat: viajeActual.origenLat, lng: viajeActual.origenLng };
     const dstLatLng = { lat: viajeActual.destinoLat, lng: viajeActual.destinoLng };
 
@@ -467,10 +570,15 @@ async function iniciarSimulacionHacia(target, isFast) {
                     return;
                 }
                 
+                const posicionAnterior = ultimaPosicion;
                 const nextPos = { lat: steps[currentStep].lat(), lng: steps[currentStep].lng() };
+                const rumbo = calcularRumbo(posicionAnterior.lat, posicionAnterior.lng, nextPos.lat, nextPos.lng);
                 setUltimaPosicion(nextPos);
-                
-                if (marcadorChofer) marcadorChofer.setPosition(ultimaPosicion);
+
+                if (marcadorChofer) {
+                    marcadorChofer.setPosition(ultimaPosicion);
+                    marcadorChofer.setIcon(crearIconoAutoRotado(rumbo));
+                }
                 if (circuloPrecision) circuloPrecision.setCenter(ultimaPosicion);
                 mapaChofer.panTo(ultimaPosicion);
                 
