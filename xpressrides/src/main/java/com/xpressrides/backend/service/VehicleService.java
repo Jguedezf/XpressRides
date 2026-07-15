@@ -3,6 +3,7 @@ package com.xpressrides.backend.service;
 import java.time.LocalDateTime;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.xpressrides.backend.dto.VehicleInspectionDTO;
 import com.xpressrides.backend.dto.request.InspectionRequest;
@@ -144,6 +145,7 @@ public class VehicleService {
         return dto;
     }
 
+    @Transactional
     public VehicleInspectionDTO createInspection(InspectionRequest request) {
         Vehicle vehicle = vehicleRepository.findById(request.getVehicleId())
             .orElseThrow(() -> new ResourceNotFoundException("Vehículo no encontrado"));
