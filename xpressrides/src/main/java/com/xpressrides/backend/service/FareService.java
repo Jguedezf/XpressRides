@@ -82,6 +82,15 @@ public class FareService {
 
     public FareResponse calculateFare(FareRequest request, String username) {
 
+        // ZoneRepository se mantiene como dependencia completa a propósito, no es deuda
+        // técnica: el plan original de migración (Plan_Migracion_Google_Places_Propuesta.docx,
+        // sección 5.2) proponía retirarla, pero se decidió conservar el dual-path (zona por ID
+        // O coordenadas directas) por la misma razón que sp_solicitar_traslado mantiene
+        // id_zona_origen/id_zona_destino como nullable "kept for backward compatibility": no
+        // romper clientes/pruebas que todavía envían zona en vez de lat/lng. Mismo criterio
+        // aplica al descuento estudiantil (líneas más abajo): por nombre de zona si la
+        // solicitud no trae coordenadas, por radio de 300m si sí las trae. Decisión confirmada
+        // por Johanna el 14/07/2026.
         // 1. Resolver coordenadas de origen
         Double originLat = request.getOriginLat();
         Double originLng = request.getOriginLng();
