@@ -10,6 +10,180 @@ let originPlace = null;
 let destinationPlace = null;
 let origenAutocomplete = null;
 let destinoAutocomplete = null;
+let geocoder = null;   // se instancia en inicializarMapa(); a scope de módulo para reusarlo desde dragend
+let infoWindow = null; // idem — lo usa mostrarInfoPOI() para clics sobre POI
+
+// Detecta si formatted_address es un Plus Code (ej. "CWC8+R9 Ciudad Guayana, Venezuela"):
+// bloque de 4-8 caracteres del alfabeto de Plus Codes + '+' + 2-3 caracteres, sin espacios.
+function esPlusCode(direccion) {
+    return /\b[23456789CFGHJMPQRVWX]{4,8}\+[23456789CFGHJMPQRVWX]{2,3}\b/i.test(direccion);
+}
+
+// La tarjeta ".floating-request-card" (bottom:80px, ver cliente-dashboard.html) se
+// solapa a propósito con la parte inferior del mapa, así que un InfoWindow que Google
+// abre ahí queda tapado sin importar su z-index interno (#map y la tarjeta son hermanos
+// en el mismo stacking context, y #map ya pierde esa pelea). En vez de pelear con
+// z-index, desplazamos el mapa hacia arriba solo cuando el punto clicado cae en esa
+// franja, para que el popup se abra en una zona visible.
+const ALTO_ZONA_TAPADA_PX = 220; // bottom:80px de la tarjeta + alto aproximado de su contenido
+function evitarPopupTapado(latLng) {
+    const projection = mapaGoogle.getProjection();
+    if (!projection) return;
+
+    const bounds = mapaGoogle.getBounds();
+    if (!bounds) return;
+
+    const scale = Math.pow(2, mapaGoogle.getZoom());
+    const topRight = projection.fromLatLngToPoint(bounds.getNorthEast());
+    const bottomLeft = projection.fromLatLngToPoint(bounds.getSouthWest());
+    const point = projection.fromLatLngToPoint(latLng);
+
+    const pixelY = (point.y - topRight.y) * scale;
+    const alturaMapa = mapaGoogle.getDiv().clientHeight;
+
+    if (pixelY > alturaMapa - ALTO_ZONA_TAPADA_PX) {
+        mapaGoogle.panBy(0, pixelY - (alturaMapa - ALTO_ZONA_TAPADA_PX));
+    }
+}
+
+// Abre el InfoWindow propio (no el nativo de Google) para clics sobre un POI —
+// necesitamos control manual para poder aplicar evitarPopupTapado() antes de abrirlo.
+function mostrarInfoPOI(direccion, latLng) {
+    infoWindow.setContent(`
+        <div style="padding: 8px; color: #333; font-family: 'Inter', sans-serif;">
+            <h4 style="margin: 0 0 4px 0; color: #1F4E79; font-size: 14px;">Ubicación seleccionada</h4>
+            <p style="margin: 0 0 8px 0; font-size: 12px;">${direccion}</p>
+        </div>
+    `);
+    infoWindow.setPosition(latLng);
+    evitarPopupTapado(latLng);
+    infoWindow.open(mapaGoogle);
+}
+
+// Reverse geocoding compartido por el clic en terreno vacío y por dragend de ambos
+// pines (antes vivía anidado como fallbackGeocoder() dentro del listener de clic).
+// Misma lógica de siempre: dirección real, o si Google devuelve un Plus Code, el
+// nombre de sector/localidad más cercano, o como último recurso coordenadas redondeadas.
+async function reverseGeocodeAmigable(latLng, callback) {
+    // Intento previo: el backend puede pedirle a Google result_type=route (calle exacta),
+    // filtro que el Geocoder JS del navegador no soporta. Si no hay resultado a ese nivel
+    // (o falla la llamada), fetchAPI lanza y caemos exactamente al camino de siempre.
+    try {
+        const response = await fetchAPI(`/geocoding/reverse?lat=${latLng.lat()}&lng=${latLng.lng()}`);
+        if (response && response.data) {
+            callback(response.data);
+            return;
+        }
+    } catch (e) {
+        // Sin resultado preciso a nivel de calle — seguimos con el fallback de siempre.
+    }
+
+    geocoder.geocode({ location: latLng }, (results, status) => {
+        let direccion;
+        if (status === 'OK' && results[0] && !esPlusCode(results[0].formatted_address)) {
+            direccion = results[0].formatted_address;
+        } else if (status === 'OK' && results[0]) {
+            const comp = results[0].address_components.find(c =>
+                c.types.includes('sublocality') || c.types.includes('locality') || c.types.includes('administrative_area_level_2')
+            );
+            direccion = comp
+                ? `Cerca de ${comp.long_name}`
+                : `Ubicación aproximada (${latLng.lat().toFixed(5)}, ${latLng.lng().toFixed(5)})`;
+        } else {
+            direccion = `Ubicación aproximada (${latLng.lat().toFixed(5)}, ${latLng.lng().toFixed(5)})`;
+        }
+        callback(direccion);
+    });
+}
+
+// Distancia aproximada (proporcional, no en metros reales) solo para decidir cuál de
+// los 2 pines ya puestos está más cerca de un clic nuevo — no hace falta más precisión
+// que esa para esta decisión, así que no se carga la librería geometry.
+function distanciaAprox(latLngA, latLngB) {
+    const dLat = latLngA.lat() - latLngB.lat();
+    const dLng = latLngA.lng() - latLngB.lng();
+    return dLat * dLat + dLng * dLng;
+}
+
+// Umbral conservador para distinguir un arrastre deliberado de un micro-movimiento
+// accidental (2-3px de jitter de mouse/trackpad sobre un pin recién centrado por
+// Autocomplete). EN PÍXELES DE PANTALLA, no metros — corrección del 14/07/2026:
+// un umbral en metros resultó inútil (a zoom 12, el zoom con el que Autocomplete
+// centra el mapa, 1px ya son ~38 metros reales, así que cualquier jitter normal
+// lo superaba sin filtrar nada). El jitter de mouse/trackpad es un fenómeno de
+// hardware, prácticamente constante en píxeles sin importar el zoom — por eso
+// píxeles es la unidad correcta aquí. Valor de partida a validar con pruebas
+// reales (Johanna, 14/07/2026): si se siente muy sensible o muy laxo, se ajusta
+// este número, no la lógica de alrededor.
+const UMBRAL_DRAG_ACCIDENTAL_PX = 8;
+
+// Distancia en píxeles de pantalla entre 2 LatLng — misma proyección que ya usa
+// evitarPopupTapado(), así el umbral tiene el mismo significado (jitter de mouse)
+// sin importar el nivel de zoom actual.
+function distanciaPixeles(latLngA, latLngB) {
+    const projection = mapaGoogle.getProjection();
+    if (!projection) return Infinity; // sin proyección disponible, no filtramos
+    const scale = Math.pow(2, mapaGoogle.getZoom());
+    const pointA = projection.fromLatLngToPoint(latLngA);
+    const pointB = projection.fromLatLngToPoint(latLngB);
+    const dx = (pointA.x - pointB.x) * scale;
+    const dy = (pointA.y - pointB.y) * scale;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+// Bloquea el arrastre del pin por ~400ms tras crearlo/reposicionarlo (clic o
+// Autocomplete) — es la ventana de mayor riesgo, porque el mapa se recentra sobre
+// el pin justo ahí y el mouse del usuario suele estar cerca. Capa complementaria
+// al umbral de distancia, no lo reemplaza (por si el mouse sigue cerca del pin
+// después de esos 400ms).
+function bloquearDragTemporal(marker) {
+    marker.setDraggable(false);
+    setTimeout(() => marker.setDraggable(true), 400);
+}
+
+function aplicarSeleccion(mode, direccion, latLng) {
+    const place = { geometry: { location: latLng }, name: direccion };
+    if (mode === 'origen') {
+        originPlace = place;
+        document.getElementById('origen').value = direccion;
+    } else {
+        destinationPlace = place;
+        document.getElementById('destino').value = direccion;
+    }
+    actualizarMarcadoresYRuta();
+}
+
+// Pin tipo Google Maps/Uber (gota + degradado sutil + contorno blanco + punto central
+// + sombra elíptica), construido en SVG puro — sin imágenes externas. Los 4 colores son
+// los mismos --color-success/--color-success-bg/--color-error/--color-error-bg de
+// estilos.css (una SVG data URI no puede leer variables CSS de la página, así que se
+// copian los valores hex tal cual están definidos ahí, no son colores nuevos).
+function crearIconoPin(colorClaro, colorOscuro) {
+    const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="42" viewBox="0 0 24 36">
+            <defs>
+                <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="${colorClaro}"/>
+                    <stop offset="100%" stop-color="${colorOscuro}"/>
+                </linearGradient>
+            </defs>
+            <ellipse cx="12" cy="34" rx="5" ry="2" fill="rgba(0,0,0,0.25)"/>
+            <path d="M12 0C5.373 0 0 5.373 0 12c0 9 12 24 12 24s12-15 12-24C24 5.373 18.627 0 12 0z"
+                  fill="url(#grad)" stroke="#FFFFFF" stroke-width="1.5"/>
+            <circle cx="12" cy="12" r="4.5" fill="#FFFFFF"/>
+        </svg>
+    `;
+    return {
+        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+        scaledSize: new google.maps.Size(30, 42),
+        anchor: new google.maps.Point(15, 40)
+    };
+}
+
+const COLOR_ORIGEN_CLARO   = '#E2EFDA'; // --color-success-bg (estilos.css)
+const COLOR_ORIGEN_OSCURO  = '#1E6B3C'; // --color-success
+const COLOR_DESTINO_CLARO  = '#FCE4D6'; // --color-error-bg
+const COLOR_DESTINO_OSCURO = '#C00000'; // --color-error
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (!requireAuth()) return;
@@ -90,78 +264,44 @@ function inicializarMapa() {
         }
     });
 
-    const geocoder = new google.maps.Geocoder();
-    const infoWindow = new google.maps.InfoWindow();
+    geocoder = new google.maps.Geocoder();
+    infoWindow = new google.maps.InfoWindow();
 
     const placesService = new google.maps.places.PlacesService(mapaGoogle);
 
     mapaGoogle.addListener('click', (e) => {
-        const modeEl = document.querySelector('input[name="map_click_mode"]:checked');
-        const mode = modeEl ? modeEl.value : 'info';
-        
-        // En caso de que se haga click en un POI
+        // Clic sobre un POI: mostramos nuestro propio InfoWindow (no el nativo de
+        // Google) para poder aplicar evitarPopupTapado() antes de abrirlo. Nunca
+        // mueve ni crea ningún pin — eso solo pasa con clics en terreno vacío.
         if (e.placeId) {
-            // Si estamos en modo origen o destino, prevenimos que se abra el infowindow por defecto
-            // Si estamos en info, queremos que se abra el default de Google (como el chofer)
-            if (mode !== 'info') {
-                e.stop(); 
-            } else {
-                // Dejamos que Google Maps haga lo suyo
-                return;
-            }
-        }
-
-        const clickedLat = e.latLng.lat();
-        const clickedLng = e.latLng.lng();
-
-        const handleLocationSelection = (direccion, latLng) => {
-            if (mode === 'info') {
-                infoWindow.setContent(`
-                    <div style="padding: 8px; color: #333; font-family: 'Inter', sans-serif;">
-                        <h4 style="margin: 0 0 4px 0; color: #1F4E79; font-size: 14px;">Ubicación seleccionada</h4>
-                        <p style="margin: 0 0 8px 0; font-size: 12px;">${direccion}</p>
-                    </div>
-                `);
-                infoWindow.setPosition(latLng);
-                infoWindow.open(mapaGoogle);
-            } else {
-                const place = {
-                    geometry: { location: latLng },
-                    name: direccion
-                };
-                
-                if (mode === 'origen') {
-                    originPlace = place;
-                    document.getElementById('origen').value = direccion;
-                } else {
-                    destinationPlace = place;
-                    document.getElementById('destino').value = direccion;
-                }
-                actualizarMarcadoresYRuta();
-            }
-        };
-
-        if (e.placeId) {
+            e.stop();
             placesService.getDetails({ placeId: e.placeId, fields: ['name', 'geometry', 'formatted_address'] }, (placeResult, status) => {
                 if (status === google.maps.places.PlacesServiceStatus.OK && placeResult.geometry) {
-                    const placeName = placeResult.name || placeResult.formatted_address;
-                    handleLocationSelection(placeName, placeResult.geometry.location);
+                    const direccion = placeResult.name || placeResult.formatted_address;
+                    mostrarInfoPOI(direccion, placeResult.geometry.location);
                 } else {
-                    fallbackGeocoder();
+                    mostrarInfoPOI('Ubicación seleccionada', e.latLng);
                 }
             });
-        } else {
-            fallbackGeocoder();
+            return;
         }
 
-        function fallbackGeocoder() {
-            geocoder.geocode({ location: e.latLng }, (results, status) => {
-                const direccion = (status === 'OK' && results[0])
-                    ? results[0].formatted_address
-                    : `${clickedLat.toFixed(5)}, ${clickedLng.toFixed(5)}`;
-                handleLocationSelection(direccion, e.latLng);
-            });
+        // Clic en terreno vacío: primer clic = origen, segundo = destino (atajo que
+        // ya existía). Si ambos pines ya están puestos, el siguiente clic mueve el
+        // pin más cercano al punto clicado, en vez de no hacer nada — la corrección
+        // "de precisión" sigue siendo arrastrar el pin directamente.
+        let mode;
+        if (!originPlace) {
+            mode = 'origen';
+        } else if (!destinationPlace) {
+            mode = 'destino';
+        } else {
+            mode = distanciaAprox(e.latLng, originPlace.geometry.location) <=
+                   distanciaAprox(e.latLng, destinationPlace.geometry.location)
+                   ? 'origen' : 'destino';
         }
+
+        reverseGeocodeAmigable(e.latLng, (direccion) => aplicarSeleccion(mode, direccion, e.latLng));
     });
 }
 
@@ -274,19 +414,23 @@ function actualizarMarcadoresYRuta() {
         if (!originMarker) {
             originMarker = new google.maps.Marker({
                 map: mapaGoogle,
-                title: 'Origen',
-                icon: {
-                    path: google.maps.SymbolPath.CIRCLE,
-                    fillColor: '#4CAF50',
-                    fillOpacity: 1,
-                    strokeColor: '#FFFFFF',
-                    strokeWeight: 2,
-                    scale: 8
+                title: 'Origen (arrastra para ajustar)',
+                draggable: true,
+                animation: google.maps.Animation.DROP,
+                icon: crearIconoPin(COLOR_ORIGEN_CLARO, COLOR_ORIGEN_OSCURO)
+            });
+            originMarker.addListener('dragend', () => {
+                const nuevaPos = originMarker.getPosition();
+                if (originPlace && distanciaPixeles(nuevaPos, originPlace.geometry.location) < UMBRAL_DRAG_ACCIDENTAL_PX) {
+                    originMarker.setPosition(originPlace.geometry.location); // revierte el micro-movimiento
+                    return;
                 }
+                reverseGeocodeAmigable(nuevaPos, (direccion) => aplicarSeleccion('origen', direccion, nuevaPos));
             });
         }
         originMarker.setPosition(originPlace.geometry.location);
         mapaGoogle.setCenter(originPlace.geometry.location);
+        bloquearDragTemporal(originMarker);
     } else if (originMarker) {
         originMarker.setMap(null);
         originMarker = null;
@@ -296,18 +440,22 @@ function actualizarMarcadoresYRuta() {
         if (!destinationMarker) {
             destinationMarker = new google.maps.Marker({
                 map: mapaGoogle,
-                title: 'Destino',
-                icon: {
-                    path: google.maps.SymbolPath.CIRCLE,
-                    fillColor: '#F44336',
-                    fillOpacity: 1,
-                    strokeColor: '#FFFFFF',
-                    strokeWeight: 2,
-                    scale: 8
+                title: 'Destino (arrastra para ajustar)',
+                draggable: true,
+                animation: google.maps.Animation.DROP,
+                icon: crearIconoPin(COLOR_DESTINO_CLARO, COLOR_DESTINO_OSCURO)
+            });
+            destinationMarker.addListener('dragend', () => {
+                const nuevaPos = destinationMarker.getPosition();
+                if (destinationPlace && distanciaPixeles(nuevaPos, destinationPlace.geometry.location) < UMBRAL_DRAG_ACCIDENTAL_PX) {
+                    destinationMarker.setPosition(destinationPlace.geometry.location); // revierte el micro-movimiento
+                    return;
                 }
+                reverseGeocodeAmigable(nuevaPos, (direccion) => aplicarSeleccion('destino', direccion, nuevaPos));
             });
         }
         destinationMarker.setPosition(destinationPlace.geometry.location);
+        bloquearDragTemporal(destinationMarker);
     } else if (destinationMarker) {
         destinationMarker.setMap(null);
         destinationMarker = null;
