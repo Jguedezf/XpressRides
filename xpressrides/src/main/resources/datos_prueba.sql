@@ -286,6 +286,16 @@ SET @id_usuario_admin = (
   LIMIT 1
 );
 
+-- El hash real de 'admin' en decarrerita.sql:1091 corresponde a la contraseña
+-- documentada "Admin2026!", pero en la BD de desarrollo se encontró reemplazado
+-- por un valor no funcional ($2a$10$placeholder) el 15/07/2026 — origen no
+-- identificado, no viene de ningún archivo del repo. Se fija aquí la misma
+-- contraseña de prueba ("password") que ya usan laurap/carlosr/miguelch, para
+-- que el login de admin funcione siempre que se recargue la BD desde cero.
+UPDATE usuario
+   SET password_hash = '$2b$10$cU14jCy1URLaX9p57SPkDu2ZUG8GbBZQFaI.xa6BerSmAr3xmKBkW'
+ WHERE id = @id_usuario_admin;
+
 INSERT INTO personal_admin (id_usuario, cargo)
 VALUES (@id_usuario_admin, 'Administrador General')
 ON DUPLICATE KEY UPDATE cargo = VALUES(cargo);
