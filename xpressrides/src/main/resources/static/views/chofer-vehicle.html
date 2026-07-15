@@ -67,7 +67,6 @@
     <nav class="desktop-nav">
         <a href="../views/chofer-viaje.html">Inicio</a>
         <a href="../views/chofer-travel-history.html">Mis Viajes</a>
-        <a href="../views/chofer-dashboard.html" class="active">Mi Perfil</a>
     </nav>
     <div class="top-bar-right d-flex align-center" style="gap: 16px;">
         <div class="user-profile-widget" onclick="toggleProfileDropdown()" style="position:relative; cursor:pointer;">
@@ -133,7 +132,7 @@
                 <input type="text" class="input-field" id="veh-color" readonly style="background-color: #f9f9f9; color: var(--color-text-muted);">
             </div>
         </div>
-        <button id="btn-edit-vehicle" class="btn btn-secondary w-100 mt-md" style="background-color: var(--color-secondary); color: white; display: none; padding: var(--space-sm) 0; border: none; border-radius: var(--border-radius-sm); font-weight: 600; cursor: pointer;">Editar Vehículo</button>
+        <button id="btn-edit-vehicle" class="btn btn-secondary w-100 mt-md" style="background-color: var(--color-secondary); color: white; display: none; padding: var(--space-sm) 0; border: none; border-radius: var(--radius-btn); font-weight: 600; cursor: pointer;">Editar Vehículo</button>
     </div>
 
     <div id="vehiculo-form-container" class="card" style="display: none;">
@@ -164,8 +163,8 @@
                 </div>
             </div>
             <div class="d-flex mt-md" style="gap: var(--space-sm);">
-                <button type="submit" id="btn-submit-vehiculo" class="btn btn-secondary w-100" style="background-color: var(--color-secondary); color: white; padding: var(--space-sm) 0; border: none; border-radius: var(--border-radius-sm); font-weight: 600; cursor: pointer;">Guardar Vehículo</button>
-                <button type="button" id="btn-cancel-edit" class="btn w-100" style="display: none; background-color: #ccc; color: #333; padding: var(--space-sm) 0; border: none; border-radius: var(--border-radius-sm); font-weight: 600; cursor: pointer;">Cancelar</button>
+                <button type="submit" id="btn-submit-vehiculo" class="btn btn-secondary w-100" style="background-color: var(--color-secondary); color: white; padding: var(--space-sm) 0; border: none; border-radius: var(--radius-btn); font-weight: 600; cursor: pointer;">Guardar Vehículo</button>
+                <button type="button" id="btn-cancel-edit" class="btn w-100" style="display: none; background-color: #ccc; color: #333; padding: var(--space-sm) 0; border: none; border-radius: var(--radius-btn); font-weight: 600; cursor: pointer;">Cancelar</button>
             </div>
         </form>
     </div>
