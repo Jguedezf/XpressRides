@@ -4,9 +4,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!requireAuth()) return;
     configurarBotonesEstado();
     configurarBotonEmergencia();
+    configurarModoUbicacion();
     cargarViajeActivo();
     setInterval(cargarViajeActivo, 8000);
-    inicializarMapaChofer();
+    await inicializarMapaChofer();
 });
 
 let mapaChofer = null;
@@ -14,11 +15,39 @@ let marcadorChofer = null;
 let ultimaPosicion = null;
 let viajeActual = null;
 let countdownInterval = null;
+let watchId = null;
+let daemonIntervalId = null;
+let modoUbicacion = 'manual'; // 'manual' | 'automatico'
+let primerFixAutomatico = false;
 const RESPONSE_TIMEOUT_SECONDS = 30; // debe coincidir con TripTimeoutScheduler (backend)
 
 // ─── 1. MAPA (LEAFLET) ────────────────────────────────
 
-function inicializarMapaChofer() {
+// Intento único (no watchPosition) de obtener la posición real antes de
+// centrar el mapa por primera vez. Si falla o tarda más de 6s, seguimos
+// con el fallback de siempre en vez de bloquear el render del mapa.
+function obtenerPosicionInicial() {
+    return new Promise((resolve) => {
+        if (!navigator.geolocation) {
+            resolve(null);
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+            () => resolve(null),
+            { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+        );
+    });
+}
+
+async function inicializarMapaChofer() {
+    const overlay = document.getElementById('ubicando-overlay');
+
+    if (!ultimaPosicion) {
+        ultimaPosicion = await obtenerPosicionInicial();
+    }
+    if (overlay) overlay.style.display = 'none';
+
     const centroGuayana = ultimaPosicion || { lat: 8.29, lng: -62.71 };
 
     mapaChofer = L.map('map').setView([centroGuayana.lat, centroGuayana.lng], 14);
@@ -86,6 +115,69 @@ async function reportarUbicacion() {
         console.warn('Error reportando ubicación al backend:', e);
     }
 }
+
+function configurarModoUbicacion() {
+    const toggle = document.getElementById('ubicacion-mode-toggle');
+    const label = document.getElementById('ubicacion-mode-label');
+    if (!toggle) return;
+
+    toggle.addEventListener('change', () => {
+        detenerTrackingAutomatico();
+        if (toggle.checked) {
+            modoUbicacion = 'automatico';
+            if (label) label.textContent = 'GPS automático';
+            iniciarTrackingAutomatico();
+        } else {
+            modoUbicacion = 'manual';
+            if (label) label.textContent = 'Manual';
+        }
+    });
+}
+
+// Mismo patrón base que controlarTrackingUbicacion() en chofer-dashboard-offline.js:
+// watchPosition solo guarda la posición y NO recentra el mapa en cada callback
+// (evita el bug de recentrado que colapsaba el render — ver commit 9386be4).
+// Única excepción: la primera vez que el modo automático obtiene un fix, se
+// recentra una sola vez (primerFixAutomatico), para que el usuario vea que
+// el mapa sí reconoció su posición real al encender el GPS automático.
+// El reporte al backend va aparte, cada 15s, con la última posición conocida.
+function iniciarTrackingAutomatico() {
+    if (!navigator.geolocation) return;
+    primerFixAutomatico = false;
+    if (!watchId) {
+        watchId = navigator.geolocation.watchPosition(
+            (pos) => {
+                ultimaPosicion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                if (!primerFixAutomatico && mapaChofer) {
+                    mapaChofer.setView([ultimaPosicion.lat, ultimaPosicion.lng], 15);
+                    primerFixAutomatico = true;
+                }
+            },
+            (err) => console.warn('Error de geolocalización:', err.message),
+            { enableHighAccuracy: true, maximumAge: 5000, timeout: 10000 }
+        );
+    }
+    if (!daemonIntervalId) {
+        reportarUbicacion();
+        daemonIntervalId = setInterval(reportarUbicacion, 15000);
+    }
+}
+
+function detenerTrackingAutomatico() {
+    if (watchId) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+    }
+    if (daemonIntervalId) {
+        clearInterval(daemonIntervalId);
+        daemonIntervalId = null;
+    }
+}
+
+window.addEventListener('beforeunload', () => {
+    if (watchId) navigator.geolocation.clearWatch(watchId);
+    if (daemonIntervalId) clearInterval(daemonIntervalId);
+});
 
 // ─── 2. CARGAR VIAJE ACTIVO ─────────────────────────
 
