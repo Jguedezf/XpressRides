@@ -196,6 +196,7 @@ function configurarFormularioViaje() {
         if (!place.geometry || !place.geometry.location) {
             originPlace = null;
             if(originMarker) originMarker.setMap(null);
+            originMarker = null;
             inputOrigen.value = "";
             return;
         }
@@ -209,6 +210,7 @@ function configurarFormularioViaje() {
         if (!place.geometry || !place.geometry.location) {
             destinationPlace = null;
             if(destinationMarker) destinationMarker.setMap(null);
+            destinationMarker = null;
             inputDestino.value = "";
             return;
         }
