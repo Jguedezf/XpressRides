@@ -21,6 +21,8 @@ CREATE TABLE banco (
   id          INT           AUTO_INCREMENT PRIMARY KEY,
   nombre      VARCHAR(100)  NOT NULL,
   codigo_bcv  VARCHAR(10)   NOT NULL UNIQUE,
+  acepta_usd  TINYINT(1)    NOT NULL DEFAULT 0,
+  acepta_ves  TINYINT(1)    NOT NULL DEFAULT 1,
   activo      TINYINT(1)    NOT NULL DEFAULT 1,
   creado_en   TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT chk_banco_nombre CHECK (CHAR_LENGTH(TRIM(nombre)) >= 3)
@@ -1020,14 +1022,18 @@ DELIMITER ;
 -- BLOQUE 9: DATOS INICIALES
 -- ================================================================
 
-INSERT INTO banco (nombre, codigo_bcv) VALUES
-  ('Banco de Venezuela',   'BDV'),
-  ('Banesco',              'BNC'),
-  ('Mercantil',            'MER'),
-  ('BBVA Provincial',      'BBV'),
-  ('Bicentenario',         'BIC'),
-  ('Banco del Tesoro',     'BTU'),
-  ('Banco Exterior',       'BEX');
+INSERT INTO banco (nombre, codigo_bcv, acepta_usd, acepta_ves) VALUES
+  ('Banco de Venezuela',            'BDV', 1, 1),
+  ('Banesco',                       'BAN', 0, 1),
+  ('Mercantil',                     'MER', 1, 1),
+  ('BBVA Provincial',               'BBV', 1, 1),
+  ('Bicentenario',                  'BIC', 0, 1),
+  ('Banco del Tesoro',              'BTU', 0, 1),
+  ('Banco Exterior',                'BEX', 0, 1),
+  ('Bancaribe',                     'BCB', 1, 1),
+  ('BNC (Banco Nacional de Credito)', 'BNC', 1, 1),
+  ('Banco Plaza',                   'BPZ', 1, 1),
+  ('BFC (Banco Fondo Comun)',       'BFC', 1, 1);
 
 INSERT INTO zona (nombre, parroquia, latitud, longitud) VALUES
   ('Castillito',           'Cachamay',      8.3153000, -62.7066000),

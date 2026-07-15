@@ -36,6 +36,12 @@ public class Bank {
     @Column(name = "activo", nullable = false)
     private Boolean active;
 
+    @Column(name = "acepta_usd", nullable = false)
+    private Boolean acceptsUsd;
+
+    @Column(name = "acepta_ves", nullable = false)
+    private Boolean acceptsVes;
+
     @Column(name = "creado_en", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 }

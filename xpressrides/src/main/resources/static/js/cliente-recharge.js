@@ -7,6 +7,7 @@
 
 let tasaBcvActual = 1.0;
 let exchangeRateId = null; // ID de la tasa vigente, necesario para el POST
+let todosLosBancos = []; // Lista completa de bancos cargada desde la API
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (!requireAuth()) return;
@@ -32,17 +33,31 @@ async function cargarDatosIniciales() {
     try {
         // 2. Obtener Bancos disponibles (CatalogController)
         const responseBancos = await fetchAPI('/bancos');
-        const selectBanco = document.getElementById('banco');
-
-        selectBanco.innerHTML = '<option value="">Selecciona tu banco...</option>';
-        (responseBancos.data || []).forEach(banco => {
-            // El modelo Bank usa campo 'name' (inglés)
-            selectBanco.add(new Option(banco.name || banco.nombre, banco.id));
-        });
-
+        todosLosBancos = responseBancos.data || [];
+        poblarBancos();
     } catch (error) {
         console.error("Error cargando bancos:", error);
     }
+}
+
+function poblarBancos() {
+    const tipoRecarga = document.getElementById('tipo_recarga').value;
+    const selectBanco = document.getElementById('banco');
+    
+    selectBanco.innerHTML = '<option value="">Selecciona tu banco...</option>';
+    
+    todosLosBancos.forEach(banco => {
+        // En el backend, las nuevas propiedades son acceptsUsd y acceptsVes
+        // Si por alguna razón no vienen, se asume que todos aceptan VES y ninguno USD (retrocompatibilidad)
+        const aceptaVes = banco.acceptsVes !== undefined ? banco.acceptsVes : true;
+        const aceptaUsd = banco.acceptsUsd !== undefined ? banco.acceptsUsd : false;
+        
+        if (tipoRecarga === 'usd' && aceptaUsd) {
+            selectBanco.add(new Option(banco.name || banco.nombre, banco.id));
+        } else if (tipoRecarga === 'ves' && aceptaVes) {
+            selectBanco.add(new Option(banco.name || banco.nombre, banco.id));
+        }
+    });
 }
 
 function configurarFormulario() {
@@ -65,10 +80,11 @@ function configurarFormulario() {
     }
 
     tipoRecarga.addEventListener('change', () => {
+        poblarBancos(); // Actualizar las opciones de banco según el tipo de moneda
         if (tipoRecarga.value === 'usd') {
             usdFields.style.display = 'block';
             vesFields.style.display = 'none';
-            document.getElementById('banco').required = false;
+            document.getElementById('banco').required = true;
             document.getElementById('monto_ves').required = false;
             document.getElementById('monto_usd_directo').required = true;
         } else {
@@ -111,12 +127,11 @@ function configurarFormulario() {
         try {
             let montoVes = 0;
             let montoUsd = 0;
-            let bankId = null;
+            let bankId = parseInt(document.getElementById('banco').value);
 
             if (tipoRecarga.value === 'ves') {
                 montoVes = parseFloat(document.getElementById('monto_ves').value);
                 montoUsd = tasaBcvActual > 0 ? montoVes / tasaBcvActual : 0;
-                bankId = parseInt(document.getElementById('banco').value);
             } else {
                 montoUsd = parseFloat(document.getElementById('monto_usd_directo').value);
                 montoVes = montoUsd * tasaBcvActual;
