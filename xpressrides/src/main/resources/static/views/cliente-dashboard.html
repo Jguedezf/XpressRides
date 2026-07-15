@@ -169,22 +169,6 @@
     </div>
 
     <form id="form-solicitar-viaje">
-        <!-- Modo de clic en el mapa -->
-        <div style="font-size: 13px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px;">
-            <strong style="color: var(--color-primary);">Al hacer clic en el mapa:</strong>
-            <div style="display: flex; gap: 12px; align-items: center;">
-                <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                    <input type="radio" name="map_click_mode" value="info" checked> Ver Información
-                </label>
-                <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                    <input type="radio" name="map_click_mode" value="origen"> Fijar Origen
-                </label>
-                <label style="cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                    <input type="radio" name="map_click_mode" value="destino"> Fijar Destino
-                </label>
-            </div>
-        </div>
-
         <div class="input-group">
             <label for="origen" class="input-label">Punto de Origen</label>
             <input type="text" id="origen" class="input-field" placeholder="Escribe una dirección de origen…" autocomplete="off" required>
