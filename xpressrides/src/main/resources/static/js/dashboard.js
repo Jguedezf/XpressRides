@@ -12,6 +12,8 @@ let origenAutocomplete = null;
 let destinoAutocomplete = null;
 let geocoder = null;   // se instancia en inicializarMapa(); a scope de módulo para reusarlo desde dragend
 let infoWindow = null; // idem — lo usa mostrarInfoPOI() para clics sobre POI
+let placesService = null; // a scope de módulo para buscar POIs al soltar el pin
+let isInfoWindowOpen = false; // rastrea si nuestro InfoWindow personalizado está abierto
 
 // Detecta si formatted_address es un Plus Code (ej. "CWC8+R9 Ciudad Guayana, Venezuela"):
 // bloque de 4-8 caracteres del alfabeto de Plus Codes + '+' + 2-3 caracteres, sin espacios.
@@ -58,42 +60,66 @@ function mostrarInfoPOI(direccion, latLng) {
     infoWindow.setPosition(latLng);
     evitarPopupTapado(latLng);
     infoWindow.open(mapaGoogle);
+    isInfoWindowOpen = true;
 }
 
-// Reverse geocoding compartido por el clic en terreno vacío y por dragend de ambos
-// pines (antes vivía anidado como fallbackGeocoder() dentro del listener de clic).
-// Misma lógica de siempre: dirección real, o si Google devuelve un Plus Code, el
-// nombre de sector/localidad más cercano, o como último recurso coordenadas redondeadas.
+// Reverse geocoding compartido por el dragend de ambos pines y por el click derecho.
+// Intenta primero buscar un POI exacto. Si no lo hay, cae a la calle exacta (backend),
+// y finalmente al fallback clásico ( Plus Code -> localidad ).
 async function reverseGeocodeAmigable(latLng, callback) {
-    // Intento previo: el backend puede pedirle a Google result_type=route (calle exacta),
-    // filtro que el Geocoder JS del navegador no soporta. Si no hay resultado a ese nivel
-    // (o falla la llamada), fetchAPI lanza y caemos exactamente al camino de siempre.
-    try {
-        const response = await fetchAPI(`/geocoding/reverse?lat=${latLng.lat()}&lng=${latLng.lng()}`);
-        if (response && response.data) {
-            callback(response.data);
-            return;
-        }
-    } catch (e) {
-        // Sin resultado preciso a nivel de calle — seguimos con el fallback de siempre.
+    if (placesService) {
+        placesService.nearbySearch({ location: latLng, radius: 30 }, async (results, status) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK && results.length > 0) {
+                // Filtrar resultados genéricos (ciudades, barrios, calles) para quedarnos solo con POIs reales
+                const best = results.find(r => r.types && 
+                    !r.types.includes('political') && 
+                    !r.types.includes('locality') && 
+                    !r.types.includes('sublocality') && 
+                    !r.types.includes('neighborhood') &&
+                    !r.types.includes('route')
+                );
+
+                if (best) {
+                    const nombreLugar = best.name + (best.vicinity && !best.name.includes(best.vicinity) ? ', ' + best.vicinity : '');
+                    callback(nombreLugar);
+                    return;
+                }
+            }
+            // Si no hay resultados o todos eran genéricos, seguimos con el geocoding de calle
+            continuarGeocoding();
+        });
+    } else {
+        continuarGeocoding();
     }
 
-    geocoder.geocode({ location: latLng }, (results, status) => {
-        let direccion;
-        if (status === 'OK' && results[0] && !esPlusCode(results[0].formatted_address)) {
-            direccion = results[0].formatted_address;
-        } else if (status === 'OK' && results[0]) {
-            const comp = results[0].address_components.find(c =>
-                c.types.includes('sublocality') || c.types.includes('locality') || c.types.includes('administrative_area_level_2')
-            );
-            direccion = comp
-                ? `Cerca de ${comp.long_name}`
-                : `Ubicación aproximada (${latLng.lat().toFixed(5)}, ${latLng.lng().toFixed(5)})`;
-        } else {
-            direccion = `Ubicación aproximada (${latLng.lat().toFixed(5)}, ${latLng.lng().toFixed(5)})`;
+    async function continuarGeocoding() {
+        try {
+            const response = await fetchAPI(`/geocoding/reverse?lat=${latLng.lat()}&lng=${latLng.lng()}`);
+            if (response && response.data) {
+                callback(response.data);
+                return;
+            }
+        } catch (e) {
+            // Sin resultado preciso a nivel de calle — seguimos con el fallback.
         }
-        callback(direccion);
-    });
+
+        geocoder.geocode({ location: latLng }, (results, status) => {
+            let direccion;
+            if (status === 'OK' && results[0] && !esPlusCode(results[0].formatted_address)) {
+                direccion = results[0].formatted_address;
+            } else if (status === 'OK' && results[0]) {
+                const comp = results[0].address_components.find(c =>
+                    c.types.includes('sublocality') || c.types.includes('locality') || c.types.includes('administrative_area_level_2')
+                );
+                direccion = comp
+                    ? `Cerca de ${comp.long_name}`
+                    : `Ubicación aproximada (${latLng.lat().toFixed(5)}, ${latLng.lng().toFixed(5)})`;
+            } else {
+                direccion = `Ubicación aproximada (${latLng.lat().toFixed(5)}, ${latLng.lng().toFixed(5)})`;
+            }
+            callback(direccion);
+        });
+    }
 }
 
 // Distancia aproximada (proporcional, no en metros reales) solo para decidir cuál de
@@ -267,29 +293,38 @@ function inicializarMapa() {
     geocoder = new google.maps.Geocoder();
     infoWindow = new google.maps.InfoWindow();
 
-    const placesService = new google.maps.places.PlacesService(mapaGoogle);
+    infoWindow.addListener('closeclick', () => {
+        isInfoWindowOpen = false;
+    });
+
+    placesService = new google.maps.places.PlacesService(mapaGoogle);
 
     mapaGoogle.addListener('click', (e) => {
-        // Clic sobre un POI: mostramos nuestro propio InfoWindow (no el nativo de
-        // Google) para poder aplicar evitarPopupTapado() antes de abrirlo. Nunca
-        // mueve ni crea ningún pin — eso solo pasa con clics en terreno vacío.
-        if (e.placeId) {
-            e.stop();
-            placesService.getDetails({ placeId: e.placeId, fields: ['name', 'geometry', 'formatted_address'] }, (placeResult, status) => {
-                if (status === google.maps.places.PlacesServiceStatus.OK && placeResult.geometry) {
-                    const direccion = placeResult.name || placeResult.formatted_address;
-                    mostrarInfoPOI(direccion, placeResult.geometry.location);
-                } else {
-                    mostrarInfoPOI('Ubicación seleccionada', e.latLng);
-                }
-            });
+        // Si nuestra ventana está abierta, el click en el mapa solo la cierra
+        if (isInfoWindowOpen) {
+            infoWindow.close();
+            isInfoWindowOpen = false;
+            // Si además clickearon un POI, evitamos que Google abra su ventana nativa
+            if (e.placeId) {
+                e.stop();
+            }
             return;
         }
 
-        // Clic en terreno vacío: primer clic = origen, segundo = destino (atajo que
-        // ya existía). Si ambos pines ya están puestos, el siguiente clic mueve el
-        // pin más cercano al punto clicado, en vez de no hacer nada — la corrección
-        // "de precisión" sigue siendo arrastrar el pin directamente.
+        // Clic sobre un POI: dejamos que Google muestre su InfoWindow nativo rico
+        if (e.placeId) {
+            evitarPopupTapado(e.latLng);
+            return;
+        }
+
+        // Clic en terreno vacío: mostramos nuestro InfoWindow con la info, sin colocar pines
+        reverseGeocodeAmigable(e.latLng, (direccion) => {
+            mostrarInfoPOI(direccion, e.latLng);
+        });
+    });
+
+    mapaGoogle.addListener('rightclick', (e) => {
+        // Click derecho: colocar o mover pines de origen/destino
         let mode;
         if (!originPlace) {
             mode = 'origen';
@@ -427,6 +462,12 @@ function actualizarMarcadoresYRuta() {
                 }
                 reverseGeocodeAmigable(nuevaPos, (direccion) => aplicarSeleccion('origen', direccion, nuevaPos));
             });
+
+            originMarker.addListener('rightclick', () => {
+                originPlace = null;
+                document.getElementById('origen').value = '';
+                actualizarMarcadoresYRuta();
+            });
         }
         originMarker.setPosition(originPlace.geometry.location);
         mapaGoogle.setCenter(originPlace.geometry.location);
@@ -452,6 +493,12 @@ function actualizarMarcadoresYRuta() {
                     return;
                 }
                 reverseGeocodeAmigable(nuevaPos, (direccion) => aplicarSeleccion('destino', direccion, nuevaPos));
+            });
+
+            destinationMarker.addListener('rightclick', () => {
+                destinationPlace = null;
+                document.getElementById('destino').value = '';
+                actualizarMarcadoresYRuta();
             });
         }
         destinationMarker.setPosition(destinationPlace.geometry.location);
