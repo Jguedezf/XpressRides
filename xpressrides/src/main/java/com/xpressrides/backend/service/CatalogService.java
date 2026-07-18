@@ -14,11 +14,16 @@
  */
 package com.xpressrides.backend.service;
 
+import com.xpressrides.backend.dto.request.BankRequest;
+import com.xpressrides.backend.exception.BadRequestException;
+import com.xpressrides.backend.exception.ResourceNotFoundException;
 import com.xpressrides.backend.model.Bank;
 import com.xpressrides.backend.model.Zone;
 import com.xpressrides.backend.repository.BankRepository;
 import com.xpressrides.backend.repository.ZoneRepository;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -51,5 +56,50 @@ public class CatalogService {
     // Retorna todos los bancos sin filtro — para el panel administrativo
     public List<Bank> listarTodosLosBancos() {
         return bankRepository.findAll();
+    }
+
+    // Crea un banco nuevo — personal_admin ingresa datos de tablas base (enunciado)
+    public Bank crearBanco(BankRequest request) {
+        Bank bank = new Bank();
+        bank.setName(request.getName());
+        bank.setBcvCode(request.getBcvCode());
+        bank.setAcceptsUsd(request.getAcceptsUsd() != null ? request.getAcceptsUsd() : false);
+        bank.setAcceptsVes(request.getAcceptsVes() != null ? request.getAcceptsVes() : true);
+        bank.setActive(true);
+        bank.setCreatedAt(LocalDateTime.now());
+
+        try {
+            return bankRepository.save(bank);
+        } catch (DataAccessException e) {
+            throw new BadRequestException(
+                "No se pudo crear el banco: el código BCV ya está en uso o el nombre no cumple el mínimo de 3 caracteres.");
+        }
+    }
+
+    // Actualiza un banco existente — no toca activo ni fecha de creación
+    public Bank actualizarBanco(Integer id, BankRequest request) {
+        Bank bank = bankRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Banco no encontrado"));
+
+        bank.setName(request.getName());
+        bank.setBcvCode(request.getBcvCode());
+        bank.setAcceptsUsd(request.getAcceptsUsd() != null ? request.getAcceptsUsd() : false);
+        bank.setAcceptsVes(request.getAcceptsVes() != null ? request.getAcceptsVes() : true);
+
+        try {
+            return bankRepository.save(bank);
+        } catch (DataAccessException e) {
+            throw new BadRequestException(
+                "No se pudo actualizar el banco: el código BCV ya está en uso o el nombre no cumple el mínimo de 3 caracteres.");
+        }
+    }
+
+    // Desactiva un banco — soft delete, mismo patrón que 'activo' en Zone
+    public Bank desactivarBanco(Integer id) {
+        Bank bank = bankRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Banco no encontrado"));
+
+        bank.setActive(false);
+        return bankRepository.save(bank);
     }
 }
