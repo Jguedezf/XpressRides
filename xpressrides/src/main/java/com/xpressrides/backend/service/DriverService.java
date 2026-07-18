@@ -92,7 +92,7 @@ public class DriverService {
             .findFirstByDriver_IdOrderByEvaluationDateDesc(driver.getId()).orElse(null);
         response.setPsychEvaluation(buildPsychStatus(lastEval));
 
-        Vehicle vehicle = vehicleRepository.findByDriver_Id(driver.getId()).orElse(null);
+        Vehicle vehicle = vehicleRepository.findByDriver_IdAndInUseTrue(driver.getId()).orElse(null);
         VehicleInspection lastInsp = null;
         if (vehicle != null) {
             lastInsp = vehicleInspectionRepository
@@ -227,16 +227,10 @@ public class DriverService {
             .orElseThrow(() -> new ResourceNotFoundException("Chofer no encontrado"));
         User user = driver.getUsername();
         List<EmergencyContact> contacts = emergencyContactRepository.findByDriver_Id(driver.getId());
-        Vehicle vehicle = vehicleRepository.findByDriver_Id(driver.getId()).orElse(null);
-        
+        List<Vehicle> vehicles = vehicleRepository.findByDriver_Id(driver.getId());
+
         PsychologicalEvaluation lastEval = psychEvalRepository
             .findFirstByDriver_IdOrderByEvaluationDateDesc(driver.getId()).orElse(null);
-            
-        VehicleInspection lastInsp = null;
-        if (vehicle != null) {
-            lastInsp = vehicleInspectionRepository
-                .findFirstByVehicle_IdOrderByInspectionDateDesc(vehicle.getId()).orElse(null);
-        }
 
         List<Map<String, Object>> contactList = contacts.stream().map(c -> {
             Map<String, Object> cm = new HashMap<>();
@@ -264,17 +258,30 @@ public class DriverService {
         
         profile.put("contactosEmergencia", contactList);
         
-        if (vehicle != null) {
+        List<Map<String, Object>> vehicleList = vehicles.stream().map(v -> {
             Map<String, Object> vehData = new HashMap<>();
-            vehData.put("placa", vehicle.getPlate());
-            vehData.put("marca", vehicle.getBrand());
-            vehData.put("modelo", vehicle.getModel());
-            vehData.put("anioFabricacion", vehicle.getYear());
-            vehData.put("color", vehicle.getColor());
-            vehData.put("activo", vehicle.getActive());
-            profile.put("vehiculo", vehData);
-        }
-        
+            vehData.put("id", v.getId());
+            vehData.put("placa", v.getPlate());
+            vehData.put("marca", v.getBrand());
+            vehData.put("modelo", v.getModel());
+            vehData.put("anioFabricacion", v.getYear());
+            vehData.put("color", v.getColor());
+            vehData.put("activo", v.getActive());
+            vehData.put("enUso", v.getInUse());
+
+            VehicleInspection vehLastInsp = vehicleInspectionRepository
+                .findFirstByVehicle_IdOrderByInspectionDateDesc(v.getId()).orElse(null);
+            if (vehLastInsp != null) {
+                Map<String, Object> vehInspData = new HashMap<>();
+                vehInspData.put("calificacion", vehLastInsp.getScore());
+                vehInspData.put("fecha", vehLastInsp.getInspectionDate());
+                vehInspData.put("observacion", vehLastInsp.getObservation());
+                vehData.put("ultimaRevision", vehInspData);
+            }
+            return vehData;
+        }).collect(Collectors.toList());
+        profile.put("vehiculos", vehicleList);
+
         if (lastEval != null) {
             Map<String, Object> evalData = new HashMap<>();
             evalData.put("calificacion", lastEval.getScore());
@@ -282,15 +289,7 @@ public class DriverService {
             evalData.put("observacion", lastEval.getObservation());
             profile.put("evaluacionPsicologica", evalData);
         }
-        
-        if (lastInsp != null) {
-            Map<String, Object> inspData = new HashMap<>();
-            inspData.put("calificacion", lastInsp.getScore());
-            inspData.put("fecha", lastInsp.getInspectionDate());
-            inspData.put("observacion", lastInsp.getObservation());
-            profile.put("revisionVehiculo", inspData);
-        }
-        
+
         return profile;
     }
 

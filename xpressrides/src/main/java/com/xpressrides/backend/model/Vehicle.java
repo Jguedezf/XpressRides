@@ -31,7 +31,7 @@ public class Vehicle {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "id_chofer")
     private Driver driver;
 
@@ -52,6 +52,9 @@ public class Vehicle {
 
     @Column(name = "activo")
     private Boolean active;
+
+    @Column(name = "en_uso")
+    private Boolean inUse;
 
     @Column(name = "creado_en", insertable = false, updatable = false)
     private LocalDateTime createdAt;

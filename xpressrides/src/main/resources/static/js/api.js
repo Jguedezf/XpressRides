@@ -63,7 +63,9 @@ async function fetchAPI(endpoint, options = {}) {
             let errorMsg = `Error HTTP ${response.status}`;
             try {
                 const errorBody = await response.json();
-                errorMsg = errorBody.message || errorMsg;
+                // .message: endpoints que arman su propia respuesta {success,data,message}
+                // .error: endpoints que dejan la excepción a GlobalExceptionHandler ({error: ...})
+                errorMsg = errorBody.message || errorBody.error || errorMsg;
             } catch (e) { /* body no era JSON */ }
             throw new Error(errorMsg);
         }

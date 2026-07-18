@@ -7,9 +7,11 @@
  * ============================================================
  *  Módulo:      Habilitación de Choferes
  *  Descripción: Lógica de negocio para el proceso de habilitación
- *               del chofer: registro de vehículo, evaluación
- *               psicológica y revisión vehicular. Activa
- *               chofer.habilitado cuando ambas evaluaciones aprueban.
+ *               del chofer: evaluación psicológica y revisión
+ *               vehicular. Activa chofer.habilitado cuando ambas
+ *               evaluaciones aprueban y tiene 2 contactos de
+ *               emergencia. El registro del vehículo en sí vive en
+ *               VehicleService (único camino real, con pantalla).
  *  Versión:     1.0.0
  *  Fecha:       24/06/2026
  * ============================================================
@@ -53,26 +55,6 @@ public class DriverRegistrationService {
         this.psychEvalRepository = psychEvalRepository;
         this.vehicleInspectionRepository = vehicleInspectionRepository;
         this.emergencyContactRepository = emergencyContactRepository;
-    }
-
-    // Registra el vehículo de un chofer — un chofer solo puede tener un vehículo
-    public Vehicle registerVehicle(Integer driverId, Vehicle vehicle) {
-        Driver driver = driverRepository.findById(driverId)
-                .orElseThrow(() -> new RuntimeException("Chofer no encontrado con ID: " + driverId));
-
-        // Valida que la placa no esté duplicada en el sistema
-        if (vehicleRepository.existsByPlate(vehicle.getPlate())) {
-            throw new RuntimeException("La placa " + vehicle.getPlate() + " ya está registrada.");
-        }
-
-        // Valida que el chofer no tenga ya un vehículo registrado
-        if (vehicleRepository.findByDriver_Id(driverId).isPresent()) {
-            throw new RuntimeException("El chofer ya tiene un vehículo registrado.");
-        }
-
-        vehicle.setDriver(driver);
-        vehicle.setActive(true);
-        return vehicleRepository.save(vehicle);
     }
 
     // Registra una evaluación psicológica y verifica habilitación del chofer
@@ -149,7 +131,7 @@ public class DriverRegistrationService {
         boolean hasApprovedEval = psychEvalRepository.existsByDriver_IdAndApprovedTrue(driverId);
         if (!hasApprovedEval) return;
 
-        Optional<Vehicle> vehicle = vehicleRepository.findByDriver_Id(driverId);
+        Optional<Vehicle> vehicle = vehicleRepository.findByDriver_IdAndInUseTrue(driverId);
         if (vehicle.isEmpty()) return;
 
         Optional<VehicleInspection> latestInspection =

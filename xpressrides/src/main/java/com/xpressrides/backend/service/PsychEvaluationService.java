@@ -83,7 +83,7 @@ public class PsychEvaluationService {
         boolean hasApprovedEval = psychEvalRepository.existsByDriver_IdAndApprovedTrue(driverId);
         if (!hasApprovedEval) return;
 
-        Optional<Vehicle> vehicle = vehicleRepository.findByDriver_Id(driverId);
+        Optional<Vehicle> vehicle = vehicleRepository.findByDriver_IdAndInUseTrue(driverId);
         if (vehicle.isEmpty()) return;
 
         Optional<VehicleInspection> latestInspection =

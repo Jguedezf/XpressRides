@@ -1,5 +1,7 @@
 package com.xpressrides.backend.service;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.springframework.stereotype.Service;
@@ -24,6 +26,7 @@ import com.xpressrides.backend.repository.VehicleRepository;
 
 import jakarta.persistence.EntityManager;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -48,42 +51,77 @@ public class VehicleService {
         this.psychEvalRepository = psychEvalRepository;
     }
 
+    // Registra un vehículo nuevo del chofer — un chofer puede tener varios
+    // (enunciado); cada llamada crea una fila nueva, nunca edita una existente.
+    // Si es el primer vehículo del chofer, queda "en uso" automáticamente —
+    // así el caso común (un solo vehículo) no exige ningún paso adicional.
+    @Transactional
     public VehicleResponse registerVehicle(VehicleRequest request){
-      
+
         Driver driver = driverRepository.findById(request.getDriverId())
                 .orElseThrow(() -> new ResourceNotFoundException("Chofer no encontrado"));
 
-        Optional<Vehicle> existingVehicleOpt = vehicleRepository.findByDriver_Id(request.getDriverId());
-        Vehicle vehicle;
-
-        if (existingVehicleOpt.isPresent()) {
-            vehicle = existingVehicleOpt.get();
-            // Si la placa cambió, validamos que no esté duplicada con otro vehículo
-            if (!vehicle.getPlate().equalsIgnoreCase(request.getPlate())) {
-                if (vehicleRepository.existsByPlate(request.getPlate())) {
-                    throw new BadRequestException("Esta placa ya esta registrada");
-                }
-            }
-            vehicle.setPlate(request.getPlate());
-            vehicle.setBrand(request.getBrand());
-            vehicle.setModel(request.getModel());
-            vehicle.setYear(request.getYear());
-            vehicle.setColor(request.getColor());
-        } else {
-            if (vehicleRepository.existsByPlate(request.getPlate())) {
-                throw new BadRequestException("Esta placa ya esta registrada");
-            }
-            vehicle = new Vehicle();
-            vehicle.setDriver(driver);
-            vehicle.setPlate(request.getPlate());
-            vehicle.setBrand(request.getBrand());
-            vehicle.setModel(request.getModel());
-            vehicle.setYear(request.getYear());
-            vehicle.setColor(request.getColor());
-            vehicle.setActive(true);
-            vehicle.setCreatedAt(LocalDateTime.now());
+        if (vehicleRepository.existsByPlate(request.getPlate())) {
+            throw new BadRequestException("Esta placa ya esta registrada");
         }
 
+        boolean esElPrimero = vehicleRepository.findByDriver_Id(request.getDriverId()).isEmpty();
+
+        Vehicle vehicle = new Vehicle();
+        vehicle.setDriver(driver);
+        vehicle.setPlate(request.getPlate());
+        vehicle.setBrand(request.getBrand());
+        vehicle.setModel(request.getModel());
+        vehicle.setYear(request.getYear());
+        vehicle.setColor(request.getColor());
+        vehicle.setActive(true);
+        vehicle.setInUse(esElPrimero);
+        vehicle.setCreatedAt(LocalDateTime.now());
+
+        vehicle = vehicleRepository.save(vehicle);
+
+        return mapToResponse(vehicle);
+    }
+
+    // Marca cuál de los vehículos del chofer está usando para traslados —
+    // auto-toggle transaccional: apaga el que estaba en uso antes de encender
+    // el nuevo, para que nunca choque contra el índice único
+    // uq_vehiculo_en_uso_por_chofer. Rechaza si el vehículo no está apto
+    // (revisión vencida o reprobada) — evita que el chofer quede "habilitado"
+    // pero con un vehículo que sp_solicitar_traslado nunca va a poder asignar.
+    @Transactional
+    public VehicleResponse activarVehiculo(Integer vehicleId, Integer driverId) {
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+            .orElseThrow(() -> new ResourceNotFoundException("Vehículo no encontrado"));
+
+        if (!vehicle.getDriver().getId().equals(driverId)) {
+            throw new ResourceNotFoundException("Vehículo no encontrado");
+        }
+
+        Optional<VehicleInspection> latestInspection =
+            vehicleInspectionRepository.findFirstByVehicle_IdOrderByInspectionDateDesc(vehicleId);
+        boolean apto = latestInspection.isPresent()
+            && latestInspection.get().isFitForUse()
+            && !latestInspection.get().getInspectionDate()
+                .isBefore(LocalDate.now().minusYears(1));
+        if (!apto) {
+            throw new BadRequestException(
+                "No se puede activar este vehículo: necesita una revisión vehicular vigente y aprobada (mínimo 65).");
+        }
+
+        // saveAndFlush (no solo save): el UPDATE que apaga el vehículo anterior
+        // debe llegar a MySQL antes que el que enciende el nuevo — si Hibernate
+        // los deja para el mismo flush de commit, el orden no está garantizado y
+        // puede intentar poner dos en_uso=1 para el mismo chofer a la vez,
+        // chocando contra uq_vehiculo_en_uso_por_chofer (hallazgo de prueba,
+        // ver reporte de implementación).
+        vehicleRepository.findByDriver_IdAndInUseTrue(driverId)
+            .ifPresent(actual -> {
+                actual.setInUse(false);
+                vehicleRepository.saveAndFlush(actual);
+            });
+
+        vehicle.setInUse(true);
         vehicle = vehicleRepository.save(vehicle);
 
         return mapToResponse(vehicle);
@@ -99,6 +137,7 @@ public class VehicleService {
         response.setYear(vehicle.getYear());
         response.setColor(vehicle.getColor());
         response.setActive(vehicle.getActive());
+        response.setInUse(vehicle.getInUse());
 
          // Última inspección (ordenada por fecha descendente, top 1)
         VehicleInspection lastInsp = vehicleInspectionRepository.findFirstByVehicle_IdOrderByInspectionDateDesc(vehicle.getId()).orElse(null);
@@ -122,7 +161,7 @@ public class VehicleService {
         boolean hasApprovedEval = psychEvalRepository.existsByDriver_IdAndApprovedTrue(driverId);
         if (!hasApprovedEval) return;
 
-        Optional<Vehicle> vehicle = vehicleRepository.findByDriver_Id(driverId);
+        Optional<Vehicle> vehicle = vehicleRepository.findByDriver_IdAndInUseTrue(driverId);
         if (vehicle.isEmpty()) return;
 
         Optional<VehicleInspection> latestInspection =
@@ -151,6 +190,21 @@ public class VehicleService {
             .orElseThrow(() -> new ResourceNotFoundException("Vehículo no encontrado"));
         AdminPersonnel admin = adminPersonnelRepository.findById(request.getAdminId())
             .orElseThrow(() -> new ResourceNotFoundException("Admin no encontrado"));
+
+        // Mismas 2 validaciones que ya tenía DriverRegistrationService.registerVehicleInspection()
+        // — no existían aquí (hallazgo de propuesta_vehiculos_limitados_y_hallazgo_rutas_duplicadas.md).
+        if (request.getScore() == null || request.getScore().compareTo(BigDecimal.valueOf(65)) < 0) {
+            throw new BadRequestException(
+                "La calificación mínima aprobatoria para la revisión vehicular es 65. " +
+                "Calificación recibida: " + request.getScore());
+        }
+
+        int year = request.getInspectionDate().getYear();
+        if (vehicleInspectionRepository.existsByVehicle_IdAndInspectionDateBetween(
+                request.getVehicleId(), LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31))) {
+            throw new BadRequestException(
+                "Este vehículo ya tiene una revisión registrada en el año " + year);
+        }
 
         VehicleInspection inspection = new VehicleInspection();
         inspection.setVehicle(vehicle);

@@ -236,7 +236,7 @@ sp_solicitar_traslado: BEGIN
       INTO v_id_chofer, v_id_vehiculo, v_id_zona_chofer, v_chofer_lat, v_chofer_lng
       FROM chofer c
       LEFT JOIN zona zo ON zo.id = c.id_zona_actual
-      JOIN vehiculo v ON v.id_chofer = c.id AND v.activo = 1
+      JOIN vehiculo v ON v.id_chofer = c.id AND v.activo = 1 AND v.en_uso = 1
       JOIN (SELECT id_chofer FROM evaluacion_psicologica
              WHERE aprobado = 1
                AND fecha_eval >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)

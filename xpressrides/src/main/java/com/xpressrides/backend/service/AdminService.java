@@ -115,8 +115,8 @@ public class AdminService {
         eval.setEvaluationDate(LocalDate.now());
         driverRegistrationService.registerPsychologicalEvaluation(eval);
 
-        Vehicle vehicle = vehicleRepository.findByDriver_Id(driverId)
-            .orElseThrow(() -> new ResourceNotFoundException("El chofer no tiene vehículo registrado"));
+        Vehicle vehicle = vehicleRepository.findByDriver_IdAndInUseTrue(driverId)
+            .orElseThrow(() -> new ResourceNotFoundException("El chofer no tiene un vehículo en uso registrado"));
         VehicleInspection inspection = new VehicleInspection();
         inspection.setVehicle(vehicle);
         inspection.setScore(notaVehicular);

@@ -103,39 +103,63 @@
         <h2 class="h2-subtitle" style="margin-bottom: 0;" id="vehicle-title">Cargando...</h2>
     </div>
 
-    <div id="vehiculo-info" class="card">
-        <h2 class="h2-subtitle mb-md" style="color: var(--color-secondary); border-bottom: 1px solid #eee; padding-bottom: 8px;">Información del Vehículo</h2>
-        
-        <div class="input-group">
-            <label class="input-label">Placa</label>
-            <input type="text" class="input-field" id="veh-placa" readonly style="background-color: #f9f9f9; color: var(--color-text-muted);">
-        </div>
-        
-        <div class="d-flex" style="gap: var(--space-md);">
-            <div class="input-group" style="flex: 1;">
-                <label class="input-label">Marca</label>
-                <input type="text" class="input-field" id="veh-marca" readonly style="background-color: #f9f9f9; color: var(--color-text-muted);">
-            </div>
-            <div class="input-group" style="flex: 1;">
-                <label class="input-label">Modelo</label>
-                <input type="text" class="input-field" id="veh-modelo" readonly style="background-color: #f9f9f9; color: var(--color-text-muted);">
-            </div>
-        </div>
+    <div id="vehiculos-container"></div>
 
-        <div class="d-flex" style="gap: var(--space-md);">
-            <div class="input-group" style="flex: 1;">
-                <label class="input-label">Año</label>
-                <input type="text" class="input-field" id="veh-anio" readonly style="background-color: #f9f9f9; color: var(--color-text-muted);">
+    <template id="vehiculo-card-template">
+        <div class="card mt-md vehiculo-card">
+            <div class="d-flex justify-between align-center mb-md" style="border-bottom: 1px solid #eee; padding-bottom: 8px;">
+                <h2 class="h2-subtitle" style="color: var(--color-secondary); margin: 0;">Información del Vehículo</h2>
+                <span class="badge-green veh-badge-en-uso" style="display: none;">En uso</span>
             </div>
-            <div class="input-group" style="flex: 1;">
-                <label class="input-label">Color</label>
-                <input type="text" class="input-field" id="veh-color" readonly style="background-color: #f9f9f9; color: var(--color-text-muted);">
-            </div>
-        </div>
-        <button id="btn-edit-vehicle" class="btn btn-secondary w-100 mt-md" style="background-color: var(--color-secondary); color: white; display: none; padding: var(--space-sm) 0; border: none; border-radius: var(--radius-btn); font-weight: 600; cursor: pointer;">Editar Vehículo</button>
-    </div>
 
-    <div id="vehiculo-form-container" class="card" style="display: none;">
+            <div class="input-group">
+                <label class="input-label">Placa</label>
+                <input type="text" class="input-field veh-placa" readonly style="background-color: #f9f9f9; color: var(--color-text-muted);">
+            </div>
+
+            <div class="d-flex" style="gap: var(--space-md);">
+                <div class="input-group" style="flex: 1;">
+                    <label class="input-label">Marca</label>
+                    <input type="text" class="input-field veh-marca" readonly style="background-color: #f9f9f9; color: var(--color-text-muted);">
+                </div>
+                <div class="input-group" style="flex: 1;">
+                    <label class="input-label">Modelo</label>
+                    <input type="text" class="input-field veh-modelo" readonly style="background-color: #f9f9f9; color: var(--color-text-muted);">
+                </div>
+            </div>
+
+            <div class="d-flex" style="gap: var(--space-md);">
+                <div class="input-group" style="flex: 1;">
+                    <label class="input-label">Año</label>
+                    <input type="text" class="input-field veh-anio" readonly style="background-color: #f9f9f9; color: var(--color-text-muted);">
+                </div>
+                <div class="input-group" style="flex: 1;">
+                    <label class="input-label">Color</label>
+                    <input type="text" class="input-field veh-color" readonly style="background-color: #f9f9f9; color: var(--color-text-muted);">
+                </div>
+            </div>
+
+            <div class="veh-revision-block" style="display: none;">
+                <h2 class="h2-subtitle mt-md mb-md" style="color: var(--color-secondary); border-bottom: 1px solid #eee; padding-bottom: 8px;">Última Revisión</h2>
+                <div class="input-group">
+                    <label class="input-label">Calificación</label>
+                    <input type="text" class="input-field veh-rev-calif" readonly style="background-color: #f9f9f9; color: var(--color-text-muted);">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Fecha de Revisión</label>
+                    <input type="text" class="input-field veh-rev-fecha" readonly style="background-color: #f9f9f9; color: var(--color-text-muted);">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Observación</label>
+                    <textarea class="input-field veh-rev-obs" readonly style="background-color: #f9f9f9; color: var(--color-text-muted); resize: none; font-family: inherit;" rows="2"></textarea>
+                </div>
+            </div>
+
+            <button type="button" class="btn btn-secondary w-100 mt-md btn-usar-vehiculo" style="background-color: var(--color-secondary); color: white; padding: var(--space-sm) 0; border: none; border-radius: var(--radius-btn); font-weight: 600; cursor: pointer;">Usar este vehículo</button>
+        </div>
+    </template>
+
+    <div id="vehiculo-form-container" class="card mt-md">
         <h2 class="h2-subtitle mb-md" id="form-title" style="color: var(--color-secondary); border-bottom: 1px solid #eee; padding-bottom: 8px;">Registrar Vehículo</h2>
         <form id="vehiculo-form">
             <div class="input-group">
@@ -164,26 +188,8 @@
             </div>
             <div class="d-flex mt-md" style="gap: var(--space-sm);">
                 <button type="submit" id="btn-submit-vehiculo" class="btn btn-secondary w-100" style="background-color: var(--color-secondary); color: white; padding: var(--space-sm) 0; border: none; border-radius: var(--radius-btn); font-weight: 600; cursor: pointer;">Guardar Vehículo</button>
-                <button type="button" id="btn-cancel-edit" class="btn w-100" style="display: none; background-color: #ccc; color: #333; padding: var(--space-sm) 0; border: none; border-radius: var(--radius-btn); font-weight: 600; cursor: pointer;">Cancelar</button>
             </div>
         </form>
-    </div>
-
-    <div id="revision-info" class="card mt-md">
-        <h2 class="h2-subtitle mb-md" style="color: var(--color-secondary); border-bottom: 1px solid #eee; padding-bottom: 8px;">Revisión de Vehículo</h2>
-        
-        <div class="input-group">
-            <label class="input-label">Calificación</label>
-            <input type="text" class="input-field" id="rev-calif" readonly style="background-color: #f9f9f9; color: var(--color-text-muted);">
-        </div>
-        <div class="input-group">
-            <label class="input-label">Fecha de Revisión</label>
-            <input type="text" class="input-field" id="rev-fecha" readonly style="background-color: #f9f9f9; color: var(--color-text-muted);">
-        </div>
-        <div class="input-group">
-            <label class="input-label">Observación</label>
-            <textarea class="input-field" id="rev-obs" readonly style="background-color: #f9f9f9; color: var(--color-text-muted); resize: none; font-family: inherit;" rows="2"></textarea>
-        </div>
     </div>
 </main>
 

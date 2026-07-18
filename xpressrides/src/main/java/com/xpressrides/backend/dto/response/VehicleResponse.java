@@ -11,6 +11,7 @@ public class VehicleResponse {
     private Integer year;
     private String color;
     private Boolean active;
+    private Boolean inUse;
     private VehicleInspectionDTO lastInspection;
 
     public VehicleResponse() {
@@ -74,6 +75,12 @@ public class VehicleResponse {
     }
     public void setActive(Boolean active) {
         this.active = active;
+    }
+    public Boolean getInUse() {
+        return inUse;
+    }
+    public void setInUse(Boolean inUse) {
+        this.inUse = inUse;
     }
     public VehicleInspectionDTO getLastInspection() {
         return lastInspection;
