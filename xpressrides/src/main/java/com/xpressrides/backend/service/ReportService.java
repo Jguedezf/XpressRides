@@ -77,7 +77,10 @@ public class ReportService {
     }
 
     // Traslados cancelados con motivo
-    public List<CancelledTrip> getCancelledTrips() {
+    public List<CancelledTrip> getCancelledTrips(LocalDate desde, LocalDate hasta) {
+        if (desde != null && hasta != null)
+            return cancelledTripRepository.findByRequestDateBetweenOrderByRequestDateDesc(
+                    desde.atStartOfDay(), hasta.atTime(23, 59, 59));
         return cancelledTripRepository.findAll();
     }
 

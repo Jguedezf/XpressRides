@@ -17,7 +17,13 @@ package com.xpressrides.backend.repository;
 import com.xpressrides.backend.model.CancelledTrip;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Repository
 public interface CancelledTripRepository extends JpaRepository<CancelledTrip, Integer> {
+
+    // Cancelados filtrados por rango de fechas de solicitud
+    List<CancelledTrip> findByRequestDateBetweenOrderByRequestDateDesc(
+            LocalDateTime desde, LocalDateTime hasta);
 }

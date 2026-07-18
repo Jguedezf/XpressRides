@@ -96,8 +96,11 @@ public class DriverController {
 
     @PreAuthorize("hasRole('chofer')")
     @GetMapping("/traslados/cancelados")
-    public ResponseEntity<?> getCancelledTrips(Authentication authentication) {
-        return ResponseEntity.ok(driverService.getCancelledTrips(authentication.getName()));
+    public ResponseEntity<?> getCancelledTrips(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta,
+            Authentication authentication) {
+        return ResponseEntity.ok(driverService.getCancelledTrips(authentication.getName(), desde, hasta));
     }
 
     @PreAuthorize("hasRole('chofer')")

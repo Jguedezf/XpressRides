@@ -117,7 +117,12 @@ public class DriverService {
         return tripRepository.findByDriver_Username_UsernameOrderByRequestDateDesc(username);
     }
 
-    public List<Trip> getCancelledTrips(String username) {
+    public List<Trip> getCancelledTrips(String username, LocalDate desde, LocalDate hasta) {
+        if (desde != null && hasta != null) {
+            return tripRepository
+                .findByDriver_Username_UsernameAndStatusAndRequestDateBetweenOrderByRequestDateDesc(
+                    username, "cancelado", desde.atStartOfDay(), hasta.atTime(23, 59, 59));
+        }
         return tripRepository.findByDriver_Username_UsernameAndStatusOrderByRequestDateDesc(
                 username, "cancelado");
     }

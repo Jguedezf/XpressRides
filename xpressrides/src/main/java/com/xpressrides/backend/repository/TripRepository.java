@@ -45,6 +45,10 @@ public interface TripRepository extends JpaRepository<Trip, Integer>, JpaSpecifi
     List<Trip> findByDriver_Username_UsernameAndStatusOrderByRequestDateDesc(
             String username, String status);
 
+    // Traslados del chofer filtrados por estado y rango de fechas (cancelados, con período)
+    List<Trip> findByDriver_Username_UsernameAndStatusAndRequestDateBetweenOrderByRequestDateDesc(
+            String username, String status, LocalDateTime desde, LocalDateTime hasta);
+
     // Marca como pagados todos los viajes completados de un chofer que no habían sido pagados
     @org.springframework.data.jpa.repository.Modifying
     @Query("UPDATE Trip t SET t.pagadoAlChofer = true WHERE t.driver.id = :driverId AND t.status = 'completado' AND t.pagadoAlChofer = false")

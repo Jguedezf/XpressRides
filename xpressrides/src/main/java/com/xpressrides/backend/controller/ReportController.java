@@ -88,10 +88,12 @@ public class ReportController {
         return ResponseEntity.ok(response);
     }
 
-    // GET /api/reports/cancelled
+    // GET /api/reports/cancelled?desde=&hasta= (fechas opcionales, formato YYYY-MM-DD)
     @GetMapping("/cancelados")
-    public ResponseEntity<Map<String, Object>> getCancelledTrips() {
-        List<CancelledTrip> data = reportService.getCancelledTrips();
+    public ResponseEntity<Map<String, Object>> getCancelledTrips(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate desde,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate hasta) {
+        List<CancelledTrip> data = reportService.getCancelledTrips(desde, hasta);
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
         response.put("data", data);
