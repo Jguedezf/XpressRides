@@ -117,6 +117,58 @@ document.getElementById('form-filtro-cancelados').addEventListener('submit', asy
 });
 
 /* ==========================================
+   MÓDULO: TRASLADOS DE LA EMPRESA POR PERÍODO
+========================================== */
+document.getElementById('form-filtro-historial').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const btn = document.getElementById('btn-filtrar-historial');
+    const tbodyHistorial = document.getElementById('tbody-historial');
+    const originalText = btn.innerText;
+
+    btn.innerText = 'Buscando...';
+    btn.disabled = true;
+
+    const fechaInicio = document.getElementById('fechaInicioHistorial').value;
+    const fechaFin = document.getElementById('fechaFinHistorial').value;
+
+    try {
+        const response = await fetchAPI(`/reportes/historial-traslados?desde=${fechaInicio}&hasta=${fechaFin}`);
+        const registros = response.data || [];
+
+        if (registros.length === 0) {
+            tbodyHistorial.innerHTML = '<tr><td colspan="8" class="text-center">No hay traslados en este rango de fechas.</td></tr>';
+            return;
+        }
+
+        tbodyHistorial.innerHTML = '';
+
+        registros.forEach(reg => {
+            const fecha = reg.requestDate ? new Date(reg.requestDate).toLocaleString('es-VE') : '';
+            const costo = reg.customerCostUsd != null ? Number(reg.customerCostUsd).toFixed(2) : '0.00';
+            tbodyHistorial.innerHTML += `
+                <tr>
+                    <td>#${reg.id}</td>
+                    <td>${fecha}</td>
+                    <td>${reg.customerName || ''}</td>
+                    <td>${reg.driverName || ''}</td>
+                    <td>${reg.originZone || ''}</td>
+                    <td>${reg.destinationZone || ''}</td>
+                    <td style="text-transform: capitalize;">${reg.status || ''}</td>
+                    <td>$ ${costo}</td>
+                </tr>
+            `;
+        });
+
+    } catch (error) {
+        tbodyHistorial.innerHTML = `<tr><td colspan="8" class="text-center" style="color: var(--color-error);">Error: ${error.message}</td></tr>`;
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
+});
+
+/* ==========================================
    MÓDULO: IMPRESIÓN DEL REPORTE
 ========================================== */
 document.getElementById('btn-imprimir').addEventListener('click', () => {

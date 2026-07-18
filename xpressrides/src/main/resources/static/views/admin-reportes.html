@@ -78,6 +78,7 @@
         <a href="/views/admin-reportes.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;background:#C55A11;">Reporte de Ingresos</a>
         <a href="/views/admin-pagos.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Control de Pagos</a>
         <a href="/views/admin-notificaciones.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Notificaciones</a>
+        <a href="/views/admin-clientes.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Clientes</a>
     </nav>
     <div class="top-bar-right d-flex align-center" style="gap: 16px;">
         <div class="user-profile-widget" onclick="toggleProfileDropdown()" style="position:relative; cursor:pointer;">
@@ -180,6 +181,49 @@
                 </tr>
                 </thead>
                 <tbody id="tbody-cancelados">
+                <tr><td colspan="8" class="text-center">Selecciona un rango de fechas para buscar...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- SECCIÓN 3: TRASLADOS DE LA EMPRESA POR PERÍODO -->
+    <section class="premium-card" style="margin-bottom: 30px; padding: 30px;">
+        <h2 class="premium-title" style="margin-bottom: 5px; font-size: 20px;">Traslados de la Empresa por Período</h2>
+        <p class="premium-subtitle" style="margin-bottom: 20px;">Historial completo de traslados realizados (todos los estados)</p>
+
+        <!-- Formulario para Filtrar Fechas -->
+        <div class="premium-card no-print" style="margin-top: 20px; padding: 20px; margin-bottom: 20px;">
+            <form id="form-filtro-historial" style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 150px;">
+                    <label class="premium-label" for="fechaInicioHistorial">Desde:</label>
+                    <input type="date" id="fechaInicioHistorial" class="premium-input" style="height: 40px;" required>
+                </div>
+                <div style="flex: 1; min-width: 150px;">
+                    <label class="premium-label" for="fechaFinHistorial">Hasta:</label>
+                    <input type="date" id="fechaFinHistorial" class="premium-input" style="height: 40px;" required>
+                </div>
+                <div style="display: flex; gap: 10px; height: 40px;">
+                    <button type="submit" class="btn-primary" id="btn-filtrar-historial" style="padding: 0 20px; height: 100%; margin: 0;">Filtrar Fechas</button>
+                </div>
+            </form>
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table class="premium-table">
+                <thead>
+                <tr>
+                    <th>Viaje ID</th>
+                    <th>Fecha</th>
+                    <th>Cliente</th>
+                    <th>Chofer</th>
+                    <th>Origen</th>
+                    <th>Destino</th>
+                    <th>Estado</th>
+                    <th>Costo Cliente (USD)</th>
+                </tr>
+                </thead>
+                <tbody id="tbody-historial">
                 <tr><td colspan="8" class="text-center">Selecciona un rango de fechas para buscar...</td></tr>
                 </tbody>
             </table>
