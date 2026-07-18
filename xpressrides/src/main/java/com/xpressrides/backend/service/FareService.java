@@ -49,7 +49,7 @@ public class FareService {
     private static final BigDecimal COST_PER_KM      = new BigDecimal("0.45");
     private static final BigDecimal NIGHT_WEEKEND    = new BigDecimal("1.50");
     private static final BigDecimal FACTOR_PEAK_7_9  = new BigDecimal("1.20");
-    private static final BigDecimal FACTOR_PEAK_1130 = new BigDecimal("1.15");
+    private static final BigDecimal FACTOR_PEAK_11_13 = new BigDecimal("1.15");
     private static final BigDecimal FACTOR_PEAK_17   = new BigDecimal("1.25");
     private static final BigDecimal STUDENT_FACTOR   = new BigDecimal("0.70");
 
@@ -257,7 +257,7 @@ public class FareService {
     // Resuelve el factor de hora pico — misma lógica que el SP
     private BigDecimal resolvePeakFactor(int hour, int minute) {
         if (hour >= 7 && hour < 9)                            return FACTOR_PEAK_7_9;
-        if (hour >= 11 && hour < 13)                          return FACTOR_PEAK_1130;
+        if (hour >= 11 && hour < 13)                          return FACTOR_PEAK_11_13;
         if (hour >= 17 && hour < 19)                          return FACTOR_PEAK_17;
         return BigDecimal.ONE;
     }

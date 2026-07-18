@@ -21,7 +21,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Repository
-public interface CompanyEarningsRepository extends JpaRepository<CompanyEarnings, LocalDate> {
+public interface CompanyEarningsRepository extends JpaRepository<CompanyEarnings, Long> {
 
     List<CompanyEarnings> findByDateBetweenOrderByDateDesc(LocalDate desde, LocalDate hasta);
 }
