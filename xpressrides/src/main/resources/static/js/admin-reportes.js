@@ -66,6 +66,57 @@ document.getElementById('form-filtro-ganancias').addEventListener('submit', asyn
 });
 
 /* ==========================================
+   MÓDULO: TRASLADOS CANCELADOS
+========================================== */
+document.getElementById('form-filtro-cancelados').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const btn = document.getElementById('btn-filtrar-cancelados');
+    const tbodyCancelados = document.getElementById('tbody-cancelados');
+    const originalText = btn.innerText;
+
+    btn.innerText = 'Buscando...';
+    btn.disabled = true;
+
+    const fechaInicio = document.getElementById('fechaInicioCancel').value;
+    const fechaFin = document.getElementById('fechaFinCancel').value;
+
+    try {
+        const response = await fetchAPI(`/reportes/cancelados?desde=${fechaInicio}&hasta=${fechaFin}`);
+        const registros = response.data || [];
+
+        if (registros.length === 0) {
+            tbodyCancelados.innerHTML = '<tr><td colspan="8" class="text-center">No hay traslados cancelados en este rango de fechas.</td></tr>';
+            return;
+        }
+
+        tbodyCancelados.innerHTML = '';
+
+        registros.forEach(reg => {
+            const fecha = reg.requestDate ? new Date(reg.requestDate).toLocaleString('es-VE') : '';
+            tbodyCancelados.innerHTML += `
+                <tr>
+                    <td>#${reg.id}</td>
+                    <td>${fecha}</td>
+                    <td>${reg.customerName || ''}</td>
+                    <td>${reg.driverName || ''}</td>
+                    <td>${reg.originZone || ''}</td>
+                    <td>${reg.destinationZone || ''}</td>
+                    <td style="text-transform: capitalize;">${reg.cancelledBy || ''}</td>
+                    <td>${reg.cancellationReason || ''}</td>
+                </tr>
+            `;
+        });
+
+    } catch (error) {
+        tbodyCancelados.innerHTML = `<tr><td colspan="8" class="text-center" style="color: var(--color-error);">Error: ${error.message}</td></tr>`;
+    } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+    }
+});
+
+/* ==========================================
    MÓDULO: IMPRESIÓN DEL REPORTE
 ========================================== */
 document.getElementById('btn-imprimir').addEventListener('click', () => {

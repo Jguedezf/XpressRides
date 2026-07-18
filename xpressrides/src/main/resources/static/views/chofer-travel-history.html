@@ -112,6 +112,25 @@
 
     <h2 class="h1-title mb-lg text-center">Historial de Viajes</h2>
 
+    <form id="form-filtro-historial" style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: var(--space-lg);">
+        <div class="input-group" style="flex: 1; min-width: 130px; margin-bottom: 0;">
+            <label for="filtroDesde" class="input-label">Desde</label>
+            <input type="date" id="filtroDesde" class="input-field">
+        </div>
+        <div class="input-group" style="flex: 1; min-width: 130px; margin-bottom: 0;">
+            <label for="filtroHasta" class="input-label">Hasta</label>
+            <input type="date" id="filtroHasta" class="input-field">
+        </div>
+        <div class="input-group" style="margin-bottom: 0; display: flex; align-items: center; gap: 6px;">
+            <input type="checkbox" id="filtroSoloCancelados" style="width: 16px; height: 16px;">
+            <label for="filtroSoloCancelados" style="font-size: var(--font-size-small); color: var(--color-text-muted); cursor: pointer;">Solo cancelados</label>
+        </div>
+        <div style="display: flex; gap: 10px; height: 40px;">
+            <button type="submit" class="btn-primary" style="padding: 0 20px; height: 100%; margin: 0;">Filtrar</button>
+            <button type="button" id="btn-limpiar-filtro" class="btn-secondary" style="padding: 0 20px; height: 100%; margin: 0;">Limpiar</button>
+        </div>
+    </form>
+
     <div id="trips-container">
         <p class="text-center text-muted mt-lg">Cargando historial...</p>
     </div>
