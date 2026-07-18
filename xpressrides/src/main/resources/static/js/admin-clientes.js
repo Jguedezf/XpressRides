@@ -48,11 +48,11 @@ function renderClientes(clientes) {
     }
 
     tbody.innerHTML = '';
-    clientes.forEach(c => {
+    clientes.forEach((c, index) => {
         const saldo = c.saldoUsd != null ? Number(c.saldoUsd).toFixed(2) : '0.00';
         tbody.innerHTML += `
             <tr>
-                <td>#${c.id}</td>
+                <td>${index + 1}</td>
                 <td>${c.nombre || ''} ${c.apellido || ''}</td>
                 <td>${c.username || ''}</td>
                 <td>$ ${saldo}</td>

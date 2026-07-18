@@ -42,5 +42,8 @@ PROMPT_INICIO_SESION*.txt
 CONSULTA_*.txt
 commit_*.txt
 
+### Carpeta de trabajo Johanna + Code (no compartida con el equipo) ###
+capturas_informe/
+
 ### Archivos de Configuración ###
 src/main/resources/application.properties
