@@ -63,6 +63,12 @@ public class AuthService {
 
     // aqui se Registra el usuario directamente
     public AuthResponse register(RegisterRequest request) {
+        String rolSolicitado = request.getRole().toLowerCase();
+        if (!"cliente".equals(rolSolicitado) && !"chofer".equals(rolSolicitado)) {
+            throw new RuntimeException(
+                "El registro público solo permite crear cuentas de cliente o chofer.");
+        }
+
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new RuntimeException("El nombre de usuario ya está en uso");
         }
