@@ -69,10 +69,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
 
                 // Llamada a la API
-                await fetchAPI(endpoint, {
+                const response = await fetchAPI(endpoint, {
                     method: 'POST',
                     body: JSON.stringify(payload)
                 });
+
+                // El chofer debe quedar con exactamente 2 contactos de emergencia
+                // registrados (regla de negocio validada también en la BD).
+                if (isChofer) {
+                    try {
+                        await registrarContactosEmergencia(response.data);
+                    } catch (contactError) {
+                        console.error('Error registrando contactos de emergencia:', contactError);
+                        alert('Tu cuenta fue creada, pero no se pudieron guardar los contactos de '
+                            + 'emergencia: ' + contactError.message
+                            + '. Contacta al administrador para completarlos antes de poder recibir viajes.');
+                    }
+                }
 
                 // Mostrar éxito y ocultar formulario
                 registerForm.style.display = 'none';
@@ -92,6 +105,39 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 });
+
+// Envía los 2 contactos de emergencia obligatorios del chofer recién registrado.
+// fetchAPI toma el JWT desde localStorage('xpressUsuario'); como el chofer aún
+// no inició sesión formalmente (no pasó por login.html), lo fijamos aquí solo
+// para estas 2 llamadas y lo removemos después.
+async function registrarContactosEmergencia(usuarioRegistrado) {
+    localStorage.setItem('xpressUsuario', JSON.stringify(usuarioRegistrado));
+    try {
+        const contactos = [
+            {
+                driverId: usuarioRegistrado.driverId,
+                name: document.getElementById('emergencia1_nombre').value,
+                phone: document.getElementById('emergencia1_tel').value,
+                relationship: document.getElementById('emergencia1_parentesco').value
+            },
+            {
+                driverId: usuarioRegistrado.driverId,
+                name: document.getElementById('emergencia2_nombre').value,
+                phone: document.getElementById('emergencia2_tel').value,
+                relationship: document.getElementById('emergencia2_parentesco').value
+            }
+        ];
+
+        for (const contacto of contactos) {
+            await fetchAPI('/emergencias', {
+                method: 'POST',
+                body: JSON.stringify(contacto)
+            });
+        }
+    } finally {
+        localStorage.removeItem('xpressUsuario');
+    }
+}
 
 async function cargarBancos() {
     try {

@@ -195,6 +195,7 @@ public class AuthController {
                 });
             case "chofer" -> driverRepository.findByUsername_Username(user.getUsername())
                 .ifPresent(driver -> {
+                    data.put("driverId", driver.getId());
                     data.put("habilitado", driver.isEnabled());
                     data.put("disponible", driver.isAvailable());
                     data.put("saldoUsd", driver.getBalance());

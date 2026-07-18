@@ -5,8 +5,11 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -41,5 +44,24 @@ public class EmergencyContactController {
         Driver driver = emergencyContactService.findDriverByUsername(authentication.getName());
         List<EmergencyContact> contacts = emergencyContactService.listByDriver(driver.getId());
         return ResponseEntity.ok(contacts);
+    }
+
+    @PreAuthorize("hasRole('chofer')")
+    @PutMapping("/{id}")
+    public ResponseEntity<EmergencyContact> update(
+            @PathVariable Integer id,
+            @Valid @RequestBody EmergencyContactRequest request,
+            Authentication authentication) {
+        Driver driver = emergencyContactService.findDriverByUsername(authentication.getName());
+        EmergencyContact contact = emergencyContactService.update(id, driver.getId(), request);
+        return ResponseEntity.ok(contact);
+    }
+
+    @PreAuthorize("hasRole('chofer')")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Integer id, Authentication authentication) {
+        Driver driver = emergencyContactService.findDriverByUsername(authentication.getName());
+        emergencyContactService.delete(id, driver.getId());
+        return ResponseEntity.noContent().build();
     }
 }

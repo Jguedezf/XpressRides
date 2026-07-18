@@ -35,6 +35,7 @@ public class DriverRegistrationService {
     private final VehicleRepository vehicleRepository;
     private final PsychologicalEvaluationRepository psychEvalRepository;
     private final VehicleInspectionRepository vehicleInspectionRepository;
+    private final EmergencyContactRepository emergencyContactRepository;
 
     // EntityManager para forzar re-lectura de columnas generadas por MySQL
     @PersistenceContext
@@ -45,11 +46,13 @@ public class DriverRegistrationService {
             DriverRepository driverRepository,
             VehicleRepository vehicleRepository,
             PsychologicalEvaluationRepository psychEvalRepository,
-            VehicleInspectionRepository vehicleInspectionRepository) {
+            VehicleInspectionRepository vehicleInspectionRepository,
+            EmergencyContactRepository emergencyContactRepository) {
         this.driverRepository = driverRepository;
         this.vehicleRepository = vehicleRepository;
         this.psychEvalRepository = psychEvalRepository;
         this.vehicleInspectionRepository = vehicleInspectionRepository;
+        this.emergencyContactRepository = emergencyContactRepository;
     }
 
     // Registra el vehículo de un chofer — un chofer solo puede tener un vehículo
@@ -135,10 +138,11 @@ public class DriverRegistrationService {
         return saved;
     }
 
-    // Verifica si el chofer cumple ambos requisitos para ser habilitado:
+    // Verifica si el chofer cumple todos los requisitos para ser habilitado:
     // 1. Al menos una evaluación psicológica aprobada (calificacion >= 73)
     // 2. La revisión vehicular más reciente aprobada (calificacion >= 65)
-    // Si ambas condiciones se cumplen → chofer.habilitado = true
+    // 3. Exactamente 2 contactos de emergencia registrados
+    // Si las tres condiciones se cumplen → chofer.habilitado = true
     private void checkAndEnableDriver(Integer driverId) {
         Driver driver = driverRepository.findById(driverId).orElseThrow();
 
@@ -153,7 +157,9 @@ public class DriverRegistrationService {
 
         if (latestInspection.isEmpty() || !latestInspection.get().isFitForUse()) return;
 
-        // Ambas condiciones cumplen — activa al chofer
+        if (emergencyContactRepository.countByDriver_Id(driverId) != 2) return;
+
+        // Todas las condiciones cumplen — activa al chofer
         driver.setEnabled(true);
         driverRepository.save(driver);
     }

@@ -8,4 +8,5 @@ import com.xpressrides.backend.model.EmergencyContact;
 
 public interface EmergencyContactRepository extends JpaRepository<EmergencyContact,Integer>{
     List<EmergencyContact> findByDriver_Id(Integer driverId);
+    long countByDriver_Id(Integer driverId);
 }
