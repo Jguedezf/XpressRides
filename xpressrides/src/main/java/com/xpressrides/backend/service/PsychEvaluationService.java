@@ -13,6 +13,7 @@ import com.xpressrides.backend.model.Driver;
 import com.xpressrides.backend.model.PsychologicalEvaluation;
 import com.xpressrides.backend.repository.AdminPersonnelRepository;
 import com.xpressrides.backend.repository.DriverRepository;
+import com.xpressrides.backend.repository.EmergencyContactRepository;
 import com.xpressrides.backend.repository.PsychologicalEvaluationRepository;
 import com.xpressrides.backend.repository.VehicleRepository;
 import com.xpressrides.backend.repository.VehicleInspectionRepository;
@@ -32,19 +33,22 @@ public class PsychEvaluationService {
     private final EntityManager entityManager;
     private final VehicleRepository vehicleRepository;
     private final VehicleInspectionRepository vehicleInspectionRepository;
+    private final EmergencyContactRepository emergencyContactRepository;
 
     public PsychEvaluationService(DriverRepository driverRepository,
                                   AdminPersonnelRepository adminPersonnelRepository,
                                   PsychologicalEvaluationRepository psychEvalRepository,
                                   EntityManager entityManager,
                                   VehicleRepository vehicleRepository,
-                                  VehicleInspectionRepository vehicleInspectionRepository) {
+                                  VehicleInspectionRepository vehicleInspectionRepository,
+                                  EmergencyContactRepository emergencyContactRepository) {
         this.driverRepository = driverRepository;
         this.adminPersonnelRepository = adminPersonnelRepository;
         this.psychEvalRepository = psychEvalRepository;
         this.entityManager = entityManager;
         this.vehicleRepository = vehicleRepository;
         this.vehicleInspectionRepository = vehicleInspectionRepository;
+        this.emergencyContactRepository = emergencyContactRepository;
     }
 
     @Transactional
@@ -90,6 +94,8 @@ public class PsychEvaluationService {
                 vehicleInspectionRepository.findFirstByVehicle_IdOrderByInspectionDateDesc(vehicle.get().getId());
 
         if (latestInspection.isEmpty() || !latestInspection.get().isFitForUse()) return;
+
+        if (emergencyContactRepository.countByDriver_Id(driverId) != 2) return;
 
         driver.setEnabled(true);
         driverRepository.save(driver);

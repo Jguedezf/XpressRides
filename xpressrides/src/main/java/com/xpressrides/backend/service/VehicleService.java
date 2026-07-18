@@ -20,6 +20,7 @@ import com.xpressrides.backend.model.Vehicle;
 import com.xpressrides.backend.model.VehicleInspection;
 import com.xpressrides.backend.repository.AdminPersonnelRepository;
 import com.xpressrides.backend.repository.DriverRepository;
+import com.xpressrides.backend.repository.EmergencyContactRepository;
 import com.xpressrides.backend.repository.PsychologicalEvaluationRepository;
 import com.xpressrides.backend.repository.VehicleInspectionRepository;
 import com.xpressrides.backend.repository.VehicleRepository;
@@ -38,17 +39,20 @@ public class VehicleService {
     private AdminPersonnelRepository adminPersonnelRepository;
     private final EntityManager entityManager;
     private PsychologicalEvaluationRepository psychEvalRepository;
+    private final EmergencyContactRepository emergencyContactRepository;
 
     public VehicleService(VehicleRepository vehicleRepository, DriverRepository driverRepository,
             VehicleInspectionRepository vehicleInspectionRepository,
             AdminPersonnelRepository adminPersonnelRepository, EntityManager entityManager,
-            PsychologicalEvaluationRepository psychEvalRepository) {
+            PsychologicalEvaluationRepository psychEvalRepository,
+            EmergencyContactRepository emergencyContactRepository) {
         this.vehicleRepository = vehicleRepository;
         this.driverRepository = driverRepository;
         this.vehicleInspectionRepository = vehicleInspectionRepository;
         this.adminPersonnelRepository = adminPersonnelRepository;
         this.entityManager = entityManager;
         this.psychEvalRepository = psychEvalRepository;
+        this.emergencyContactRepository = emergencyContactRepository;
     }
 
     // Registra un vehículo nuevo del chofer — un chofer puede tener varios
@@ -168,6 +172,8 @@ public class VehicleService {
                 vehicleInspectionRepository.findFirstByVehicle_IdOrderByInspectionDateDesc(vehicle.get().getId());
 
         if (latestInspection.isEmpty() || !latestInspection.get().isFitForUse()) return;
+
+        if (emergencyContactRepository.countByDriver_Id(driverId) != 2) return;
 
         driver.setEnabled(true);
         driverRepository.save(driver);
