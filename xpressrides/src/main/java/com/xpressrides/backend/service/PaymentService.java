@@ -88,6 +88,8 @@ public class PaymentService {
             topUp.setIgtfAmountUsd(BigDecimal.ZERO);
         }
 
+        topUp.setDateTime(LocalDateTime.now());
+
         TopUp nueva = topUpRepository.save(topUp);
 
         // UPDATE atómico (saldo_usd = saldo_usd + :monto), no lectura-suma-guardado
