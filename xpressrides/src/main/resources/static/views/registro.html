@@ -102,27 +102,27 @@
             <div class="d-flex gap-sm">
                 <div class="input-group">
                     <label for="nombre" class="input-label">Nombre</label>
-                    <input type="text" id="nombre" class="input-field" placeholder="Ej. Juan" required>
+                    <input type="text" id="nombre" name="nombre" class="input-field" placeholder="Ej. Juan" autocomplete="given-name" required>
                 </div>
                 <div class="input-group">
                     <label for="apellido" class="input-label">Apellido</label>
-                    <input type="text" id="apellido" class="input-field" placeholder="Ej. Pérez" required>
+                    <input type="text" id="apellido" name="apellido" class="input-field" placeholder="Ej. Pérez" autocomplete="family-name" required>
                 </div>
             </div>
 
             <div class="input-group">
                 <label for="cedula" class="input-label">Cédula de Identidad</label>
-                <input type="text" id="cedula" class="input-field" placeholder="V-12345678" required>
+                <input type="text" id="cedula" name="cedula" class="input-field" placeholder="V-12345678" autocomplete="off" required>
             </div>
 
             <div class="input-group">
                 <label for="telefono" class="input-label">Teléfono</label>
-                <input type="tel" id="telefono" class="input-field" placeholder="0414-1234567" required>
+                <input type="tel" id="telefono" name="telefono" class="input-field" placeholder="0414-1234567" autocomplete="tel" required>
             </div>
 
             <div class="input-group">
                 <label for="password" class="input-label">Contraseña</label>
-                <input type="password" id="password" class="input-field" placeholder="Crea una contraseña segura" required>
+                <input type="password" id="password" name="new-password" class="input-field" placeholder="Crea una contraseña segura" autocomplete="new-password" required>
             </div>
 
             <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
