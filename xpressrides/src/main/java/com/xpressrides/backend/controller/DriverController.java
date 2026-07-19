@@ -4,10 +4,12 @@ import java.time.LocalDate;
 import java.util.Map;
 
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.xpressrides.backend.dto.request.AvailabilityRequest;
 import com.xpressrides.backend.dto.request.EnableRequest;
@@ -147,6 +149,14 @@ public class DriverController {
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
+    }
+
+    // GET /api/chofer/viaje-activo/stream — igual que /viaje-activo pero por SSE:
+    // empuja actualizaciones en vez de que el frontend haga polling.
+    @PreAuthorize("hasRole('chofer')")
+    @GetMapping(value = "/viaje-activo/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamActiveTrip(Authentication authentication) {
+        return driverService.streamActiveTrip(authentication.getName());
     }
 
     // PUT /api/chofer/traslados/{id}/rechazar — chofer rechaza el viaje asignado

@@ -296,7 +296,7 @@ const ESTADOS = {
     'en_progreso':  { texto: 'Viaje en progreso',       icono: '🛣️', bg: '#E8F5E9', color: '#2E7D32' },
 };
 
-let pollingId = null;
+let eventSource = null;
 let estadoPrevio = null;
 
 // --- Mapa Google Maps ---
@@ -434,36 +434,54 @@ function limpiarMapa() {
 document.addEventListener('DOMContentLoaded', () => {
     if (!requireAuth()) return;
     cargarViajeActivo();
-    pollingId = setInterval(cargarViajeActivo, 5000);
+    iniciarStreamViajeActivo();
     document.getElementById('btn-cancelar').addEventListener('click', confirmarCancelacion);
 });
 
+// Carga inicial única por fetch — evita esperar el handshake del EventSource
+// antes de mostrar el primer estado del viaje.
 async function cargarViajeActivo() {
     try {
         const response = await fetchAPI('/cliente/viaje-activo');
-        const data = response.data || response;
-
-        if (!data || !data.estado) {
-            // El viaje terminó
-            limpiarMapa();
-            if (estadoPrevio) {
-                clearInterval(pollingId);
-                window.location.href = '/views/cliente-record.html';
-            } else {
-                // No hay viaje activo — volver al dashboard
-                clearInterval(pollingId);
-                window.location.href = '/views/cliente-dashboard.html';
-            }
-            return;
-        }
-
-        idTrasladoActual = data.idTraslado;
-        estadoPrevio = data.estado;
-        renderizarViaje(data);
-
+        procesarViajeActivo(response.data || response);
     } catch (error) {
         console.error('Error cargando viaje activo:', error);
     }
+}
+
+// Seguimiento en tiempo real por SSE — reemplaza el polling que había aquí
+// antes (setInterval cada 5s). El EventSource nativo reconecta solo si la
+// conexión se cae.
+function iniciarStreamViajeActivo() {
+    const usuario = getUsuario();
+    if (!usuario || !usuario.token) return;
+
+    eventSource = new EventSource(`/api/cliente/viaje-activo/stream?token=${encodeURIComponent(usuario.token)}`);
+    eventSource.addEventListener('viaje', (e) => {
+        procesarViajeActivo(JSON.parse(e.data));
+    });
+    eventSource.onerror = (e) => {
+        console.warn('Conexión SSE de viaje activo interrumpida, reintentando...', e);
+    };
+}
+
+function procesarViajeActivo(data) {
+    if (!data || !data.estado) {
+        // El viaje terminó
+        limpiarMapa();
+        if (eventSource) eventSource.close();
+        if (estadoPrevio) {
+            window.location.href = '/views/cliente-record.html';
+        } else {
+            // No hay viaje activo — volver al dashboard
+            window.location.href = '/views/cliente-dashboard.html';
+        }
+        return;
+    }
+
+    idTrasladoActual = data.idTraslado;
+    estadoPrevio = data.estado;
+    renderizarViaje(data);
 }
 
 function renderizarViaje(data) {
@@ -536,7 +554,7 @@ async function confirmarCancelacion() {
             method: 'PUT',
             body: JSON.stringify({ motivo: 'Cancelado por el cliente' })
         });
-        clearInterval(pollingId);
+        if (eventSource) eventSource.close();
         window.location.href = '/views/cliente-record.html';
     } catch (error) {
         btn.disabled = false;
@@ -545,7 +563,7 @@ async function confirmarCancelacion() {
     }
 }
 
-window.addEventListener('beforeunload', () => clearInterval(pollingId));
+window.addEventListener('beforeunload', () => { if (eventSource) eventSource.close(); });
 
 </script>
 </body>

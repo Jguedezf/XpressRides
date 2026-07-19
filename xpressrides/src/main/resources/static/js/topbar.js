@@ -31,6 +31,13 @@ function populateTopbarUser() {
     if (name) {
         name.textContent = user.nombre || 'Usuario';
     }
+    // El alta de personal administrativo es exclusiva de 'administrador' — un
+    // personal_admin no puede crear otro (ver AdminController.crearPersonalAdmin).
+    const navPersonalLink = document.getElementById('nav-personal-admin-link');
+    if (navPersonalLink && userRole !== 'administrador' && userRole !== 'admin') {
+        navPersonalLink.style.display = 'none';
+    }
+
     if (role) {
         let roleStr = user.rol || 'Rol';
         // Limpiar el rol para mostrarlo más amigable y configurar el enlace del perfil

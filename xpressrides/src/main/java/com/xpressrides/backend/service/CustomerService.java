@@ -11,6 +11,7 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.xpressrides.backend.dto.request.CustomerProfileRequest;
 import com.xpressrides.backend.dto.request.RatingRequest;
@@ -325,6 +326,13 @@ public class CustomerService {
         data.put("destinoLng", trip.getDestinationLng());
 
         return data;
+    }
+
+    // Empuja el estado del viaje activo del cliente por Server-Sent Events en vez
+    // de que el frontend haga polling — reemplaza el setInterval de
+    // cliente-viaje-activo.html.
+    public SseEmitter streamActiveTrip(String username) {
+        return TripStreamHelper.stream(() -> getActiveTrip(username));
     }
 
     private CustomerProfileResponse mapToProfileResponse(Customer customer) {

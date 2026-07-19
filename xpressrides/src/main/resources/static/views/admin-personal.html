@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Administrativo - XpressRides</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="/css/estilos.css">
+
+    <style>
+        body {
+            background-color: var(--color-bg-card, #F8F9FB);
+            font-family: var(--font-family-base);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 76px 20px 40px;
+            min-height: 100vh;
+        }
+
+        .report-container { width: 100%; max-width: 600px; }
+        .brand-logo-img { max-width: 260px; width: 100%; height: auto; display: block; margin: 0 auto; }
+
+        .premium-card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid #E2E8F0;
+        }
+        .premium-title { margin-top: 0; }
+        .premium-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #CBD5E1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-family: inherit;
+            background-color: white;
+        }
+        .premium-label { display: block; font-weight: 500; margin-bottom: 5px; font-size: 13px; color: var(--color-text-main); margin-left: 2px; }
+        .form-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+        .form-row > div { flex: 1; min-width: 160px; }
+    </style>
+</head>
+<body>
+
+<header style="position:fixed;top:0;left:0;right:0;z-index:1000;background:#1F4E79;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+    <div class="top-bar-left d-flex align-center" style="gap: 16px;">
+        <span style="color:white;font-weight:700;font-size:18px;">Xpress<span style="color:#C55A11;">Rides</span><span style="font-weight:400;font-size:13px;opacity:0.75;"> | Admin</span></span>
+        <span id="topbar-bcv-rate" class="badge-green" style="display:none; font-size:12px;">BCV: Cargando...</span>
+    </div>
+    <nav style="display:flex;gap:8px;">
+        <a href="/views/admin-dashboard.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Panel Principal</a>
+        <a href="/views/admin-reportes.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Reporte de Ingresos</a>
+        <a href="/views/admin-pagos.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Control de Pagos</a>
+        <a href="/views/admin-notificaciones.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Notificaciones</a>
+        <a href="/views/admin-clientes.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Clientes</a>
+        <a href="/views/admin-bancos.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Bancos</a>
+        <a href="/views/admin-cupones.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Cupones</a>
+        <a href="/views/admin-personal.html" id="nav-personal-admin-link" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;background:#C55A11;">Personal</a>
+    </nav>
+    <div class="top-bar-right d-flex align-center" style="gap: 16px;">
+        <div class="user-profile-widget" onclick="toggleProfileDropdown()" style="position:relative; cursor:pointer;">
+            <div id="topbar-user-initial" style="width:32px; height:32px; border-radius:50%; background-color:var(--color-primary); color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">U</div>
+            <div id="topbar-profile-dropdown" class="card" style="position:absolute; top:100%; right:0; margin-top:12px; display:none; min-width:180px; z-index:1000; padding:12px; cursor:default;" onclick="event.stopPropagation()">
+                <p id="topbar-user-name" class="h2-subtitle" style="margin:0; font-size:14px; color:var(--color-text-main);">Usuario</p>
+                <p id="topbar-user-role" class="text-small" style="margin-bottom:8px; text-transform:capitalize; color:var(--color-text-muted);">Rol</p>
+            </div>
+        </div>
+        <a href="/views/user-logout.html" style="color:white;text-decoration:none;font-size:13px;opacity:0.75;">Cerrar sesión</a>
+</div>
+</header>
+
+<main class="report-container">
+
+    <div class="text-center mb-24">
+        <img src="/img/logo.png" alt="XpressRides Logo" class="brand-logo-img">
+    </div>
+
+    <div id="acceso-denegado" class="premium-card" style="padding: 30px; display: none; text-align: center;">
+        <h2 class="premium-title" style="font-size: 20px; color: var(--color-error);">Acceso restringido</h2>
+        <p>Solo el rol Administrador puede dar de alta a nuevo personal administrativo.</p>
+    </div>
+
+    <section class="premium-card" id="form-section" style="padding: 30px;">
+        <h2 class="premium-title" style="margin-bottom: 5px; font-size: 20px;">Nuevo Personal Administrativo</h2>
+        <p class="premium-subtitle" style="margin-bottom: 20px;">Alta de cuentas de personal_admin — no disponible desde el registro público</p>
+
+        <div class="alert-success" id="personal-success" style="display: none; font-size: 13px;"></div>
+        <div class="alert-error" id="personal-error" style="display: none; font-size: 13px;"></div>
+
+        <form id="personal-form">
+            <div class="form-row">
+                <div>
+                    <label class="premium-label" for="personal-nombre">Nombre</label>
+                    <input type="text" id="personal-nombre" class="premium-input" required>
+                </div>
+                <div>
+                    <label class="premium-label" for="personal-apellido">Apellido</label>
+                    <input type="text" id="personal-apellido" class="premium-input" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div>
+                    <label class="premium-label" for="personal-cedula">Cédula</label>
+                    <input type="text" id="personal-cedula" class="premium-input" required>
+                </div>
+                <div>
+                    <label class="premium-label" for="personal-telefono">Teléfono</label>
+                    <input type="text" id="personal-telefono" class="premium-input" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div>
+                    <label class="premium-label" for="personal-usuario">Usuario</label>
+                    <input type="text" id="personal-usuario" class="premium-input" required>
+                </div>
+                <div>
+                    <label class="premium-label" for="personal-correo">Correo electrónico</label>
+                    <input type="email" id="personal-correo" class="premium-input" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div>
+                    <label class="premium-label" for="personal-password">Contraseña</label>
+                    <input type="password" id="personal-password" class="premium-input" minlength="8" required>
+                </div>
+                <div>
+                    <label class="premium-label" for="personal-cargo">Cargo (opcional)</label>
+                    <input type="text" id="personal-cargo" class="premium-input" placeholder="Empleado Administrativo">
+                </div>
+            </div>
+            <button type="submit" class="btn-primary" id="btn-personal-submit" style="width:100%;">Crear Cuenta</button>
+        </form>
+    </section>
+
+</main>
+
+<script src="/js/api.js"></script>
+<script src="/js/topbar.js"></script>
+<script src="/js/admin-personal.js"></script>
+</body>
+</html>

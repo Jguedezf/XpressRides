@@ -6,8 +6,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     configurarBotonEmergencia();
     configurarModoUbicacion();
     cargarViajeActivo();
-    // Polling cada 8 segundos para detectar nuevos viajes asignados por el SP
-    setInterval(cargarViajeActivo, 8000);
+    // Seguimiento en tiempo real por SSE — reemplaza el polling que había aquí
+    // antes (setInterval cada 8s). El EventSource nativo reconecta solo si la
+    // conexión se cae.
+    iniciarStreamViajeActivo();
 
     // Modo de ubicación por defecto: Manual (ver configurarModoUbicacion).
     // El chofer activa el GPS automático con el switch si lo prefiere.
@@ -289,25 +291,44 @@ async function reportarUbicacion() {
 
 // ─── 2. CARGAR VIAJE ACTIVO ─────────────────────────
 
+// Carga inicial única por fetch — evita esperar el handshake del EventSource
+// antes de mostrar el primer estado del viaje.
 async function cargarViajeActivo() {
     try {
         const response = await fetchAPI('/chofer/viaje-activo');
-        const viaje = response.data;
-
-        if (!viaje) {
-            if (viajeActual !== null) {
-                ocultarPaneles();
-            }
-            return;
-        }
-
-        // Solo actualizar UI si el estado cambió para no parpadear
-        if (!viajeActual || viajeActual.estado !== viaje.estado || viajeActual.idTraslado !== viaje.idTraslado) {
-            viajeActual = viaje;
-            renderizarEstado(viaje);
-        }
+        procesarViajeActivo(response.data);
     } catch (error) {
         console.error('Error cargando viaje activo:', error);
+    }
+}
+
+let eventSourceViajeActivo = null;
+
+function iniciarStreamViajeActivo() {
+    const usuario = getUsuario();
+    if (!usuario || !usuario.token) return;
+
+    eventSourceViajeActivo = new EventSource(`/api/chofer/viaje-activo/stream?token=${encodeURIComponent(usuario.token)}`);
+    eventSourceViajeActivo.addEventListener('viaje', (e) => {
+        procesarViajeActivo(JSON.parse(e.data));
+    });
+    eventSourceViajeActivo.onerror = (e) => {
+        console.warn('Conexión SSE de viaje activo interrumpida, reintentando...', e);
+    };
+}
+
+function procesarViajeActivo(viaje) {
+    if (!viaje) {
+        if (viajeActual !== null) {
+            ocultarPaneles();
+        }
+        return;
+    }
+
+    // Solo actualizar UI si el estado cambió para no parpadear
+    if (!viajeActual || viajeActual.estado !== viaje.estado || viajeActual.idTraslado !== viaje.idTraslado) {
+        viajeActual = viaje;
+        renderizarEstado(viaje);
     }
 }
 

@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.xpressrides.backend.dto.PsychEvaluationStatus;
 import com.xpressrides.backend.dto.VehicleInspectionStatus;
@@ -356,6 +357,12 @@ public class DriverService {
         data.put("fechaAsignacionActual", trip.getCurrentAssignmentDate());
 
         return data;
+    }
+
+    // Empuja el estado del viaje activo del chofer por Server-Sent Events en vez
+    // de que el frontend haga polling — reemplaza el setInterval de chofer-viaje.js.
+    public SseEmitter streamActiveTrip(String username) {
+        return TripStreamHelper.stream(() -> getActiveTrip(username));
     }
 
     private PsychEvaluationStatus buildPsychStatus(PsychologicalEvaluation eval) {

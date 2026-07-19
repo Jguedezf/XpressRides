@@ -3,15 +3,17 @@ package com.xpressrides.backend.controller;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;    
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.xpressrides.backend.dto.request.CustomerProfileRequest;
 import com.xpressrides.backend.dto.request.RatingRequest;
@@ -140,5 +142,13 @@ public class CustomerController {
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
+    }
+
+    // GET /api/cliente/viaje-activo/stream — igual que /viaje-activo pero por SSE:
+    // empuja actualizaciones en vez de que el frontend haga polling.
+    @PreAuthorize("hasRole('cliente')")
+    @GetMapping(value = "/viaje-activo/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter streamActiveTrip(Authentication authentication) {
+        return customerService.streamActiveTrip(authentication.getName());
     }
 }

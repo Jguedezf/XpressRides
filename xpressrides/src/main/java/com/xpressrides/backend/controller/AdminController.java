@@ -1,6 +1,9 @@
 package com.xpressrides.backend.controller;
 
+import com.xpressrides.backend.dto.request.AdminPersonnelRequest;
+import com.xpressrides.backend.model.User;
 import com.xpressrides.backend.service.AdminService;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -97,6 +100,32 @@ public class AdminController {
             response.put("success", false);
             response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    // POST /api/admin/personal-admin — alta de personal administrativo desde el panel.
+    // Solo 'administrador' (no 'personal_admin') puede crear más personal_admin.
+    @PreAuthorize("hasRole('administrador')")
+    @PostMapping("/personal-admin")
+    public ResponseEntity<Map<String, Object>> crearPersonalAdmin(
+            @Valid @RequestBody AdminPersonnelRequest request) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            User user = adminService.crearPersonalAdmin(request);
+            Map<String, Object> data = new HashMap<>();
+            data.put("id", user.getId());
+            data.put("username", user.getUsername());
+            data.put("nombre", user.getName());
+            data.put("apellido", user.getLastName());
+            response.put("success", true);
+            response.put("data", data);
+            response.put("message", "Personal administrativo creado correctamente");
+            return ResponseEntity.status(201).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("data", null);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(400).body(response);
         }
     }
 

@@ -57,6 +57,12 @@ public class FareService {
     // TARIFA_MIN_CUPON_REFERIDO en sp_solicitar_traslado.
     private static final BigDecimal REFERRAL_COUPON_MIN_FARE = new BigDecimal("1.00");
 
+    // Tope de distancia del primer viaje gratis — mismo mecanismo que maxDistanceKm
+    // en los cupones de referido: si la distancia lo supera, el descuento no se
+    // aplica y el cliente paga el viaje completo. Valor confirmado por Johanna
+    // el 19/07/2026. Mismo valor que DISTANCIA_MAX_PRIMER_VIAJE en sp_solicitar_traslado.
+    private static final BigDecimal FIRST_TRIP_MAX_DISTANCE_KM = new BigDecimal("15");
+
     // Zonas universitarias con descuento estudiantil — igual que el SP
     private static final Set<String> UNIVERSITY_ZONES = Set.of(
         "UNEG Sede Atlántico", "UNEG Sede Villa Asia", "UNEXPO"
@@ -158,7 +164,8 @@ public class FareService {
         BigDecimal peakHourSurcharge = rawFare.subtract(subtotal).setScale(2, RoundingMode.HALF_UP);
 
         // 8. Descuentos — primer viaje tiene prioridad sobre descuento estudiantil
-        boolean firstTripFree   = !customer.isFirstTripUsed();
+        boolean firstTripFree = !customer.isFirstTripUsed()
+            && distanceKm.compareTo(FIRST_TRIP_MAX_DISTANCE_KM) <= 0;
         boolean studentDiscount = false;
         if (customer.isStudent()) {
             boolean coordinatesNull = (request.getOriginLat() == null || request.getOriginLng() == null

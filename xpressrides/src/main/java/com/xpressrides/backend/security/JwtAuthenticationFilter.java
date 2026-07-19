@@ -35,13 +35,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
+        String token;
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            token = authHeader.substring(7);
+        } else if (request.getRequestURI().endsWith("/stream")) {
+            // El EventSource nativo del navegador no permite headers personalizados,
+            // así que los endpoints SSE (/viaje-activo/stream) aceptan el token por
+            // query param como excepción — el resto de la API sigue exigiendo el
+            // header Authorization normal.
+            token = request.getParameter("token");
+        } else {
+            token = null;
+        }
+
+        if (token == null) {
             filterChain.doFilter(request, response);
             return;
         }
-
-        String token = authHeader.substring(7);
 
         try {
             // First check if the token is cryptographically valid and not revoked

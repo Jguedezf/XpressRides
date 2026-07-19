@@ -35,6 +35,19 @@
             border-left: 4px solid var(--color-error);
             background: #fffcfc;
         }
+        .incident-card {
+            background: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-left: 4px solid var(--color-error);
+        }
+        .incident-badge { padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+        .badge-abierto { background: #f8d7da; color: #721c24; }
+        .badge-en_proceso { background: #fff3cd; color: #856404; }
+        .badge-cerrado { background: #d4edda; color: #155724; }
+        .btn-mini { padding: 5px 10px; font-size: 12px; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; margin-right: 6px; margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -50,6 +63,9 @@
         <a href="/views/admin-pagos.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Control de Pagos</a>
         <a href="/views/admin-notificaciones.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;background:#C55A11;">Notificaciones</a>
         <a href="/views/admin-clientes.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Clientes</a>
+        <a href="/views/admin-bancos.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Bancos</a>
+        <a href="/views/admin-cupones.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Cupones</a>
+        <a href="/views/admin-personal.html" id="nav-personal-admin-link" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Personal</a>
     </nav>
     <div class="top-bar-right d-flex align-center" style="gap: 16px;">
         <div class="user-profile-widget" onclick="toggleProfileDropdown()" style="position:relative; cursor:pointer;">
@@ -64,6 +80,13 @@
 </header>
 
 <main class="d-flex flex-col align-center" style="width: 100%; max-width: 800px;">
+    <div class="card" style="width: 100%; background-color: var(--color-bg-main); margin-bottom: 20px;">
+        <h2 class="h2-subtitle" style="color: var(--color-secondary); margin-bottom: 20px; font-weight: 700;">Incidentes Reportados</h2>
+        <p class="text-small" style="margin-top:-12px; margin-bottom:16px; color: var(--color-text-muted);">Casos abiertos desde el botón de emergencia de cliente/chofer</p>
+        <div id="incidents-container">
+            <p class="text-center">Cargando incidentes...</p>
+        </div>
+    </div>
     <div class="card" style="width: 100%; background-color: var(--color-bg-main);">
         <h2 class="h2-subtitle" style="color: var(--color-secondary); margin-bottom: 20px; font-weight: 700;">Centro de Notificaciones</h2>
         <div id="notifications-container">

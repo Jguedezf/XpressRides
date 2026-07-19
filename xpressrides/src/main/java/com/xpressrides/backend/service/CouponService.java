@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class CouponService {
@@ -58,6 +59,39 @@ public class CouponService {
         coupon.setActive(true);
         coupon.setCreatedAt(LocalDateTime.now());
 
+        return couponRepository.save(coupon);
+    }
+
+    // Retorna todos los cupones — panel administrativo
+    public List<Coupon> listarTodosLosCupones() {
+        return couponRepository.findAll();
+    }
+
+    // Actualiza un cupón existente
+    @Transactional
+    public Coupon updateCoupon(Integer id, CouponRequest request) {
+        Coupon coupon = couponRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Cupón no encontrado con ID: " + id));
+
+        String nuevoCodigo = request.getCode().toUpperCase();
+        if (couponRepository.existsByCodeAndIdNot(nuevoCodigo, id)) {
+            throw new BadRequestException("Ya existe un cupón con el código: " + nuevoCodigo);
+        }
+
+        coupon.setCode(nuevoCodigo);
+        coupon.setType(request.getType());
+        coupon.setDiscountUsd(request.getDiscountUsd());
+        coupon.setMaxDistanceKm(request.getMaxDistanceKm());
+
+        return couponRepository.save(coupon);
+    }
+
+    // Desactiva un cupón — soft delete, mismo patrón que Bank
+    @Transactional
+    public Coupon deactivateCoupon(Integer id) {
+        Coupon coupon = couponRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Cupón no encontrado con ID: " + id));
+        coupon.setActive(false);
         return couponRepository.save(coupon);
     }
 

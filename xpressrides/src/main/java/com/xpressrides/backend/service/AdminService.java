@@ -1,5 +1,7 @@
 package com.xpressrides.backend.service;
 
+import com.xpressrides.backend.dto.request.AdminPersonnelRequest;
+import com.xpressrides.backend.exception.BadRequestException;
 import com.xpressrides.backend.model.AdminPersonnel;
 import com.xpressrides.backend.model.Customer;
 import com.xpressrides.backend.model.Driver;
@@ -15,10 +17,12 @@ import com.xpressrides.backend.repository.TripRepository;
 import com.xpressrides.backend.repository.UserRepository;
 import com.xpressrides.backend.repository.VehicleRepository;
 import com.xpressrides.backend.exception.ResourceNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +38,7 @@ public class AdminService {
     private final AdminPersonnelRepository adminPersonnelRepository;
     private final VehicleRepository vehicleRepository;
     private final DriverRegistrationService driverRegistrationService;
+    private final PasswordEncoder passwordEncoder;
 
     public AdminService(DriverRepository driverRepository,
                         CustomerRepository customerRepository,
@@ -41,7 +46,8 @@ public class AdminService {
                         UserRepository userRepository,
                         AdminPersonnelRepository adminPersonnelRepository,
                         VehicleRepository vehicleRepository,
-                        DriverRegistrationService driverRegistrationService) {
+                        DriverRegistrationService driverRegistrationService,
+                        PasswordEncoder passwordEncoder) {
         this.driverRepository          = driverRepository;
         this.customerRepository        = customerRepository;
         this.tripRepository            = tripRepository;
@@ -49,6 +55,40 @@ public class AdminService {
         this.adminPersonnelRepository  = adminPersonnelRepository;
         this.vehicleRepository         = vehicleRepository;
         this.driverRegistrationService = driverRegistrationService;
+        this.passwordEncoder           = passwordEncoder;
+    }
+
+    // Alta de personal administrativo desde el panel de admin — ruta separada del
+    // registro público (AuthService.register() la bloquea a propósito, ver
+    // commit 152c5d1). Solo alcanzable vía POST /api/admin/personal-admin,
+    // protegido con @PreAuthorize hasRole('administrador') únicamente.
+    public User crearPersonalAdmin(AdminPersonnelRequest request) {
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new BadRequestException("El nombre de usuario ya está en uso");
+        }
+
+        User user = new User();
+        user.setCi(request.getCi());
+        user.setName(request.getName());
+        user.setLastName(request.getLastName());
+        user.setUsername(request.getUsername());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setEmail(request.getEmail());
+        user.setPhone(request.getPhone());
+        user.setRole("personal_admin");
+        user.setActive(true);
+        user.setCreatedAt(LocalDateTime.now());
+        user = userRepository.save(user);
+
+        String cargo = request.getPosition() != null && !request.getPosition().isBlank()
+            ? request.getPosition() : "Empleado Administrativo";
+        AdminPersonnel admin = new AdminPersonnel();
+        admin.setUserId(user);
+        admin.setPosition(cargo);
+        admin.setCreatedAt(LocalDateTime.now());
+        adminPersonnelRepository.save(admin);
+
+        return user;
     }
 
     // Retorna todos los choferes con su estado operativo

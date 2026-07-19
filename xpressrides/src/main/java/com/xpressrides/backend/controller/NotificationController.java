@@ -1,11 +1,13 @@
 package com.xpressrides.backend.controller;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.xpressrides.backend.model.Incident;
 import com.xpressrides.backend.service.NotificationService;
 
 @RestController
@@ -57,5 +60,58 @@ public class NotificationController {
         }
         notificationService.sendEmergencyAlert(authentication.getName(), tripId);
         return ResponseEntity.ok(Map.of("message", "Alerta de emergencia enviada a soporte."));
+    }
+
+    // GET /api/notificaciones/incidentes — admin lista los incidentes reportados por el botón de emergencia
+    @PreAuthorize("hasRole('administrador') or hasRole('personal_admin')")
+    @GetMapping("/incidentes")
+    public ResponseEntity<Map<String, Object>> getIncidents() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", notificationService.getIncidents());
+        response.put("message", "OK");
+        return ResponseEntity.ok(response);
+    }
+
+    // PATCH /api/notificaciones/incidentes/{id}/tomar — admin marca el incidente como en proceso
+    @PreAuthorize("hasRole('administrador') or hasRole('personal_admin')")
+    @PatchMapping("/incidentes/{id}/tomar")
+    public ResponseEntity<Map<String, Object>> takeIncident(@PathVariable Integer id) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Incident incident = notificationService.takeIncident(id);
+            response.put("success", true);
+            response.put("data", incident);
+            response.put("message", "Incidente marcado como en proceso");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("data", null);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(400).body(response);
+        }
+    }
+
+    // PATCH /api/notificaciones/incidentes/{id}/cerrar — admin cierra el incidente con notas de resolución
+    @PreAuthorize("hasRole('administrador') or hasRole('personal_admin')")
+    @PatchMapping("/incidentes/{id}/cerrar")
+    public ResponseEntity<Map<String, Object>> closeIncident(
+            @PathVariable Integer id,
+            @RequestBody(required = false) Map<String, String> body,
+            Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            String notas = body != null ? body.getOrDefault("notas", null) : null;
+            Incident incident = notificationService.closeIncident(id, authentication.getName(), notas);
+            response.put("success", true);
+            response.put("data", incident);
+            response.put("message", "Incidente cerrado");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("data", null);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(400).body(response);
+        }
     }
 }

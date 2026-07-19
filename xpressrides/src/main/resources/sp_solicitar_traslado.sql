@@ -34,6 +34,12 @@ sp_solicitar_traslado: BEGIN
   -- el viaje en $0 (es una promoción de $5, no un viaje gratis). Otros tipos
   -- de cupón (bienvenida, promocional) conservan el piso de $0.00 de siempre.
   DECLARE TARIFA_MIN_CUPON_REFERIDO DECIMAL(8,2) DEFAULT 1.00;
+  -- Tope de distancia del primer viaje gratis — mismo mecanismo que
+  -- distancia_max_km de los cupones de referido: si se supera, el viaje no
+  -- se considera "primer viaje gratis" y el descuento no se aplica (el
+  -- cliente conserva el beneficio para un próximo viaje dentro del tope).
+  -- Valor confirmado por Johanna el 19/07/2026.
+  DECLARE DISTANCIA_MAX_PRIMER_VIAJE DECIMAL(5,1) DEFAULT 15.0;
 
   DECLARE v_lat1 DECIMAL(10,7); DECLARE v_lon1 DECIMAL(10,7);
   DECLARE v_lat2 DECIMAL(10,7); DECLARE v_lon2 DECIMAL(10,7);
@@ -163,8 +169,8 @@ sp_solicitar_traslado: BEGIN
     END IF;
   END IF;
 
-  -- Primer viaje gratis
-  IF v_primer = 0 THEN
+  -- Primer viaje gratis (sujeto al tope de distancia DISTANCIA_MAX_PRIMER_VIAJE)
+  IF v_primer = 0 AND v_dist_km <= DISTANCIA_MAX_PRIMER_VIAJE THEN
     SET v_descuento   = v_tarifa;
     SET v_costo_cli   = 0.00;
   ELSE
@@ -308,7 +314,7 @@ sp_solicitar_traslado: BEGIN
     UPDATE cupon_cliente SET usado = 1, fecha_uso = NOW()
      WHERE id = p_id_cupon_cliente;
   END IF;
-  IF v_primer = 0 THEN
+  IF v_primer = 0 AND v_dist_km <= DISTANCIA_MAX_PRIMER_VIAJE THEN
     UPDATE cliente SET primer_viaje_usado = 1 WHERE id = p_id_cliente;
   END IF;
 
