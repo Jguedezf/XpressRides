@@ -139,7 +139,7 @@ public class DriverRegistrationService {
 
         if (latestInspection.isEmpty() || !latestInspection.get().isFitForUse()) return;
 
-        if (emergencyContactRepository.countByDriver_Id(driverId) != 2) return;
+        if (emergencyContactRepository.countByDriver_Id(driverId) < 2) return;
 
         // Todas las condiciones cumplen — activa al chofer
         driver.setEnabled(true);

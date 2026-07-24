@@ -144,10 +144,17 @@ public class AuthController {
 
     @PostMapping("/cambiar-contrasena")
     public ResponseEntity<Map<String, Object>> changePassword(
-            @Valid @RequestBody ChangePasswordRequest request) {
+            @Valid @RequestBody ChangePasswordRequest request,
+            HttpServletRequest httpRequest) {
         Map<String, Object> response = new HashMap<>();
         try {
-            authService.changePassword(request);
+            // Extraer el token actual para invalidarlo tras el cambio de contraseña
+            String currentToken = null;
+            String authHeader = httpRequest.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                currentToken = authHeader.substring(7);
+            }
+            authService.changePassword(request, currentToken);
             response.put("success", true);
             response.put("data", null);
             response.put("message", "Contraseña cambiada correctamente");

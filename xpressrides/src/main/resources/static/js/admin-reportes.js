@@ -3,6 +3,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!requireAuth()) return;
 });
 
+let ultimosRegistrosIngresos = [];
+
 /* ==========================================
    MÓDULO: GANANCIAS DE LA EMPRESA
 ========================================== */
@@ -24,6 +26,7 @@ document.getElementById('form-filtro-ganancias').addEventListener('submit', asyn
         // Petición GET con variables en la URL
         const response = await fetchAPI(`/reportes/ganancias?desde=${fechaInicio}&hasta=${fechaFin}`);
         const registros = response.data || [];
+        ultimosRegistrosIngresos = registros;
 
         if (registros.length === 0) {
             tbodyGanancias.innerHTML = '<tr><td colspan="4" class="text-center">No hay viajes en este rango de fechas.</td></tr>';
@@ -259,15 +262,171 @@ function imprimirReporte({ fechaInicioId, fechaFinId, tbodyId, titulo, headers, 
     }, 300);
 }
 
-document.getElementById('btn-imprimir').addEventListener('click', () => {
-    imprimirReporte({
-        fechaInicioId: 'fechaInicio',
-        fechaFinId: 'fechaFin',
-        tbodyId: 'tbody-ganancias',
-        titulo: 'Reporte de Ingresos de la Empresa (30%)',
-        headers: ['Viaje ID', 'Fecha', 'Costo Bruto', 'Descuento', 'Ganancia Empresa', 'Concepto'],
-        footerHtml: `<div class="print-footer">Total Ganancias: ${document.getElementById('total-ganancias').innerText}</div>`
+function imprimirReporteIngresos() {
+    const prevPrint = document.getElementById('reporte-impresion');
+    if (prevPrint) prevPrint.remove();
+    const prevPrintStyle = document.getElementById('print-style-reporte');
+    if (prevPrintStyle) prevPrintStyle.remove();
+
+    const fechaInicio = document.getElementById('fechaInicio').value || '---';
+    const fechaFin = document.getElementById('fechaFin').value || '---';
+
+    // Agrupar los datos
+    let regularesCant = 0;
+    let regularesCosto = 0;
+    let regularesDcto = 0;
+    let regularesGanancia = 0;
+
+    let descuentoCant = 0;
+    let descuentoCosto = 0;
+    let descuentoDcto = 0;
+    let descuentoGanancia = 0;
+
+    ultimosRegistrosIngresos.forEach(reg => {
+        const costo = Number(reg.totalCostUsd || 0);
+        const dcto = Number(reg.discountUsd || 0);
+        const ganancia = Number(reg.totalCompanyUsd || 0);
+        const concepto = reg.discountUsd > 0 ? "Viaje con descuento" : "Viaje regular";
+
+        if (concepto === "Viaje regular") {
+            regularesCant++;
+            regularesCosto += costo;
+            regularesDcto += dcto;
+            regularesGanancia += ganancia;
+        } else {
+            descuentoCant++;
+            descuentoCosto += costo;
+            descuentoDcto += dcto;
+            descuentoGanancia += ganancia;
+        }
     });
+
+    const granTotal = regularesGanancia + descuentoGanancia;
+    const fechaActual = new Date().toLocaleDateString('es-VE', { year: 'numeric', month: '2-digit', day: '2-digit' });
+
+    const printStyles = `
+        <style id="print-style-reporte">
+            @media print {
+                body { display: block !important; height: auto !important; min-height: 0 !important; background: white !important; padding: 0 !important; }
+                body * { visibility: hidden; }
+                #reporte-impresion, #reporte-impresion * { visibility: visible; }
+                #reporte-impresion { display: block !important; position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 20px; box-sizing: border-box; }
+
+                .print-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #1F4E79; padding-bottom: 20px; margin-bottom: 20px; }
+                .print-logo { height: 60px; object-fit: contain; }
+                .print-company-info { text-align: center; font-size: 14px; }
+                .print-doc-info { text-align: right; font-size: 14px; }
+
+                .print-client-info { border: 1px solid #1F4E79; padding: 15px; margin-bottom: 20px; font-size: 14px; }
+
+                .print-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+                .print-table th { background-color: #1F4E79 !important; color: white !important; padding: 10px; text-align: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; border: 1px solid #ccc; }
+                .print-table td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+
+                .print-footer-totals { display: flex; justify-content: space-between; margin-top: 20px; align-items: flex-start; }
+                .print-legal-notes { width: 55%; font-size: 10px; color: #555; text-align: justify; }
+                .print-totals-table { width: 40%; border-collapse: collapse; font-size: 14px; font-weight: bold; }
+                .print-totals-table td, .print-totals-table th { padding: 8px; border-bottom: 1px solid #ccc; }
+                .print-totals-table .total-row { background-color: #1F4E79 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+                .text-right { text-align: right !important; }
+                .text-left { text-align: left !important; }
+
+                @page { margin: 1cm; size: auto; }
+            }
+        </style>
+    `;
+    document.head.insertAdjacentHTML('beforeend', printStyles);
+
+    const printContainer = document.createElement('div');
+    printContainer.id = 'reporte-impresion';
+    printContainer.style.display = 'none';
+
+    printContainer.innerHTML = `
+        <div class="print-header">
+            <div>
+                <img src="/img/logo.png" alt="XpressRides Logo" class="print-logo">
+            </div>
+            <div class="print-company-info">
+                <strong>XpressRides, C.A.</strong><br>
+                RIF: J-50301732-5<br>
+                Domicilio Fiscal: Ciudad Guayana<br>
+                Código de Actividad: 9609
+            </div>
+            <div class="print-doc-info">
+                <strong>Reporte de Ingresos (30%)</strong><br>
+                Fecha de Emisión: <span>${fechaActual}</span><br>
+                Moneda Base: USD ($)
+            </div>
+        </div>
+
+        <div class="print-client-info">
+            Período Evaluado: <span>${fechaInicio} al ${fechaFin}</span><br>
+            Total de Viajes: <span>${regularesCant + descuentoCant}</span>
+        </div>
+
+        <table class="print-table">
+            <thead>
+                <tr>
+                    <th class="text-left">CONCEPTO</th>
+                    <th>CANTIDAD</th>
+                    <th>COSTO BRUTO</th>
+                    <th>DESCUENTOS</th>
+                    <th>GANANCIA EMPRESA</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="text-left">Viajes Regulares</td>
+                    <td>${regularesCant}</td>
+                    <td>$${regularesCosto.toFixed(2)}</td>
+                    <td style="color: red;">-$${regularesDcto.toFixed(2)}</td>
+                    <td>$${regularesGanancia.toFixed(2)}</td>
+                </tr>
+                <tr>
+                    <td class="text-left">Viajes con Descuento</td>
+                    <td>${descuentoCant}</td>
+                    <td>$${descuentoCosto.toFixed(2)}</td>
+                    <td style="color: red;">-$${descuentoDcto.toFixed(2)}</td>
+                    <td>$${descuentoGanancia.toFixed(2)}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="print-footer-totals">
+            <div class="print-legal-notes">
+                <p><strong>Nota:</strong> Este reporte es un resumen administrativo de los ingresos obtenidos por la plataforma (comisión del 30%) sobre los viajes completados en el período indicado. Los descuentos aplicados reducen la ganancia neta de la empresa pero no afectan el monto pagado a los choferes.</p>
+            </div>
+            <table class="print-totals-table">
+                <tbody>
+                    <tr>
+                        <td class="text-left">Costo Bruto Total:</td>
+                        <td class="text-right">$${(regularesCosto + descuentoCosto).toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                        <td class="text-left">Descuentos Totales:</td>
+                        <td class="text-right">-$${(regularesDcto + descuentoDcto).toFixed(2)}</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td class="text-left" style="color: white !important;">TOTAL GANANCIA:</td>
+                        <td class="text-right" style="color: white !important;">$${granTotal.toFixed(2)}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    `;
+
+    document.body.appendChild(printContainer);
+
+    setTimeout(() => {
+        window.print();
+        printContainer.remove();
+        document.getElementById('print-style-reporte').remove();
+    }, 300);
+}
+
+document.getElementById('btn-imprimir').addEventListener('click', () => {
+    imprimirReporteIngresos();
 });
 
 document.getElementById('btn-imprimir-cancelados').addEventListener('click', () => {

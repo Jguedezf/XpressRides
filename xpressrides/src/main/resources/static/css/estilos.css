@@ -2,6 +2,7 @@
    XpressRides - Estilos Globales Compartidos
    Equipo Frontend: Manuel, Ángel, Freddy
    ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 /* --- 1. TOKENS DE DISEÑO (Variables) --- */
 :root {
@@ -114,6 +115,11 @@ body {
     background-color: var(--color-primary-hover);
 }
 
+.btn-lg {
+    padding: 16px 32px;
+    font-size: 15.5px;
+}
+
 .btn-primary:disabled {
     background-color: #CCCCCC;
     cursor: not-allowed;
@@ -131,6 +137,22 @@ body {
     width: 100%;
     text-align: center;
     transition: background-color 0.2s ease;
+}
+
+.btn-secondary:hover {
+    background-color: #F8F9FB;
+}
+
+.btn-secondary:disabled {
+    border-color: #CCCCCC;
+    color: #CCCCCC;
+    cursor: not-allowed;
+}
+
+.btn-auto {
+    width: auto !important;
+    flex: 0 0 auto !important;
+    min-width: 100px;
 }
 
 .btn-secondary:hover {
@@ -243,6 +265,26 @@ body {
 .badge-green {
     background-color: #D5F5E3;
     color: var(--color-success);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.badge-si {
+    background-color: var(--color-success-bg);
+    color: var(--color-success);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+
+.badge-no {
+    background-color: var(--color-error-bg);
+    color: var(--color-error);
     font-size: 11px;
     font-weight: 700;
     padding: 4px 8px;

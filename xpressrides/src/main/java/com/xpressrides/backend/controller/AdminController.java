@@ -1,6 +1,7 @@
 package com.xpressrides.backend.controller;
 
 import com.xpressrides.backend.dto.request.AdminPersonnelRequest;
+import com.xpressrides.backend.dto.request.EvaluarChoferRequest;
 import com.xpressrides.backend.model.User;
 import com.xpressrides.backend.service.AdminService;
 import jakarta.validation.Valid;
@@ -87,11 +88,11 @@ public class AdminController {
     @PostMapping("/choferes/{id}/evaluar")
     public ResponseEntity<Map<String, Object>> evaluarChofer(
             @PathVariable Integer id,
-            @RequestBody Map<String, Object> body) {
+            @Valid @RequestBody EvaluarChoferRequest body) {
         Map<String, Object> response = new HashMap<>();
         try {
-            BigDecimal notaPsicologica = new BigDecimal(body.get("notaPsicologica").toString());
-            BigDecimal notaVehicular   = new BigDecimal(body.get("notaVehicular").toString());
+            BigDecimal notaPsicologica = body.getNotaPsicologica();
+            BigDecimal notaVehicular   = body.getNotaVehicular();
             adminService.evaluarChofer(id, notaPsicologica, notaVehicular);
             response.put("success", true);
             response.put("message", "Chofer evaluado correctamente");

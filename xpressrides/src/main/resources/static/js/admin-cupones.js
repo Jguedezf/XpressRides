@@ -109,11 +109,29 @@ async function guardarCupon() {
 
     const id = document.getElementById('cupon-id').value;
     const distanciaVal = document.getElementById('cupon-distancia').value;
+    
+    const discountUsd = parseFloat(document.getElementById('cupon-descuento').value);
+    if (isNaN(discountUsd)) {
+        errorAlert.textContent = 'El descuento debe ser un número válido.';
+        errorAlert.style.display = 'block';
+        return;
+    }
+    
+    let maxDistanceKm = null;
+    if (distanciaVal) {
+        maxDistanceKm = parseInt(distanciaVal, 10);
+        if (isNaN(maxDistanceKm)) {
+            errorAlert.textContent = 'La distancia máxima debe ser un número válido.';
+            errorAlert.style.display = 'block';
+            return;
+        }
+    }
+
     const payload = {
         code: document.getElementById('cupon-codigo').value.trim(),
         type: document.getElementById('cupon-tipo').value,
-        discountUsd: parseFloat(document.getElementById('cupon-descuento').value),
-        maxDistanceKm: distanciaVal ? parseInt(distanciaVal, 10) : null
+        discountUsd: discountUsd,
+        maxDistanceKm: maxDistanceKm
     };
 
     const originalText = btn.textContent;

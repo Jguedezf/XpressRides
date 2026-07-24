@@ -59,9 +59,7 @@ public class NotificationService {
         User reportingUser = userRepository.findByUsername(username)
             .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
-        List<User> admins = userRepository.findAll().stream()
-            .filter(u -> "administrador".equalsIgnoreCase(u.getRole()) || "personal_admin".equalsIgnoreCase(u.getRole()))
-            .toList();
+        List<User> admins = userRepository.findByActiveTrueAndRoleIn(List.of("administrador", "personal_admin"));
 
         String mensaje = "🚨 EMERGENCIA REPORTADA por " + reportingUser.getName() + " " + reportingUser.getLastName() +
                          (tripId != null ? " en el traslado #" + tripId : "");

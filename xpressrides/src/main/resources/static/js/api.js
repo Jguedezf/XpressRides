@@ -152,3 +152,11 @@ function requireAuth() {
     }
     return true;
 }
+
+// Sincronización entre pestañas: Si el usuario se loguea/desloguea en otra pestaña,
+// forzamos la recarga de esta pestaña para que refleje el nuevo estado o cierre sesión.
+window.addEventListener('storage', function(e) {
+    if (e.key === 'xpressUsuario') {
+        window.location.reload();
+    }
+});

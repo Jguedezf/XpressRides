@@ -25,6 +25,7 @@ import com.xpressrides.backend.repository.AdminPersonnelRepository;
 import com.xpressrides.backend.repository.BankRepository;
 import com.xpressrides.backend.repository.UserRepository;
 import com.xpressrides.backend.security.JwtService;
+import com.xpressrides.backend.security.TokenBlacklistService;
 
 //Servicio de autenticacion para el registro de usuarios
 @Service
@@ -46,11 +47,14 @@ public class AuthService {
 
     private JwtService jwtService;
 
+    private TokenBlacklistService tokenBlacklistService;
+
     //aqui se reciben todos los datos del registro
     public AuthService(UserRepository userRepository, CustomerRepository customerRepository,
             DriverRepository driverRepository, AdminPersonnelRepository adminPersonnelRepository,
             PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager,
-            JwtService jwtService, BankRepository bankRepository) {
+            JwtService jwtService, BankRepository bankRepository,
+            TokenBlacklistService tokenBlacklistService) {
             this.userRepository = userRepository;
             this.bankRepository = bankRepository;
             this.customerRepository = customerRepository;
@@ -59,9 +63,11 @@ public class AuthService {
             this.passwordEncoder = passwordEncoder;
             this.authenticationManager = authenticationManager;
             this.jwtService = jwtService;
+            this.tokenBlacklistService = tokenBlacklistService;
     }
 
     // aqui se Registra el usuario directamente
+    @org.springframework.transaction.annotation.Transactional
     public AuthResponse register(RegisterRequest request) {
         String rolSolicitado = request.getRole().toLowerCase();
         if (!"cliente".equals(rolSolicitado) && !"chofer".equals(rolSolicitado)) {
@@ -178,7 +184,7 @@ public class AuthService {
         return codigo;
     }
 
-    public void changePassword(ChangePasswordRequest request){
+    public void changePassword(ChangePasswordRequest request, String currentToken){
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByUsername(username).orElseThrow(()-> new RuntimeException("Usuario no encontrado"));
 
@@ -188,5 +194,10 @@ public class AuthService {
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
+
+        // Invalidar el token actual para cerrar la sesión existente
+        if (currentToken != null && !currentToken.isBlank()) {
+            tokenBlacklistService.revoke(currentToken);
+        }
     }
 }

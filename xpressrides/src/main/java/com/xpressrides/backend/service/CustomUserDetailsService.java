@@ -25,8 +25,9 @@ public class CustomUserDetailsService implements UserDetailsService {
         com.xpressrides.backend.model.User user = userRepository.findByUsername(username)
             .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
 
-        // Avoid IllegalArgumentException or NullPointerException when constructing Spring User
-        if (user.getUsername() == null || user.getPassword() == null) {
+        // Avoid IllegalArgumentException or NullPointerException when constructing Spring User.
+        // isBlank() also catches empty strings ("") that would bypass validation.
+        if (user.getUsername() == null || user.getUsername().isBlank() || user.getPassword() == null || user.getPassword().isBlank()) {
             throw new UsernameNotFoundException("Datos de usuario incompletos para: " + username);
         }
 

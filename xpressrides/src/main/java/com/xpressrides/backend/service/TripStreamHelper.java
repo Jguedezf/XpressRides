@@ -31,13 +31,13 @@ final class TripStreamHelper {
             try {
                 while (true) {
                     Map<String, Object> data = activeTripSupplier.get();
-                    if (!Objects.equals(data, ultimoEnviado)) {
-                        emitter.send(SseEmitter.event().name("viaje").data(data));
-                        ultimoEnviado = data;
-                    }
                     if (data == null) {
                         emitter.complete();
                         break;
+                    }
+                    if (!Objects.equals(data, ultimoEnviado)) {
+                        emitter.send(SseEmitter.event().name("viaje").data(data));
+                        ultimoEnviado = data;
                     }
                     Thread.sleep(POLL_INTERVAL_MS);
                 }

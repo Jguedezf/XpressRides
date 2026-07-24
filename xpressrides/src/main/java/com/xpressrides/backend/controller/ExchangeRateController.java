@@ -90,7 +90,7 @@ public class ExchangeRateController {
     // GET /api/tasa-bcv/convertir?monto=&moneda=
     @GetMapping("/tasa-bcv/convertir")
     public ResponseEntity<Map<String, Object>> convertCurrency(
-            @RequestParam double monto,
+            @RequestParam java.math.BigDecimal monto,
             @RequestParam String moneda) {
         
         Optional<ExchangeRate> rateOpt = exchangeRateService.getCurrentRate();
@@ -101,8 +101,8 @@ public class ExchangeRateController {
             return ResponseEntity.status(404).body(response);
         }
         
-        double tasa = rateOpt.get().getRateVes().doubleValue();
-        double ves = monto * tasa;
+        java.math.BigDecimal tasa = rateOpt.get().getRateVes();
+        java.math.BigDecimal ves = monto.multiply(tasa).setScale(2, java.math.RoundingMode.HALF_UP);
         
         response.put("success", true);
         response.put("ves", ves);

@@ -19,6 +19,7 @@ import com.xpressrides.backend.repository.VehicleRepository;
 import com.xpressrides.backend.exception.ResourceNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -145,6 +146,7 @@ public class AdminService {
     }
 
     // Registra evaluación psicológica y revisión vehicular para un chofer en un solo paso
+    @Transactional
     public void evaluarChofer(Integer driverId, BigDecimal notaPsicologica, BigDecimal notaVehicular) {
         Driver driver = driverRepository.findById(driverId)
             .orElseThrow(() -> new ResourceNotFoundException("Chofer no encontrado"));

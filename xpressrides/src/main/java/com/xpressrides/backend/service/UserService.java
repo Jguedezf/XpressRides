@@ -43,7 +43,7 @@ public class UserService {
 
         boolean isAdmin = authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_administrador"));
-        boolean isSelf = authentication.getName().equals(user.getUsername());
+        boolean isSelf = authentication.getName().equalsIgnoreCase(user.getUsername());
 
         if (!isAdmin && !isSelf) {
             throw new AccessDeniedException("No autorizado para modificar este perfil");

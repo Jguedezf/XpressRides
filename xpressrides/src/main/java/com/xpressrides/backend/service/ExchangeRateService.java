@@ -63,14 +63,21 @@ public class ExchangeRateService {
         exchangeRate.setRegisteredBy(user.getId());
         exchangeRate.setCreatedAt(java.time.LocalDateTime.now());
 
-        Optional<ExchangeRate> existingOpt = exchangeRateRepository.findByEffectiveDate(exchangeRate.getEffectiveDate());
-        if (existingOpt.isPresent()) {
-            ExchangeRate existing = existingOpt.get();
-            existing.setRateVes(exchangeRate.getRateVes());
-            existing.setRegisteredBy(user.getId());
-            return exchangeRateRepository.save(existing);
+        try {
+            Optional<ExchangeRate> existingOpt = exchangeRateRepository.findByEffectiveDate(exchangeRate.getEffectiveDate());
+            if (existingOpt.isPresent()) {
+                ExchangeRate existing = existingOpt.get();
+                existing.setRateVes(exchangeRate.getRateVes());
+                existing.setRegisteredBy(user.getId());
+                return exchangeRateRepository.save(existing);
+            }
+            return exchangeRateRepository.save(exchangeRate);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            // Race condition occurred, another thread already saved it for today.
+            // Fetch the newly created record instead of failing.
+            return exchangeRateRepository.findByEffectiveDate(exchangeRate.getEffectiveDate())
+                    .orElseThrow(() -> new RuntimeException("Error resolviendo colisión de tasa BCV."));
         }
-        return exchangeRateRepository.save(exchangeRate);
     }
 
     private javax.net.ssl.SSLSocketFactory buildTrustAllSslSocketFactory() {

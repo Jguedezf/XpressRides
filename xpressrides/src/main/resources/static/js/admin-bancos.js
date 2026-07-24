@@ -4,6 +4,13 @@ let todosLosBancos = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (!requireAuth()) return;
+    
+    document.getElementById('banco-nombre').addEventListener('change', (e) => {
+        const select = e.target;
+        const code = select.options[select.selectedIndex].getAttribute('data-code');
+        document.getElementById('banco-codigo').value = code || '';
+    });
+
     await cargarBancos();
 });
 
@@ -70,17 +77,60 @@ function renderBancos() {
 
         tbody.appendChild(tr);
     });
+
+    actualizarOpcionesBancos();
+}
+
+function actualizarOpcionesBancos() {
+    const select = document.getElementById('banco-nombre');
+    const currentEditId = document.getElementById('banco-id').value;
+
+    Array.from(select.options).forEach(opt => opt.disabled = false);
+
+    todosLosBancos.forEach(b => {
+        if (currentEditId === String(b.id)) return; // No deshabilitar el banco que se está editando
+
+        const optionByCodeAttr = select.querySelector(`option[data-code="${b.bcvCode}"]`);
+        if (optionByCodeAttr) optionByCodeAttr.disabled = true;
+
+        const optionByValueOrName = Array.from(select.options).find(opt => 
+            opt.value === b.name || 
+            opt.value === b.bcvCode || 
+            opt.textContent === b.name
+        );
+        if (optionByValueOrName) optionByValueOrName.disabled = true;
+    });
 }
 
 function cargarParaEdicion(banco) {
     document.getElementById('form-title').textContent = `Editar Banco — ${banco.name}`;
     document.getElementById('banco-id').value = banco.id;
-    document.getElementById('banco-nombre').value = banco.name;
+    
+    // Si el nombre antiguo no está en el select, lo agregamos temporalmente para que se vea
+    const select = document.getElementById('banco-nombre');
+    const optionExists = Array.from(select.options).some(opt => opt.value === banco.name || opt.getAttribute('data-code') === banco.bcvCode);
+    
+    if (!optionExists) {
+        const newOpt = document.createElement('option');
+        newOpt.value = banco.name;
+        newOpt.setAttribute('data-code', banco.bcvCode);
+        newOpt.textContent = banco.name;
+        select.appendChild(newOpt);
+    }
+
+    // Seleccionamos por código preferiblemente
+    const optionToSelect = select.querySelector(`option[data-code="${banco.bcvCode}"]`) || Array.from(select.options).find(opt => opt.value === banco.name);
+    if (optionToSelect) {
+        select.value = optionToSelect.value;
+    }
+
     document.getElementById('banco-codigo').value = banco.bcvCode;
     document.getElementById('banco-usd').checked = !!banco.acceptsUsd;
     document.getElementById('banco-ves').checked = !!banco.acceptsVes;
     document.getElementById('btn-banco-submit').textContent = 'Guardar Cambios';
     document.getElementById('btn-banco-cancelar').style.display = 'inline-block';
+    
+    actualizarOpcionesBancos();
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -91,6 +141,8 @@ function resetFormulario() {
     document.getElementById('banco-ves').checked = true;
     document.getElementById('btn-banco-submit').textContent = 'Guardar Banco';
     document.getElementById('btn-banco-cancelar').style.display = 'none';
+    
+    actualizarOpcionesBancos();
 }
 
 async function guardarBanco() {

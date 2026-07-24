@@ -141,9 +141,8 @@ public class PaymentService {
         // 4. Guardar el pago
         DriverPayment savedPayment = driverPaymentRepository.save(payment);
 
-        // 5. Vaciar el saldo del chofer
-        driver.setBalance(BigDecimal.ZERO);
-        driverRepository.save(driver);
+        // 5. Descontar el saldo pagado atómicamente
+        driverRepository.subtractBalance(driver.getId(), amountToPayUsd);
 
         // 6. Marcar todos los traslados pendientes como pagados
         tripRepository.markTripsAsPaidForDriver(driver.getId());

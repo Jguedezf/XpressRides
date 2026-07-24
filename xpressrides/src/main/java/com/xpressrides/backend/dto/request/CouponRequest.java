@@ -29,8 +29,8 @@ public class CouponRequest {
 
     @NotBlank(message = "El tipo de cupón es obligatorio")
     @Pattern(
-        regexp = "bienvenida|estudiante|promocional",
-        message = "Tipo inválido. Valores permitidos: bienvenida, estudiante, promocional"
+        regexp = "bienvenida|estudiante|promocional|referido",
+        message = "Tipo inválido. Valores permitidos: bienvenida, estudiante, promocional, referido"
     )
     private String type;
 

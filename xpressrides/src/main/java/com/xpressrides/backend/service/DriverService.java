@@ -243,6 +243,7 @@ public class DriverService {
 
         Map<String, Object> profile = new HashMap<>();
         profile.put("id", driver.getId());
+        profile.put("usuarioId", user.getId()); // ID del usuario asociado al chofer
         profile.put("nombre", user.getName());
         profile.put("apellido", user.getLastName());
         profile.put("cedula", user.getCi());
@@ -402,8 +403,12 @@ public class DriverService {
             throw new BadRequestException("No tienes saldo pendiente para retirar.");
         }
         
-        List<User> admins = userRepository.findByActiveTrueAndRole("personal_admin");
-        
+        List<User> admins = userRepository.findByActiveTrueAndRoleIn(List.of("personal_admin", "administrador"));
+
+        if (admins.isEmpty()) {
+            throw new BadRequestException("No hay administradores disponibles para procesar tu retiro en este momento. Intenta más tarde.");
+        }
+
         String mensaje = "El chofer " + driver.getUsername().getName() + " " + driver.getUsername().getLastName() 
                 + " ha solicitado el pago de su deuda de $" + driver.getBalance() + ".";
                 

@@ -15,7 +15,7 @@ async function cargarIncidentes() {
         const incidentes = response.data || [];
 
         if (incidentes.length === 0) {
-            container.innerHTML = '<p class="text-center text-mutted">No hay incidentes reportados.</p>';
+            container.innerHTML = '<p class="text-center text-muted">No hay incidentes reportados.</p>';
             return;
         }
 
@@ -23,19 +23,41 @@ async function cargarIncidentes() {
         incidentes.forEach(inc => {
             const dateStr = new Date(inc.createdAt).toLocaleString();
             const reportante = inc.reportedBy ? `${inc.reportedBy.name || ''} ${inc.reportedBy.lastName || ''}`.trim() : 'Desconocido';
+            const phone = inc.reportedBy && inc.reportedBy.phone ? inc.reportedBy.phone : 'N/A';
+            const email = inc.reportedBy && inc.reportedBy.email ? inc.reportedBy.email : 'N/A';
+
+            let tripHtml = '';
+            if (inc.trip) {
+                const origen = inc.trip.originAddress || 'N/A';
+                const destino = inc.trip.destinationAddress || 'N/A';
+                const costo = inc.trip.customerCostUsd != null ? `$${inc.trip.customerCostUsd}` : 'N/A';
+                tripHtml = `
+                    <div style="margin-top: 8px; padding: 10px; background: #f0f0f0; border-radius: 6px; font-size: 13px;">
+                        <strong style="color: var(--color-primary);">Detalles del Viaje (#${inc.trip.id})</strong><br>
+                        <span style="color: var(--color-text-muted);">Origen:</span> ${origen}<br>
+                        <span style="color: var(--color-text-muted);">Destino:</span> ${destino}<br>
+                        <span style="color: var(--color-text-muted);">Costo:</span> ${costo}
+                    </div>
+                `;
+            }
 
             const card = document.createElement('div');
             card.className = 'incident-card';
             card.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
-                    <div>
-                        <p style="margin:0; font-size:14px; font-weight:600; color: var(--color-text-main);">${inc.message}</p>
-                        <p style="margin:4px 0 0 0; font-size:12px; color: var(--color-text-muted);">Reportado por ${reportante} — ${dateStr}</p>
-                        ${inc.status === 'cerrado' && inc.resolutionNotes ? `<p style="margin:6px 0 0 0; font-size:12px; color: var(--color-text-muted);"><em>Resolución: ${inc.resolutionNotes}</em></p>` : ''}
+                    <div style="flex:1;">
+                        <p style="margin:0; font-size:15px; font-weight:700; color: var(--color-error);">${inc.message}</p>
+                        <p style="margin:6px 0 0 0; font-size:13px; color: var(--color-text-main);">
+                            <strong>Reportado por:</strong> ${reportante}<br>
+                            <strong>Contacto:</strong> ${phone} | ${email}<br>
+                            <strong>Fecha:</strong> ${dateStr}
+                        </p>
+                        ${tripHtml}
+                        ${inc.status === 'cerrado' && inc.resolutionNotes ? `<div style="margin-top:8px; padding:8px; background:#e8f5e9; border-left:3px solid #4caf50; font-size:13px;"><strong>Resolución:</strong> ${inc.resolutionNotes}</div>` : ''}
                     </div>
-                    <span class="incident-badge badge-${inc.status}">${ESTADO_INCIDENTE_TEXTO[inc.status] || inc.status}</span>
+                    <span class="incident-badge badge-${inc.status}" style="font-size: 12px;">${ESTADO_INCIDENTE_TEXTO[inc.status] || inc.status}</span>
                 </div>
-                <div id="incident-actions-${inc.id}"></div>
+                <div id="incident-actions-${inc.id}" style="margin-top:12px; display:flex; gap:8px;"></div>
             `;
             const actionsDiv = card.querySelector(`#incident-actions-${inc.id}`);
 
@@ -94,7 +116,7 @@ async function cargarNotificaciones() {
         const notificaciones = await fetchAPI('/notificaciones');
         
         if (!notificaciones || notificaciones.length === 0) {
-            container.innerHTML = '<p class="text-center text-mutted">No tienes notificaciones por ahora.</p>';
+            container.innerHTML = '<p class="text-center text-muted">No tienes notificaciones por ahora.</p>';
             return;
         }
 
@@ -111,7 +133,7 @@ async function cargarNotificaciones() {
                     <p style="margin: 0; font-size: 14px; font-weight: ${isUnread ? '600' : '400'}; color: var(--color-text-main);">
                         ${notif.message}
                     </p>
-                    <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--color-text-mutted);">
+                    <p style="margin: 4px 0 0 0; font-size: 12px; color: var(--color-text-muted);">
                         ${dateStr}
                     </p>
                 </div>
