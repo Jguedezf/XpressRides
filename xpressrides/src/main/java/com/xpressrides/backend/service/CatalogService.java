@@ -21,6 +21,8 @@ import com.xpressrides.backend.model.Bank;
 import com.xpressrides.backend.model.Zone;
 import com.xpressrides.backend.repository.BankRepository;
 import com.xpressrides.backend.repository.ZoneRepository;
+import com.xpressrides.backend.repository.BankCatalogRepository;
+import com.xpressrides.backend.model.BankCatalog;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
@@ -31,11 +33,13 @@ public class CatalogService {
 
     private final ZoneRepository zoneRepository;
     private final BankRepository bankRepository;
+    private final BankCatalogRepository bankCatalogRepository;
 
     // Inyección de dependencias por constructor
-    public CatalogService(ZoneRepository zoneRepository, BankRepository bankRepository) {
+    public CatalogService(ZoneRepository zoneRepository, BankRepository bankRepository, BankCatalogRepository bankCatalogRepository) {
         this.zoneRepository = zoneRepository;
         this.bankRepository = bankRepository;
+        this.bankCatalogRepository = bankCatalogRepository;
     }
 
     // Retorna todas las zonas activas para los dropdowns del frontend
@@ -56,6 +60,11 @@ public class CatalogService {
     // Retorna todos los bancos sin filtro — para el panel administrativo
     public List<Bank> listarTodosLosBancos() {
         return bankRepository.findAll();
+    }
+
+    // Retorna el catálogo completo de bancos de Venezuela
+    public List<BankCatalog> listarCatalogoBancos() {
+        return bankCatalogRepository.findAllByOrderByNameAsc();
     }
 
     // Crea un banco nuevo — personal_admin ingresa datos de tablas base (enunciado)

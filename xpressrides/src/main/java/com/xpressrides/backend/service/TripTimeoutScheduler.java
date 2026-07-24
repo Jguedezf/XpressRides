@@ -19,10 +19,12 @@ public class TripTimeoutScheduler {
 
     private final TripRepository tripRepository;
     private final TripRejectionService tripRejectionService;
+    private final TripService tripService;
 
-    public TripTimeoutScheduler(TripRepository tripRepository, TripRejectionService tripRejectionService) {
+    public TripTimeoutScheduler(TripRepository tripRepository, TripRejectionService tripRejectionService, TripService tripService) {
         this.tripRepository = tripRepository;
         this.tripRejectionService = tripRejectionService;
+        this.tripService = tripService;
     }
 
     @Scheduled(initialDelay = 5000, fixedDelay = 3000)
@@ -32,6 +34,21 @@ public class TripTimeoutScheduler {
 
         for (Trip trip : expirados) {
             tripRejectionService.expireTrip(trip.getId());
+        }
+    }
+
+    @Scheduled(initialDelay = 5000, fixedDelay = 5000)
+    public void checkBuscandoTrips() {
+        List<Trip> buscando = tripRepository.findByStatus("buscando");
+        LocalDateTime threshold = LocalDateTime.now().minusMinutes(3); // 3 minutes timeout
+
+        for (Trip trip : buscando) {
+            if (trip.getRequestDate() != null && trip.getRequestDate().isBefore(threshold)) {
+                // Time out!
+                tripRejectionService.cancelBuscandoTrip(trip.getId());
+            } else {
+                tripService.searchDriverForTrip(trip.getId());
+            }
         }
     }
 }

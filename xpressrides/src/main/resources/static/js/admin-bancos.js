@@ -11,8 +11,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('banco-codigo').value = code || '';
     });
 
+    await cargarCatalogoBancos();
     await cargarBancos();
 });
+
+async function cargarCatalogoBancos() {
+    const select = document.getElementById('banco-nombre');
+    try {
+        const response = await fetchAPI('/bancos/catalogo');
+        const catalogo = response.data || [];
+        
+        catalogo.forEach(banco => {
+            const option = document.createElement('option');
+            option.value = banco.name;
+            option.setAttribute('data-code', banco.bcvCode);
+            option.textContent = banco.name;
+            select.appendChild(option);
+        });
+    } catch (error) {
+        console.error("Error al cargar catálogo de bancos:", error);
+    }
+}
 
 document.getElementById('banco-form').addEventListener('submit', async (e) => {
     e.preventDefault();

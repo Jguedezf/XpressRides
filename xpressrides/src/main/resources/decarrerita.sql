@@ -15,8 +15,17 @@ USE decarrerita;
 
 -- ================================================================
 -- BLOQUE 1: CATÁLOGOS BASE
--- ================================================================
+-- ----------------------------------------------------------------
+-- Catálogo de Bancos Venezolanos (Para selects y formularios)
+-- ----------------------------------------------------------------
+CREATE TABLE catalogo_banco (
+  codigo_bcv VARCHAR(4) PRIMARY KEY,
+  nombre VARCHAR(100) NOT NULL
+);
 
+-- ----------------------------------------------------------------
+-- Tabla Banco (Bancos activos en el sistema para pagos)
+-- ----------------------------------------------------------------
 CREATE TABLE banco (
   id          INT           AUTO_INCREMENT PRIMARY KEY,
   nombre      VARCHAR(100)  NOT NULL,
@@ -475,6 +484,8 @@ sp_solicitar_traslado: BEGIN
   DECLARE v_desc_estudiante DECIMAL(8,2)  DEFAULT 0.00;
   DECLARE v_tarifa_original DECIMAL(10,2) DEFAULT 0.00;
   DECLARE v_tipo_cupon      VARCHAR(20);
+  DECLARE v_estado VARCHAR(20) DEFAULT 'solicitado';
+  DECLARE v_eta_minutos INT DEFAULT NULL;
 
   -- Validar pasajeros
   IF p_nro_pasajeros < 1 OR p_nro_pasajeros > 3 THEN
@@ -631,10 +642,13 @@ sp_solicitar_traslado: BEGIN
   END WHILE;
 
   IF v_id_chofer IS NULL THEN
-    SET p_mensaje = CONCAT(IFNULL(p_mensaje,''),
-      'ERROR: No hay choferes disponibles en este momento.');
-    SET p_id_traslado = NULL;
-    LEAVE sp_solicitar_traslado;
+    SET v_estado = 'buscando';
+  ELSE
+    SET v_eta_minutos = CEILING(fn_distancia_km(
+      (SELECT latitud FROM zona WHERE id = v_id_zona_chofer LIMIT 1),
+      (SELECT longitud FROM zona WHERE id = v_id_zona_chofer LIMIT 1),
+      v_lat1, v_lon1
+    ) / 30 * 60);
   END IF;
 
   -- Registrar traslado
@@ -652,19 +666,16 @@ sp_solicitar_traslado: BEGIN
     p_nro_pasajeros, v_dist_km, v_tarifa,
     v_recargo, v_factor, v_desc_estudiante + IFNULL(v_descuento,0),
     v_costo_cli, v_monto_ch, v_monto_emp,
-    v_costo_ves, 'solicitado',
-    CEILING(fn_distancia_km(
-      (SELECT latitud FROM zona WHERE id = v_id_zona_chofer LIMIT 1),
-      (SELECT longitud FROM zona WHERE id = v_id_zona_chofer LIMIT 1),
-      v_lat1, v_lon1
-    ) / 30 * 60),
-    NOW()
+    v_costo_ves, v_estado,
+    v_eta_minutos, NOW()
   );
   SET p_id_traslado = LAST_INSERT_ID();
 
   -- Actualizar saldos y disponibilidad
   UPDATE cliente SET saldo_usd = saldo_usd - v_costo_cli WHERE id = p_id_cliente;
-  UPDATE chofer  SET disponible = 0 WHERE id = v_id_chofer;
+  IF v_id_chofer IS NOT NULL THEN
+    UPDATE chofer  SET disponible = 0 WHERE id = v_id_chofer;
+  END IF;
 
   -- Marcar cupón y primer viaje
   IF p_id_cupon_cliente IS NOT NULL THEN
@@ -675,12 +686,17 @@ sp_solicitar_traslado: BEGIN
     UPDATE cliente SET primer_viaje_usado = 1 WHERE id = p_id_cliente;
   END IF;
 
-  SET p_mensaje = CONCAT(IFNULL(p_mensaje,''),
-    'OK: Traslado #', p_id_traslado,
-    ' | Dist: ', v_dist_km, ' km',
-    ' | Pasajeros: ', p_nro_pasajeros,
-    ' | Costo: $', v_costo_cli, ' USD',
-    ' | Bs. ', v_costo_ves);
+  IF v_estado = 'buscando' THEN
+    SET p_mensaje = CONCAT(IFNULL(p_mensaje,''),
+      'OK: Traslado #', p_id_traslado, ' (Buscando chofer)');
+  ELSE
+    SET p_mensaje = CONCAT(IFNULL(p_mensaje,''),
+      'OK: Traslado #', p_id_traslado,
+      ' | Dist: ', v_dist_km, ' km',
+      ' | Pasajeros: ', p_nro_pasajeros,
+      ' | Costo: $', v_costo_cli, ' USD',
+      ' | Bs. ', v_costo_ves);
+  END IF;
 END sp_solicitar_traslado$$
 
 DELIMITER ;
@@ -1042,18 +1058,33 @@ DELIMITER ;
 -- BLOQUE 9: DATOS INICIALES
 -- ================================================================
 
+  ('BFC', '0151'),
+  ('Banco Plaza', '0138'),
+  ('Banco Caroní', '0128'),
+  ('DELSUR', '0157'),
+  ('Banco Activo', '0171'),
+  ('Sofitasa', '0137'),
+  ('100% Banco', '0156'),
+  ('BVC', '0104'),
+  ('Bancrecer', '0168'),
+  ('BDV', '0102'),
+  ('BDT', '0175'),
+  ('Banco del Tesoro', '0163'),
+  ('BAV', '0166'),
+  ('BANFANB', '0177');
+
 INSERT INTO banco (nombre, codigo_bcv, acepta_usd, acepta_ves) VALUES
-  ('Banco de Venezuela',            'BDV', 1, 1),
-  ('Banesco',                       'BAN', 0, 1),
-  ('Mercantil',                     'MER', 1, 1),
-  ('BBVA Provincial',               'BBV', 1, 1),
-  ('Bicentenario',                  'BIC', 0, 1),
-  ('Banco del Tesoro',              'BTU', 0, 1),
-  ('Banco Exterior',                'BEX', 0, 1),
-  ('Bancaribe',                     'BCB', 1, 1),
-  ('BNC (Banco Nacional de Credito)', 'BNC', 1, 1),
-  ('Banco Plaza',                   'BPZ', 1, 1),
-  ('BFC (Banco Fondo Comun)',       'BFC', 1, 1);
+  ('Banco de Venezuela',            '0102', 1, 1),
+  ('Banesco',                       '0134', 0, 1),
+  ('Mercantil',                     '0105', 1, 1),
+  ('BBVA Provincial',               '0108', 1, 1),
+  ('Bicentenario',                  '0175', 0, 1),
+  ('Banco del Tesoro',              '0163', 0, 1),
+  ('Banco Exterior',                '0115', 0, 1),
+  ('Bancaribe',                     '0114', 1, 1),
+  ('BNC (Banco Nacional de Credito)', '0191', 1, 1),
+  ('Banco Plaza',                   '0138', 1, 1),
+  ('BFC (Banco Fondo Comun)',       '0151', 1, 1);
 
 INSERT INTO zona (nombre, parroquia, latitud, longitud) VALUES
   ('Castillito',           'Cachamay',      8.3153000, -62.7066000),
@@ -1120,6 +1151,86 @@ INSERT INTO cupon (codigo, tipo, descuento_usd, distancia_max_km) VALUES
   ('BIENVENIDO', 'bienvenida',  0.00, 15),
   ('ESTUDIANTE', 'estudiante',  0.50, NULL),
   ('PROMO10',    'promocional', 1.00, 20);
+
+-- ================================================================
+-- PROCEDIMIENTO BÚSQUEDA DE CHOFER
+-- ================================================================
+DELIMITER $$
+CREATE PROCEDURE sp_buscar_chofer_viaje(
+  IN p_id_traslado INT,
+  OUT p_id_chofer INT
+)
+sp_buscar_chofer_viaje: BEGIN
+  DECLARE RADIO_1 DECIMAL(5,1) DEFAULT 5.0;
+  DECLARE RADIO_2 DECIMAL(5,1) DEFAULT 10.0;
+  DECLARE RADIO_3 DECIMAL(5,1) DEFAULT 15.0;
+  DECLARE v_radio DECIMAL(5,1) DEFAULT RADIO_1;
+
+  DECLARE v_lat1 DECIMAL(10,7);
+  DECLARE v_lon1 DECIMAL(10,7);
+  DECLARE v_id_zona_chofer INT;
+  DECLARE v_id_vehiculo INT;
+  DECLARE v_eta_minutos INT;
+
+  SET p_id_chofer = NULL;
+
+  -- Obtener origen del viaje
+  SELECT z.latitud, z.longitud
+    INTO v_lat1, v_lon1
+    FROM traslado t
+    JOIN zona z ON z.id = t.id_zona_origen
+   WHERE t.id = p_id_traslado AND t.estado = 'buscando';
+
+  IF v_lat1 IS NULL THEN
+    LEAVE sp_buscar_chofer_viaje;
+  END IF;
+
+  WHILE p_id_chofer IS NULL AND v_radio <= RADIO_3 DO
+    SELECT c.id, v.id, c.id_zona_actual
+      INTO p_id_chofer, v_id_vehiculo, v_id_zona_chofer
+      FROM chofer c
+      JOIN zona  zo ON zo.id = c.id_zona_actual
+      JOIN vehiculo v ON v.id_chofer = c.id AND v.activo = 1
+      JOIN (SELECT id_chofer FROM evaluacion_psicologica
+             WHERE aprobado = 1
+               AND fecha_eval >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
+             GROUP BY id_chofer) ep ON ep.id_chofer = c.id
+      JOIN (SELECT id_vehiculo FROM revision_vehiculo
+             WHERE apto = 1
+               AND fecha_revision >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR)
+             GROUP BY id_vehiculo) rv ON rv.id_vehiculo = v.id
+     WHERE c.habilitado = 1
+       AND c.disponible = 1
+       AND c.id_zona_actual IS NOT NULL
+       AND fn_distancia_km(zo.latitud, zo.longitud, v_lat1, v_lon1) <= v_radio
+     ORDER BY RAND()
+     LIMIT 1;
+
+    IF p_id_chofer IS NULL THEN
+      SET v_radio = v_radio + 5.0;
+    END IF;
+  END WHILE;
+
+  IF p_id_chofer IS NOT NULL THEN
+    SET v_eta_minutos = CEILING(fn_distancia_km(
+      (SELECT latitud FROM zona WHERE id = v_id_zona_chofer LIMIT 1),
+      (SELECT longitud FROM zona WHERE id = v_id_zona_chofer LIMIT 1),
+      v_lat1, v_lon1
+    ) / 30 * 60);
+
+    UPDATE traslado 
+       SET id_chofer = p_id_chofer,
+           id_vehiculo = v_id_vehiculo,
+           estado = 'solicitado',
+           eta_minutos = v_eta_minutos,
+           fecha_asignacion_actual = NOW()
+     WHERE id = p_id_traslado;
+
+    UPDATE chofer SET disponible = 0 WHERE id = p_id_chofer;
+  END IF;
+
+END sp_buscar_chofer_viaje$$
+DELIMITER ;
 
 -- ================================================================
 -- PRUEBAS RÁPIDAS (descomentar para verificar)

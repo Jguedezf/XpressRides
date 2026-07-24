@@ -122,6 +122,7 @@ public class TripRejectionService {
         trip.setStatus("cancelado");
         trip.setCancelledBy("sistema");
         trip.setCancellationReason("No hay choferes disponibles en este momento");
+        trip.setDriver(null);
         tripRepository.save(trip);
 
         // Refund the customer
@@ -144,5 +145,40 @@ public class TripRejectionService {
         result.put("estado", "cancelado");
         result.put("motivo", "No hay choferes disponibles");
         return result;
+    }
+
+    @Transactional
+    public void cancelBuscandoTrip(Integer tripId) {
+        Trip trip = tripRepository.findById(tripId).orElse(null);
+        if (trip == null || !"buscando".equals(trip.getStatus())) return;
+
+        // Liberar al chofer si por alguna razón estaba asociado (no debería,
+        // pero un viaje previo podría haber dejado datos inconsistentes)
+        Driver driver = trip.getDriver();
+        if (driver != null) {
+            driver.setAvailable(true);
+            driverRepository.save(driver);
+        }
+
+        trip.setStatus("cancelado");
+        trip.setCancelledBy("sistema");
+        trip.setCancellationReason("No hay choferes disponibles en este momento");
+        trip.setDriver(null);
+        tripRepository.save(trip);
+
+        if (trip.getCustomerCostUsd() != null) {
+            com.xpressrides.backend.model.Customer customer = trip.getCustomer();
+            customer.setBalance(customer.getBalance().add(trip.getCustomerCostUsd()));
+            customerRepository.save(customer);
+        }
+
+        Notification notif = new Notification();
+        notif.setUser(trip.getCustomer().getUserId());
+        notif.setTrip(trip);
+        notif.setType("sin_chofer");
+        notif.setMessage("Lo sentimos, no pudimos encontrar choferes disponibles en este momento. Hemos cancelado tu viaje.");
+        notif.setRead(false);
+        notif.setDateTime(LocalDateTime.now());
+        notificationRepository.save(notif);
     }
 }

@@ -282,7 +282,7 @@ public class CustomerService {
             .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
 
         List<String> activeStatuses = List.of(
-            "solicitado", "aceptado", "en_camino", "chofer_llego", "en_progreso"
+            "buscando", "solicitado", "aceptado", "en_camino", "chofer_llego", "en_progreso"
         );
         Optional<Trip> tripOpt = tripRepository
             .findFirstByCustomer_IdAndStatusInOrderByRequestDateDesc(
@@ -314,6 +314,10 @@ public class CustomerService {
         data.put("estado", trip.getStatus());
         data.put("origen", trip.getOriginZone() != null ? trip.getOriginZone().getName() : trip.getOriginAddress());
         data.put("destino", trip.getDestinationZone() != null ? trip.getDestinationZone().getName() : trip.getDestinationAddress());
+        data.put("origenLat", trip.getOriginLat());
+        data.put("origenLng", trip.getOriginLng());
+        data.put("destinoLat", trip.getDestinationLat());
+        data.put("destinoLng", trip.getDestinationLng());
         data.put("costoEstimadoUsd", trip.getCustomerCostUsd());
         data.put("costoEstimadoVes", trip.getCustomerCostVes());
         data.put("chofer", choferData);

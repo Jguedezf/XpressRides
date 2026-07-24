@@ -6,6 +6,7 @@ let originMarker = null;
 let destinationMarker = null;
 let directionsService = null;
 let directionsRenderer = null;
+let fallbackPolyline = null;
 let originPlace = null;
 let destinationPlace = null;
 let origenAutocomplete = null;
@@ -214,6 +215,18 @@ const COLOR_DESTINO_OSCURO = '#C00000'; // --color-error
 document.addEventListener('DOMContentLoaded', async () => {
     if (!requireAuth()) return;
     configurarCalculadora();
+
+    // Mostrar notificación si se redirigió desde un viaje completado o cancelado
+    const urlParams = new URLSearchParams(window.location.search);
+    const viajeStatus = urlParams.get('viaje');
+    if (viajeStatus === 'completado') {
+        mostrarMensajeTemporal('✅ ¡Viaje completado con éxito! Gracias por usar XpressRides.', 'success');
+        // Limpiar URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (viajeStatus === 'cancelado') {
+        mostrarMensajeTemporal('❌ El viaje fue cancelado.', 'error');
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
 
     try {
         await cargarGoogleMaps();
@@ -444,6 +457,7 @@ function configurarFormularioViaje() {
 
 function actualizarMarcadoresYRuta() {
     if (directionsRenderer) directionsRenderer.set('directions', null);
+    if (fallbackPolyline) fallbackPolyline.setMap(null);
 
     if (originPlace && originPlace.geometry) {
         if (!originMarker) {
@@ -521,6 +535,17 @@ function actualizarMarcadoresYRuta() {
         }, (result, status) => {
             if (status === google.maps.DirectionsStatus.OK) {
                 directionsRenderer.setDirections(result);
+            } else {
+                console.warn('Directions request failed due to ' + status + '. Drawing straight line instead.');
+                if (fallbackPolyline) fallbackPolyline.setMap(null);
+                fallbackPolyline = new google.maps.Polyline({
+                    path: [originPlace.geometry.location, destinationPlace.geometry.location],
+                    geodesic: true,
+                    strokeColor: '#1F4E79',
+                    strokeOpacity: 0.7,
+                    strokeWeight: 4,
+                    map: mapaGoogle
+                });
             }
         });
     }

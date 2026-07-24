@@ -5,22 +5,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     configurarBotonesEstado();
     configurarBotonEmergencia();
     configurarModoUbicacion();
-    cargarViajeActivo();
-    // Seguimiento en tiempo real por SSE — reemplaza el polling que había aquí
-    // antes (setInterval cada 8s). El EventSource nativo reconecta solo si la
-    // conexión se cae.
-    iniciarStreamViajeActivo();
 
-    // Modo de ubicación por defecto: Manual (ver configurarModoUbicacion).
-    // El chofer activa el GPS automático con el switch si lo prefiere.
-
-    // Cargar Google Maps API dinámicamente desde el backend
+    // Cargar Google Maps API y el mapa ANTES de cargar el viaje
     try {
         await Promise.all([cargarGoogleMaps(), cargarImagenAutoBase()]);
         inicializarMapaChofer();
     } catch (error) {
         console.error("No se pudo cargar el mapa:", error);
     }
+    
+    if (modoUbicacion === 'automatico') iniciarTrackingAutomatico();
+
+    // AHORA que el mapa existe, cargar viaje y SSE
+    cargarViajeActivo();
+    iniciarStreamViajeActivo();
 });
 
 let mapaChofer = null;
@@ -36,23 +34,31 @@ let directionsService = null;
 let directionsRenderer = null;
 let originMarker = null;
 let destinationMarker = null;
+let fallbackPolyline = null;
 let idTrasladoConViewportAjustado = null; // idTraslado ya ajustado una vez en dibujarRutaViaje()
 const RESPONSE_TIMEOUT_SECONDS = 30; // debe coincidir con TripTimeoutScheduler (backend)
 
+function getDriverLocationKey() {
+    const usuario = getUsuario();
+    const id = usuario ? (usuario.username || usuario.id || 'default') : 'default';
+    return 'driverLocation_' + id;
+}
+
 function setUltimaPosicion(pos) {
     ultimaPosicion = pos;
-    localStorage.setItem('driverLocation', JSON.stringify({ lat: pos.lat, lng: pos.lng, time: Date.now() }));
+    localStorage.setItem(getDriverLocationKey(), JSON.stringify({ lat: pos.lat, lng: pos.lng, time: Date.now() }));
 }
 
 function getUltimaPosicionGuardada() {
-    const dataStr = localStorage.getItem('driverLocation');
+    const dataStr = localStorage.getItem(getDriverLocationKey());
     if (dataStr) {
-        const data = JSON.parse(dataStr);
-        if (Date.now() - data.time < 1800000) { // 30 minutes
-            return { lat: data.lat, lng: data.lng };
-        } else {
-            localStorage.removeItem('driverLocation');
-        }
+        try {
+            const data = JSON.parse(dataStr);
+            // Considerar válida solo si tiene menos de 2 horas
+            if (Date.now() - data.time < 2 * 60 * 60 * 1000) {
+                return { lat: data.lat, lng: data.lng };
+            }
+        } catch (e) {}
     }
     return null;
 }
@@ -337,6 +343,11 @@ function ocultarPaneles() {
     document.getElementById('state-buttons').classList.add('hidden');
     viajeActual = null;
     detenerCuentaRegresiva();
+    
+    if (originMarker) { originMarker.setMap(null); originMarker = null; }
+    if (destinationMarker) { destinationMarker.setMap(null); destinationMarker = null; }
+    if (directionsRenderer) { directionsRenderer.setMap(null); directionsRenderer = null; }
+    if (fallbackPolyline) { fallbackPolyline.setMap(null); fallbackPolyline = null; }
 }
 
 function renderizarEstado(viaje) {
@@ -424,9 +435,10 @@ function renderizarEstado(viaje) {
         case 'completado':
         case 'cancelado':
             viajeActual = null;
-            if (directionsRenderer) directionsRenderer.setMap(null);
             if (originMarker) originMarker.setMap(null);
             if (destinationMarker) destinationMarker.setMap(null);
+            if (directionsRenderer) directionsRenderer.setMap(null);
+            if (fallbackPolyline) fallbackPolyline.setMap(null);
             break;
     }
 }
@@ -486,6 +498,23 @@ function dibujarRutaViaje() {
         if (status === 'OK') {
             directionsRenderer.setDirections(res);
             directionsRenderer.setMap(mapaChofer);
+        } else {
+            console.warn('Directions request failed due to ' + status + '. Drawing straight line instead.');
+            if (fallbackPolyline) fallbackPolyline.setMap(null);
+            fallbackPolyline = new google.maps.Polyline({
+                path: [orgLatLng, dstLatLng],
+                geodesic: true,
+                strokeColor: '#2E7D32',
+                strokeOpacity: 0.7,
+                strokeWeight: 4,
+                map: mapaChofer
+            });
+            if (esPrimerDibujo) {
+                const bounds = new google.maps.LatLngBounds();
+                bounds.extend(orgLatLng);
+                bounds.extend(dstLatLng);
+                mapaChofer.fitBounds(bounds, { top: 60, bottom: 60, left: 60, right: 60 });
+            }
         }
     });
 }

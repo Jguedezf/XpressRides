@@ -403,7 +403,10 @@ public class DriverService {
             throw new BadRequestException("No tienes saldo pendiente para retirar.");
         }
         
-        List<User> admins = userRepository.findByActiveTrueAndRoleIn(List.of("personal_admin", "administrador"));
+        List<User> allAdmins = userRepository.findByRoleIn(List.of("personal_admin", "administrador"));
+        List<User> admins = allAdmins.stream()
+                .filter(a -> a.getActive() != null && a.getActive())
+                .collect(java.util.stream.Collectors.toList());
 
         if (admins.isEmpty()) {
             throw new BadRequestException("No hay administradores disponibles para procesar tu retiro en este momento. Intenta más tarde.");

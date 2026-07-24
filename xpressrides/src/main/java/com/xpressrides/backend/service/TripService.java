@@ -80,33 +80,75 @@ public class TripService {
         if(tripId != null){
             Trip trip = tripRepository.findById(tripId).orElseThrow(()-> new ResourceNotFoundException("Traslado no encontrado"));
 
-            trip.setCurrentAssignmentDate(java.time.LocalDateTime.now());
-            tripRepository.save(trip);
+            // Solo establecer la fecha de asignación si hay un chofer asignado (no en estado 'buscando')
+            if (trip.getDriver() != null) {
+                trip.setCurrentAssignmentDate(java.time.LocalDateTime.now());
+                tripRepository.save(trip);
+            }
 
             Data data = new Data();
             data.setTripId(trip.getId());
             data.setState(trip.getStatus());
 
             Driver driver = trip.getDriver();
-            User driverUser = driver.getUsername();
-            
-            Drive drive = new Drive();
-            drive.setName(driverUser.getName()+ " " + driverUser.getLastName());
-            drive.setScore(tripRepository.findAverageRatingByDriverId(driver.getId()));
-            drive.setPhone(driverUser.getPhone());
-            
-            Vehicle vehicle = trip.getVehicle();
-            Car car = new Car();
-            car.setBrand(vehicle.getBrand());
-            car.setModel(vehicle.getModel());
-            car.setColor(vehicle.getColor());
-            car.setPlate(vehicle.getPlate());
+            if (driver != null) {
+                User driverUser = driver.getUsername();
+                
+                Drive drive = new Drive();
+                drive.setName(driverUser.getName()+ " " + driverUser.getLastName());
+                drive.setScore(tripRepository.findAverageRatingByDriverId(driver.getId()));
+                drive.setPhone(driverUser.getPhone());
+                
+                Vehicle vehicle = trip.getVehicle();
+                Car car = new Car();
+                car.setBrand(vehicle.getBrand());
+                car.setModel(vehicle.getModel());
+                car.setColor(vehicle.getColor());
+                car.setPlate(vehicle.getPlate());
 
-            drive.setVehiculo(car);
-            data.setDriver(drive);
+                drive.setVehiculo(car);
+                data.setDriver(drive);
+            }
             response.setData(data);
         }
 
         return response;
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void searchDriverForTrip(Integer tripId) {
+        StoredProcedureQuery query = entityManager.createStoredProcedureQuery("sp_buscar_chofer_viaje");
+        query.registerStoredProcedureParameter("p_id_traslado", Integer.class, ParameterMode.IN);
+        query.registerStoredProcedureParameter("p_id_chofer", Integer.class, ParameterMode.OUT);
+        
+        query.setParameter("p_id_traslado", tripId);
+        query.execute();
+        
+        // El SP modifica las tablas directamente en la BD (UPDATE traslado, UPDATE chofer).
+        // Hay que limpiar el caché de primer nivel de Hibernate para que las consultas
+        // posteriores (SSE stream, checkBuscandoTrips) vean los datos actualizados.
+        entityManager.flush();
+        entityManager.clear();
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public void cancelTripDueToNoDrivers(Integer tripId) {
+        Trip trip = tripRepository.findById(tripId).orElse(null);
+        if (trip == null || !"buscando".equals(trip.getStatus())) return;
+
+        trip.setStatus("cancelado");
+        trip.setCancelledBy("sistema");
+        trip.setCancellationReason("No hay choferes disponibles en este momento");
+        trip.setDriver(null);
+        tripRepository.save(trip);
+
+        if (trip.getCustomerCostUsd() != null) {
+            Customer customer = trip.getCustomer();
+            customer.setBalance(customer.getBalance().add(trip.getCustomerCostUsd()));
+            customerRepository.save(customer);
+        }
+
+        // We need NotificationRepository. Let's do this in TripRejectionService instead, or just add it.
+        // Actually, TripRejectionService is better suited since it already has NotificationRepository.
     }
 }

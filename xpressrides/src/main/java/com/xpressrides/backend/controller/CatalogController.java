@@ -82,6 +82,16 @@ public class CatalogController {
         return ResponseEntity.ok(response);
     }
 
+    // GET /api/bancos/catalogo — retorna todos los bancos del catálogo de Venezuela
+    @GetMapping("/bancos/catalogo")
+    public ResponseEntity<Map<String, Object>> listarCatalogoBancos() {
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", true);
+        response.put("data", catalogService.listarCatalogoBancos());
+        response.put("message", "OK");
+        return ResponseEntity.ok(response);
+    }
+
     // POST /api/bancos — personal_admin ingresa un banco nuevo
     @PreAuthorize("hasRole('administrador') or hasRole('personal_admin')")
     @PostMapping("/bancos")

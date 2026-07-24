@@ -289,7 +289,8 @@
 <script>
 
 const ESTADOS = {
-    'solicitado':   { texto: 'Buscando chofer',        icono: '🔍', bg: '#FFF3E0', color: '#C55A11' },
+    'buscando':     { texto: 'Buscando chofer',         icono: '🔍', bg: '#FFF3E0', color: '#C55A11' },
+    'solicitado':   { texto: 'Esperando respuesta',    icono: '⏳', bg: '#FFF3E0', color: '#C55A11' },
     'aceptado':     { texto: 'Chofer asignado',         icono: '✅', bg: '#E3F2FD', color: '#1F4E79' },
     'en_camino':    { texto: 'Chofer en camino',        icono: '🚗', bg: '#E3F2FD', color: '#1F4E79' },
     'chofer_llego': { texto: '¡Chofer llegó!',          icono: '📍', bg: '#E8F5E9', color: '#2E7D32' },
@@ -314,9 +315,9 @@ async function inicializarMapa(origenLat, origenLng, destinoLat, destinoLng) {
     mapEl.style.display = 'block';
 
     try {
-        await cargarGoogleMaps();
+        await Promise.all([cargarGoogleMaps(), cargarImagenAutoBase()]);
     } catch (e) {
-        console.error("Error al cargar Google Maps:", e);
+        console.error("Error al cargar Google Maps o la imagen del auto:", e);
         return;
     }
 
@@ -391,8 +392,61 @@ async function inicializarMapa(origenLat, origenLng, destinoLat, destinoLng) {
     });
 }
 
+let imagenAutoBase = null;
+
+function cargarImagenAutoBase() {
+    return new Promise((resolve, reject) => {
+        if (imagenAutoBase) return resolve(imagenAutoBase);
+        const img = new Image();
+        img.onload = () => { imagenAutoBase = img; resolve(img); };
+        img.onerror = reject;
+        img.src = '/img/auto-icono.png';
+    });
+}
+
+function crearIconoAutoRotado(headingDegrees = 0) {
+    if (!imagenAutoBase) {
+        return {
+            url: '/img/auto-icono.png',
+            scaledSize: new google.maps.Size(40, 40),
+            anchor: new google.maps.Point(20, 20)
+        };
+    }
+    const size = 40;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.translate(size / 2, size / 2);
+    ctx.rotate(headingDegrees * Math.PI / 180);
+    ctx.drawImage(imagenAutoBase, -size / 2, -size / 2, size, size);
+    return {
+        url: canvas.toDataURL(),
+        scaledSize: new google.maps.Size(size, size),
+        anchor: new google.maps.Point(size / 2, size / 2)
+    };
+}
+
+function calcularRumbo(lat1, lng1, lat2, lng2) {
+    const toRad = deg => deg * Math.PI / 180;
+    const y = Math.sin(toRad(lng2 - lng1)) * Math.cos(toRad(lat2));
+    const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
+              Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(toRad(lng2 - lng1));
+    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+}
+
+let lastDriverLat = null;
+let lastDriverLng = null;
+let currentHeading = 0;
+
 function actualizarMarcadorChofer(lat, lng) {
     if (!map || lat == null || lng == null) return;
+    
+    if (lastDriverLat !== null && lastDriverLng !== null && (lastDriverLat !== lat || lastDriverLng !== lng)) {
+        currentHeading = calcularRumbo(lastDriverLat, lastDriverLng, lat, lng);
+    }
+    lastDriverLat = lat;
+    lastDriverLng = lng;
     
     const pos = { lat: lat, lng: lng };
     
@@ -401,18 +455,12 @@ function actualizarMarcadorChofer(lat, lng) {
             position: pos,
             map: map,
             title: 'Chofer',
-            icon: {
-                path: google.maps.SymbolPath.CIRCLE,
-                fillColor: '#1565C0',
-                fillOpacity: 1,
-                strokeColor: '#FFFFFF',
-                strokeWeight: 3,
-                scale: 10
-            },
+            icon: crearIconoAutoRotado(currentHeading),
             zIndex: 999
         });
     } else {
         driverMarker.setPosition(pos);
+        driverMarker.setIcon(crearIconoAutoRotado(currentHeading));
     }
 }
 
@@ -471,7 +519,11 @@ function procesarViajeActivo(data) {
         limpiarMapa();
         if (eventSource) eventSource.close();
         if (estadoPrevio) {
-            window.location.href = '/views/cliente-record.html';
+            if (estadoPrevio === 'en_progreso' || estadoPrevio === 'chofer_llego') {
+                window.location.href = '/views/cliente-dashboard.html?viaje=completado';
+            } else {
+                window.location.href = '/views/cliente-dashboard.html?viaje=cancelado';
+            }
         } else {
             // No hay viaje activo — volver al dashboard
             window.location.href = '/views/cliente-dashboard.html';
@@ -495,7 +547,7 @@ function renderizarViaje(data) {
 
     // Círculo: iniciales del chofer o "?" si aún no hay asignación visible
     const icono = document.getElementById('estado-icono');
-    if (data.chofer && data.estado !== 'solicitado') {
+    if (data.chofer && data.estado !== 'solicitado' && data.estado !== 'buscando') {
         const partes = (data.chofer.nombre || '').split(' ');
         icono.textContent = ((partes[0]?.[0] || '') + (partes[1]?.[0] || '')).toUpperCase();
         icono.style.background = 'var(--color-secondary)';
@@ -509,7 +561,7 @@ function renderizarViaje(data) {
 
     // Chofer y vehículo solo desde 'aceptado' en adelante
     // en 'solicitado' el driver existe en BD pero aún no aceptó el viaje
-    if (data.chofer && data.estado !== 'solicitado') {
+    if (data.chofer && data.estado !== 'solicitado' && data.estado !== 'buscando') {
         const tel = (data.chofer.telefono || '').replace(/\D/g, '');
         const waHref = tel ? `https://wa.me/${tel.startsWith('58') ? tel : '58' + tel}` : '#';
 
@@ -526,7 +578,7 @@ function renderizarViaje(data) {
 
     // Botón cancelar: solo en estados donde el cliente puede cancelar
     const btnCancelar = document.getElementById('btn-cancelar');
-    if (data.estado === 'solicitado' || data.estado === 'aceptado') {
+    if (data.estado === 'solicitado' || data.estado === 'aceptado' || data.estado === 'buscando') {
         btnCancelar.classList.remove('hidden');
     } else {
         btnCancelar.classList.add('hidden');

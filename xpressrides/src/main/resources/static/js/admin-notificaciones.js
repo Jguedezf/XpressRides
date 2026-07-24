@@ -31,12 +31,20 @@ async function cargarIncidentes() {
                 const origen = inc.trip.originAddress || 'N/A';
                 const destino = inc.trip.destinationAddress || 'N/A';
                 const costo = inc.trip.customerCostUsd != null ? `$${inc.trip.customerCostUsd}` : 'N/A';
+                
+                let driverLocationHtml = '';
+                if (inc.trip.driver && inc.trip.driver.latActual && inc.trip.driver.lngActual) {
+                    const lat = inc.trip.driver.latActual;
+                    const lng = inc.trip.driver.lngActual;
+                    driverLocationHtml = `<br><span style="color: var(--color-text-muted);">Ubicación Chofer:</span> <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" style="color: var(--color-primary); font-weight: 600; text-decoration: none;">Ver en el Mapa 📍</a>`;
+                }
+
                 tripHtml = `
                     <div style="margin-top: 8px; padding: 10px; background: #f0f0f0; border-radius: 6px; font-size: 13px;">
                         <strong style="color: var(--color-primary);">Detalles del Viaje (#${inc.trip.id})</strong><br>
                         <span style="color: var(--color-text-muted);">Origen:</span> ${origen}<br>
                         <span style="color: var(--color-text-muted);">Destino:</span> ${destino}<br>
-                        <span style="color: var(--color-text-muted);">Costo:</span> ${costo}
+                        <span style="color: var(--color-text-muted);">Costo:</span> ${costo}${driverLocationHtml}
                     </div>
                 `;
             }
