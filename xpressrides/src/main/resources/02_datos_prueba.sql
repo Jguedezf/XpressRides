@@ -1,29 +1,29 @@
 -- ================================================================
---  XpressRides (Decarrerita) â€” Sistemas de Base de Datos I
---  UNEG Â· Prof. MarÃ­a Raquel Herrera E. Â· Junio 2026
---  Equipo: Johanna GuÃ©dez Â· Eliuber GonzÃ¡lez Â· Freddy Salazar
---          Manuel Jaimes Â· Ãngel MartÃ­nez
+--  XpressRides (Decarrerita) Sistemas de Base de Datos I
+--  UNEG Prof. María Raquel Herrera E. · Junio 2026
+--  Equipo: Johanna Guédez · Eliuber González · Freddy Salazar
+--          Manuel Jaimes · Ángel Martínez
 -- ================================================================
 --  Archivo:     datos_prueba.sql
---  MÃ³dulo:      Datos semilla (seed data) para pruebas
---  DescripciÃ³n: Inserta un escenario completo y funcional para
+--  Módulo:      Datos semilla (seed data) para pruebas
+--  Descripción: Inserta un escenario completo y funcional para
 --               probar el flujo de solicitud de traslado:
---               1 chofer totalmente habilitado (con evaluaciÃ³n
---               psicolÃ³gica aprobada, revisiÃ³n vehicular aprobada,
---               vehÃ­culo activo y 2 contactos de emergencia) y
+--               1 chofer totalmente habilitado (con evaluación
+--               psicológica aprobada, revisión vehicular aprobada,
+--               vehículo activo y 2 contactos de emergencia) y
 --               1 cliente estudiante con saldo disponible.
 --
---               Es idempotente: puede ejecutarse mÃºltiples veces
+--               Es idempotente: puede ejecutarse múltiples veces
 --               sin generar duplicados (limpia datos previos de
---               prueba antes de insertar). Usa transacciÃ³n para
+--               prueba antes de insertar). Usa transacción para
 --               garantizar consistencia y resuelve los IDs por
 --               nombre para no depender de valores fijos.
 --
 --  Uso:         Ejecutar completo en MySQL Workbench sobre la BD
---               'decarrerita' DESPUÃ‰S de cargar decarrerita.sql.
+--               'decarrerita' DESPUÉSS de cargar decarrerita.sql.
 --               Seleccionar (Ctrl+A) y ejecutar (rayo).
 --
---  VersiÃ³n:     1.3.0
+--  Versión:     1.3.0
 --  Fecha:       28/06/2026
 -- ================================================================
 
@@ -34,15 +34,15 @@ SET SQL_SAFE_UPDATES = 0;
 
 -- ================================================================
 -- BLOQUE 0: ACTUALIZACIONES DE ESQUEMA (DDL)
--- DDL no puede ir dentro de un TRANSACTION en MySQL â€” cada ALTER/
--- CREATE INDEX / DROP TRIGGER hace commit implÃ­cito automÃ¡tico.
+-- DDL no puede ir dentro de un TRANSACTION en MySQL cada ALTER/
+-- CREATE INDEX / DROP TRIGGER hace commit implícito automático.
 -- Se ejecutan con IF NOT EXISTS para que el script sea idempotente
--- tanto sobre una BD reciÃ©n creada como sobre una BD existente.
+-- tanto sobre una BD recién creada como sobre una BD existente.
 -- ================================================================
 
 -- 0.1 Ampliar ENUM notificacion.tipo con los valores que faltaban
---     'chofer_llego' â†’ notificaciÃ³n cuando el chofer llega al origen
---     'sin_chofer'   â†’ ya usado en Java (TripRejectionService) pero faltaba en la BD
+--     'chofer_llego' notifica cuando el chofer llega al origen
+--     'sin_chofer'   ya usado en Java (TripRejectionService) pero faltaba en la BD
 ALTER TABLE notificacion
   MODIFY COLUMN tipo ENUM(
     'viaje_solicitado','chofer_asignado','chofer_en_camino',
@@ -50,10 +50,10 @@ ALTER TABLE notificacion
     'pago_recibido','recarga_acreditada','viaje_cancelado','sin_chofer'
   ) NOT NULL;
 
--- 0.2 Ãndice compuesto para el conteo del badge de notificaciones
---     Cubre: countByUser_IdAndReadFalse â€” consultado cada 15 s por cada usuario activo
+-- 0.2 Índice compuesto para el conteo del badge de notificaciones
+--     Cubre: countByUser_IdAndReadFalse consultado cada 15 s por cada usuario activo
 --     Se verifica en information_schema.STATISTICS antes de crear para que el
---     script sea idempotente en cualquier versiÃ³n de MySQL
+--     script sea idempotente en cualquier versión de MySQL
 SET @existe = (SELECT COUNT(*) FROM information_schema.STATISTICS
     WHERE table_schema = DATABASE()
       AND table_name   = 'notificacion'
@@ -63,8 +63,8 @@ SET @sql = IF(@existe = 0,
     'SELECT ''idx_notif_usuario_leida: ya existe, se omite''');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- 0.3 Ãndice compuesto para el polling de viaje activo del cliente
---     Cubre: GET /api/cliente/viaje-activo â€” consultado cada 5 s durante un viaje
+-- 0.3 Índice compuesto para el polling de viaje activo del cliente
+--     Cubre: GET /api/cliente/viaje-activo consultado cada 5 s durante un viaje
 SET @existe = (SELECT COUNT(*) FROM information_schema.STATISTICS
     WHERE table_schema = DATABASE()
       AND table_name   = 'traslado'
@@ -74,8 +74,8 @@ SET @sql = IF(@existe = 0,
     'SELECT ''idx_traslado_cliente_estado: ya existe, se omite''');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- 0.4 Trigger actualizado: agrega notificaciÃ³n para estado 'chofer_llego'
---     El trigger original no cubrÃ­a este estado â€” el cliente nunca recibÃ­a
+-- 0.4 Trigger actualizado: agrega notificación para estado 'chofer_llego'
+--     El trigger original no cubría este estado y el cliente nunca recibía
 --     aviso cuando el chofer llegaba al punto de recogida.
 DROP TRIGGER IF EXISTS trg_traslado_eventos;
 
