@@ -2,6 +2,7 @@
 // Historial de viajes del cliente con opción de ver factura
 
 document.addEventListener('DOMContentLoaded', async () => {
+    if (typeof requireAuth === 'function' && !requireAuth()) return;
     await cargarHistorial();
 });
 

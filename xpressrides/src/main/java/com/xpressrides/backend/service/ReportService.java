@@ -18,6 +18,7 @@ import com.xpressrides.backend.model.*;
 import com.xpressrides.backend.repository.*;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -51,16 +52,22 @@ public class ReportService {
 
     // Historial de traslados, con filtro de fechas opcional
     public List<TripHistory> getTripHistory(LocalDate desde, LocalDate hasta) {
-        if (desde != null && hasta != null)
+        if (desde != null || hasta != null) {
+            LocalDateTime start = desde != null ? desde.atStartOfDay() : LocalDate.of(1970, 1, 1).atStartOfDay();
+            LocalDateTime end = hasta != null ? hasta.atTime(23, 59, 59) : LocalDate.of(2099, 12, 31).atTime(23, 59, 59);
             return tripHistoryRepository.findByRequestDateBetweenOrderByRequestDateDesc(
-                    desde.atStartOfDay(), hasta.atTime(23, 59, 59));
+                    start, end);
+        }
         return tripHistoryRepository.findAll();
     }
 
     // Ganancias de la empresa, con filtro de fechas opcional
     public List<CompanyEarnings> getCompanyEarnings(LocalDate desde, LocalDate hasta) {
-        if (desde != null && hasta != null)
-            return companyEarningsRepository.findByDateBetweenOrderByDateDesc(desde, hasta);
+        if (desde != null || hasta != null) {
+            LocalDate start = desde != null ? desde : LocalDate.of(1970, 1, 1);
+            LocalDate end = hasta != null ? hasta : LocalDate.of(2099, 12, 31);
+            return companyEarningsRepository.findByDateBetweenOrderByDateDesc(start, end);
+        }
         return companyEarningsRepository.findAll();
     }
 
@@ -78,9 +85,12 @@ public class ReportService {
 
     // Traslados cancelados con motivo
     public List<CancelledTrip> getCancelledTrips(LocalDate desde, LocalDate hasta) {
-        if (desde != null && hasta != null)
+        if (desde != null || hasta != null) {
+            LocalDateTime start = desde != null ? desde.atStartOfDay() : LocalDate.of(1970, 1, 1).atStartOfDay();
+            LocalDateTime end = hasta != null ? hasta.atTime(23, 59, 59) : LocalDate.of(2099, 12, 31).atTime(23, 59, 59);
             return cancelledTripRepository.findByRequestDateBetweenOrderByRequestDateDesc(
-                    desde.atStartOfDay(), hasta.atTime(23, 59, 59));
+                    start, end);
+        }
         return cancelledTripRepository.findAll();
     }
 

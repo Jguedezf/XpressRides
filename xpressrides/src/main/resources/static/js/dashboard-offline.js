@@ -123,6 +123,13 @@ function inicializarMapaLeaflet() {
     // Cuando el usuario selecciona origen o destino, destacamos los marcadores
     document.getElementById('origen').addEventListener('change', resaltarRuta);
     document.getElementById('destino').addEventListener('change', resaltarRuta);
+
+    setTimeout(() => {
+        if (mapaLeaflet) mapaLeaflet.invalidateSize();
+    }, 100);
+    window.addEventListener('resize', () => {
+        if (mapaLeaflet) mapaLeaflet.invalidateSize();
+    });
 }
 
 /**

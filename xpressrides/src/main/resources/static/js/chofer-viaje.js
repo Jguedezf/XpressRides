@@ -573,10 +573,7 @@ function configurarBotonesEstado() {
         detenerCuentaRegresiva();
         cambiarEstado('aceptado');
     });
-    document.getElementById('push-btn-rechazar').addEventListener('click', () => {
-        detenerCuentaRegresiva();
-        cambiarEstado('rechazado');
-    });
+    document.getElementById('push-btn-rechazar').addEventListener('click', rechazarViaje);
 
     const btnCancelar = document.getElementById('btn-cancelar');
     if (btnCancelar) {

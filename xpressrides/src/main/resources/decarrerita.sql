@@ -832,13 +832,37 @@ CREATE OR REPLACE VIEW v_notificaciones_pendientes AS
 -- ================================================================
 -- BLOQUE 8B: TRIGGER DE FACTURACIÓN Y NOTIFICACIONES AUTOMÁTICAS
 -- ================================================================
--- Reacciona a los cambios de estado del traslado para generar,
--- en el mismo trigger, tanto la factura fiscal (al completarse)
--- como las notificaciones que el cliente y el chofer verán en su
--- campanita de avisos dentro de la web. Se centraliza en un solo
--- trigger porque ambos efectos dependen del mismo evento: un
--- cambio de estado en traslado.
+-- Reacciona a los cambios de estado y creación del traslado para generar,
+-- tanto la factura fiscal (al completarse) como las notificaciones que
+-- el cliente y el chofer verán en su campanita de avisos dentro de la web.
 -- ================================================================
+
+DROP TRIGGER IF EXISTS trg_traslado_insert_notificacion;
+
+DELIMITER $$
+
+CREATE TRIGGER trg_traslado_insert_notificacion
+AFTER INSERT ON traslado
+FOR EACH ROW
+BEGIN
+  DECLARE v_id_usuario_chofer INT;
+
+  IF NEW.estado = 'solicitado' AND NEW.id_chofer IS NOT NULL THEN
+    SELECT u.id INTO v_id_usuario_chofer
+      FROM chofer ch JOIN usuario u ON ch.id_usuario = u.id
+     WHERE ch.id = NEW.id_chofer;
+
+    IF v_id_usuario_chofer IS NOT NULL THEN
+      INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+      VALUES (v_id_usuario_chofer, NEW.id, 'viaje_solicitado',
+        'Tienes una nueva solicitud de viaje.');
+    END IF;
+  END IF;
+END$$
+
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS trg_traslado_eventos;
 
 DELIMITER $$
 
@@ -857,6 +881,13 @@ BEGIN
   SELECT u.id INTO v_id_usuario_chofer
     FROM chofer ch JOIN usuario u ON ch.id_usuario = u.id
     WHERE ch.id = NEW.id_chofer;
+
+  -- Notificación: nuevo viaje solicitado al chofer (asignación o cambio de chofer en estado 'solicitado')
+  IF NEW.estado = 'solicitado' AND NEW.id_chofer IS NOT NULL AND (OLD.id_chofer IS NULL OR OLD.id_chofer <> NEW.id_chofer) AND v_id_usuario_chofer IS NOT NULL THEN
+    INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+    VALUES (v_id_usuario_chofer, NEW.id, 'viaje_solicitado',
+      'Tienes una nueva solicitud de viaje.');
+  END IF;
 
   -- Notificación: chofer asignado (cambia de solicitado a aceptado)
   IF NEW.estado = 'aceptado' AND OLD.estado <> 'aceptado' THEN

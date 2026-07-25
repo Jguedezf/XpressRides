@@ -110,19 +110,23 @@ public class DriverService {
     }
 
     public List<Trip> getTrips(String username, LocalDate desde, LocalDate hasta) {
-        if (desde != null && hasta != null) {
+        if (desde != null || hasta != null) {
+            LocalDateTime start = desde != null ? desde.atStartOfDay() : LocalDate.of(1970, 1, 1).atStartOfDay();
+            LocalDateTime end = hasta != null ? hasta.atTime(23, 59, 59) : LocalDate.of(2099, 12, 31).atTime(23, 59, 59);
             return tripRepository
                 .findByDriver_Username_UsernameAndRequestDateBetweenOrderByRequestDateDesc(
-                    username, desde.atStartOfDay(), hasta.atTime(23, 59, 59));
+                    username, start, end);
         }
         return tripRepository.findByDriver_Username_UsernameOrderByRequestDateDesc(username);
     }
 
     public List<Trip> getCancelledTrips(String username, LocalDate desde, LocalDate hasta) {
-        if (desde != null && hasta != null) {
+        if (desde != null || hasta != null) {
+            LocalDateTime start = desde != null ? desde.atStartOfDay() : LocalDate.of(1970, 1, 1).atStartOfDay();
+            LocalDateTime end = hasta != null ? hasta.atTime(23, 59, 59) : LocalDate.of(2099, 12, 31).atTime(23, 59, 59);
             return tripRepository
                 .findByDriver_Username_UsernameAndStatusAndRequestDateBetweenOrderByRequestDateDesc(
-                    username, "cancelado", desde.atStartOfDay(), hasta.atTime(23, 59, 59));
+                    username, "cancelado", start, end);
         }
         return tripRepository.findByDriver_Username_UsernameAndStatusOrderByRequestDateDesc(
                 username, "cancelado");

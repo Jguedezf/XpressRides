@@ -33,7 +33,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         // Avoid NullPointerException if role is null
         String role = user.getRole() != null ? user.getRole() : "cliente";
-        SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role);
+        SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + (role != null ? role.toLowerCase() : ""));
 
         // Safe unboxing using Boolean.TRUE.equals to avoid NullPointerException
         boolean isActive = Boolean.TRUE.equals(user.getActive());

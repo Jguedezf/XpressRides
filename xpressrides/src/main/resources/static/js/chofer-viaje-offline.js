@@ -102,6 +102,13 @@ async function inicializarMapaChofer() {
     if (ultimaPosicion) {
         marcadorChofer = L.marker([ultimaPosicion.lat, ultimaPosicion.lng]).addTo(mapaChofer);
     }
+
+    setTimeout(() => {
+        if (mapaChofer) mapaChofer.invalidateSize();
+    }, 100);
+    window.addEventListener('resize', () => {
+        if (mapaChofer) mapaChofer.invalidateSize();
+    });
 }
 
 async function reportarUbicacion() {

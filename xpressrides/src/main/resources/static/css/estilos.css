@@ -630,3 +630,10 @@ input:checked + .toggle-slider:before {
         transform: translateX(-50%) !important;
     }
 }
+
+/* --- FIX: Map Container Sizing --- */
+#map {
+    width: 100%;
+    min-height: 300px;
+    height: 100%;
+}

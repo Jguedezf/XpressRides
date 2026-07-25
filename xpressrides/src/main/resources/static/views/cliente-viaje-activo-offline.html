@@ -349,6 +349,13 @@ function inicializarMapa(origenLat, origenLng, destinoLat, destinoLng) {
         [destinoLat, destinoLng]
     );
     map.fitBounds(bounds.pad(0.3));
+
+    setTimeout(() => {
+        if (map) map.invalidateSize();
+    }, 100);
+    window.addEventListener('resize', () => {
+        if (map) map.invalidateSize();
+    });
 }
 
 function actualizarMarcadorChofer(lat, lng) {

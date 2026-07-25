@@ -10,7 +10,7 @@ public class EmergencyContactRequest {
     private Integer driverId;
 
     @NotBlank(message = "El nombre es obligatorio")
-    @Pattern(regexp = "^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\\s]+$",
+    @Pattern(regexp = "^[a-zA-Z\\u00e1\\u00e9\\u00ed\\u00f3\\u00fa\\u00c1\\u00c9\\u00cd\\u00d3\\u00da\\u00f1\\u00d1\\u00fc\\u00dc\\s]+$",
             message = "El nombre solo debe contener letras y espacios")
     private String name;
 
@@ -20,7 +20,7 @@ public class EmergencyContactRequest {
     private String phone;
 
     @NotBlank(message = "El parentesco es obligatorio")
-    @Pattern(regexp = "^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\\s]+$",
+    @Pattern(regexp = "^[a-zA-Z\\u00e1\\u00e9\\u00ed\\u00f3\\u00fa\\u00c1\\u00c9\\u00cd\\u00d3\\u00da\\u00f1\\u00d1\\u00fc\\u00dc\\s]+$",
             message = "El parentesco solo debe contener letras y espacios")
     private String relationship;
 

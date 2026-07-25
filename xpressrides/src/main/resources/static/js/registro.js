@@ -104,6 +104,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         alert('Tu cuenta fue creada, pero no se pudieron guardar los contactos de '
                             + 'emergencia: ' + contactError.message
                             + '. Contacta al administrador para completarlos antes de poder recibir viajes.');
+                        btnSubmit.disabled = false;
+                        btnSubmit.innerText = 'Registrarme';
                     }
                 }
 

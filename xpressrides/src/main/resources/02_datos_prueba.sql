@@ -74,9 +74,32 @@ SET @sql = IF(@existe = 0,
     'SELECT ''idx_traslado_cliente_estado: ya existe, se omite''');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- 0.4 Trigger actualizado: agrega notificación para estado 'chofer_llego'
---     El trigger original no cubría este estado y el cliente nunca recibía
---     aviso cuando el chofer llegaba al punto de recogida.
+-- 0.4 Triggers actualizados: notificaciones de inserción y actualización de traslados
+DROP TRIGGER IF EXISTS trg_traslado_insert_notificacion;
+
+DELIMITER $$
+
+CREATE TRIGGER trg_traslado_insert_notificacion
+AFTER INSERT ON traslado
+FOR EACH ROW
+BEGIN
+  DECLARE v_id_usuario_chofer INT;
+
+  IF NEW.estado = 'solicitado' AND NEW.id_chofer IS NOT NULL THEN
+    SELECT u.id INTO v_id_usuario_chofer
+      FROM chofer ch JOIN usuario u ON ch.id_usuario = u.id
+     WHERE ch.id = NEW.id_chofer;
+
+    IF v_id_usuario_chofer IS NOT NULL THEN
+      INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+      VALUES (v_id_usuario_chofer, NEW.id, 'viaje_solicitado',
+        'Tienes una nueva solicitud de viaje.');
+    END IF;
+  END IF;
+END$$
+
+DELIMITER ;
+
 DROP TRIGGER IF EXISTS trg_traslado_eventos;
 
 DELIMITER $$
@@ -95,6 +118,12 @@ BEGIN
   SELECT u.id INTO v_id_usuario_chofer
     FROM chofer ch JOIN usuario u ON ch.id_usuario = u.id
     WHERE ch.id = NEW.id_chofer;
+
+  IF NEW.estado = 'solicitado' AND NEW.id_chofer IS NOT NULL AND (OLD.id_chofer IS NULL OR OLD.id_chofer <> NEW.id_chofer) AND v_id_usuario_chofer IS NOT NULL THEN
+    INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
+    VALUES (v_id_usuario_chofer, NEW.id, 'viaje_solicitado',
+      'Tienes una nueva solicitud de viaje.');
+  END IF;
 
   IF NEW.estado = 'aceptado' AND OLD.estado <> 'aceptado' THEN
     INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)

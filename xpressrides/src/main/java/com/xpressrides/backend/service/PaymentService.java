@@ -152,9 +152,9 @@ public class PaymentService {
 
     // Retorna el historial de pagos de un chofer, con filtro de fechas opcional
     public List<DriverPayment> getDriverPaymentHistory(Integer driverId, LocalDate desde, LocalDate hasta) {
-        if (desde != null && hasta != null) {
-            LocalDateTime desdeDateTime = desde.atStartOfDay();
-            LocalDateTime hastaDateTime = hasta.atTime(23, 59, 59);
+        if (desde != null || hasta != null) {
+            LocalDateTime desdeDateTime = desde != null ? desde.atStartOfDay() : LocalDate.of(1970, 1, 1).atStartOfDay();
+            LocalDateTime hastaDateTime = hasta != null ? hasta.atTime(23, 59, 59) : LocalDate.of(2099, 12, 31).atTime(23, 59, 59);
             return driverPaymentRepository.findByDriver_IdAndDateTimeBetweenOrderByDateTimeDesc(
                     driverId, desdeDateTime, hastaDateTime);
         }

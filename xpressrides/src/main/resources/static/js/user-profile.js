@@ -68,6 +68,17 @@ function cargarPerfil() {
         walletAmount.innerText = `$${saldo.toFixed(2)}`;
     }
 
+    // Ocultar sección de referidos si no es cliente
+    const referidosCard = document.getElementById('referidos-card');
+    if (referidosCard) {
+        const rol = (usuario.rol || '').toLowerCase();
+        if (rol !== 'cliente') {
+            referidosCard.style.display = 'none';
+        } else {
+            referidosCard.style.display = 'block';
+        }
+    }
+
     // 6. Actualizar con datos reales del backend
     actualizarDatosBackend(usuario, walletAmount);
 }
@@ -172,20 +183,38 @@ window.compartirCodigoReferido = async function () {
     if (navigator.share) {
         try {
             await navigator.share({ title: 'XpressRides', text: texto });
+            return;
         } catch (err) {
-            // El usuario cerró el panel nativo de compartir sin elegir nada — no es un error real
+            if (err.name === 'AbortError') return;
         }
-        return;
     }
 
-    if (navigator.clipboard) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
         try {
             await navigator.clipboard.writeText(codigo);
             alert('Código copiado al portapapeles: ' + codigo);
             return;
         } catch (err) {
-            // sigue al fallback de abajo
+            // fallback to execCommand below
         }
+    }
+
+    try {
+        const textarea = document.createElement('textarea');
+        textarea.value = codigo;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        if (successful) {
+            alert('Código copiado al portapapeles: ' + codigo);
+            return;
+        }
+    } catch (err) {
+        console.error('Error ejecutando copia alternativa', err);
     }
 
     alert('Tu código de referido es: ' + codigo);
