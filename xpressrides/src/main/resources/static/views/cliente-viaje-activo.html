@@ -398,6 +398,7 @@ function cargarImagenAutoBase() {
     return new Promise((resolve, reject) => {
         if (imagenAutoBase) return resolve(imagenAutoBase);
         const img = new Image();
+        img.crossOrigin = "Anonymous";
         img.onload = () => { imagenAutoBase = img; resolve(img); };
         img.onerror = reject;
         img.src = '/img/auto-icono.png';

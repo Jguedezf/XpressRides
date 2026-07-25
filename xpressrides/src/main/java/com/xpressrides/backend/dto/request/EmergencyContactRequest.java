@@ -2,6 +2,7 @@ package com.xpressrides.backend.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 public class EmergencyContactRequest {
 
@@ -9,12 +10,18 @@ public class EmergencyContactRequest {
     private Integer driverId;
 
     @NotBlank(message = "El nombre es obligatorio")
+    @Pattern(regexp = "^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\\s]+$",
+            message = "El nombre solo debe contener letras y espacios")
     private String name;
 
     @NotBlank(message = "El teléfono es obligatorio")
+    @Pattern(regexp = "^(0414|0424|0416|0426|0412)-?\\d{7}$",
+            message = "Teléfono inválido. Formato: 0414-1234567 o 04141234567")
     private String phone;
 
     @NotBlank(message = "El parentesco es obligatorio")
+    @Pattern(regexp = "^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\\s]+$",
+            message = "El parentesco solo debe contener letras y espacios")
     private String relationship;
 
     public Integer getDriverId() { return driverId; }

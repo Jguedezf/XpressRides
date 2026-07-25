@@ -40,7 +40,7 @@ const RESPONSE_TIMEOUT_SECONDS = 30; // debe coincidir con TripTimeoutScheduler 
 
 function getDriverLocationKey() {
     const usuario = getUsuario();
-    const id = usuario ? (usuario.username || usuario.id || 'default') : 'default';
+    const id = usuario ? (usuario.username || usuario.id || usuario.idUsuario || 'default') : 'default';
     return 'driverLocation_' + id;
 }
 
@@ -75,6 +75,7 @@ function cargarImagenAutoBase() {
     return new Promise((resolve, reject) => {
         if (imagenAutoBase) return resolve(imagenAutoBase);
         const img = new Image();
+        img.crossOrigin = "Anonymous";
         img.onload = () => { imagenAutoBase = img; resolve(img); };
         img.onerror = reject;
         img.src = '/img/auto-icono.png';
@@ -215,6 +216,11 @@ function inicializarMapaChofer() {
             icon: crearIconoAutoRotado(),
             animation: google.maps.Animation.DROP
         });
+    }
+
+    // Dibujar ruta si el viaje ya fue cargado antes de que el mapa estuviera listo
+    if (viajeActual) {
+        dibujarRutaViaje();
     }
 }
 
@@ -656,6 +662,10 @@ async function cambiarEstado(nuevoEstado) {
         if (nuevoEstado === 'completado') {
             ocultarPaneles();
             mostrarMensaje('✅ Viaje completado exitosamente');
+            renderInterfazPorEstado('completado'); // Para limpiar mapa
+            setTimeout(() => {
+                window.location.href = '/views/chofer-dashboard.html?viaje=completado';
+            }, 2000);
         } else {
             await cargarViajeActivo();
         }

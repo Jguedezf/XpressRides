@@ -9,11 +9,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         radio.addEventListener('change', window.toggleForm);
     });
 
-    // 3. Manejar el evento de registro
+    // 3. Validación en tiempo real de la contraseña
+    const passwordInput = document.getElementById('password');
+    if (passwordInput) {
+        passwordInput.addEventListener('input', () => {
+            const val = passwordInput.value;
+            setRule('rule-length',  val.length >= 8);
+            setRule('rule-upper',   /[A-Z]/.test(val));
+            setRule('rule-lower',   /[a-z]/.test(val));
+            setRule('rule-number',  /\d/.test(val));
+            setRule('rule-special', /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(val));
+        });
+    }
+
+    // 4. Manejar el evento de registro
     const registerForm = document.getElementById('register-form');
     if(registerForm) {
         registerForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            // --- Validación JS antes de enviar ---
+            const errores = validarFormulario();
+            if (errores.length > 0) {
+                alert('Corrige los siguientes errores:\n\n• ' + errores.join('\n• '));
+                return;
+            }
 
             const btnSubmit = document.getElementById('btn-submit');
             const alertSuccess = document.getElementById('register-success');
@@ -164,3 +184,82 @@ window.toggleForm = function() {
     document.getElementById('lbl-cliente').classList.toggle('active', !isChofer);
     document.getElementById('lbl-chofer').classList.toggle('active', isChofer);
 };
+
+// ========================================================================
+// VALIDACIONES
+// ========================================================================
+const REGEX_NOMBRE   = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
+const REGEX_CEDULA   = /^[VE]-\d{7,9}$/;
+const REGEX_TELEFONO = /^(0414|0424|0416|0426|0412)-?\d{7}$/;
+const REGEX_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]).{8,}$/;
+const REGEX_CUENTA   = /^\d{20}$/;
+
+function validarFormulario() {
+    const errores = [];
+    const isChofer = document.querySelector('input[name="rol"][value="chofer"]').checked;
+
+    const nombre   = document.getElementById('nombre').value.trim();
+    const apellido = document.getElementById('apellido').value.trim();
+    const cedula   = document.getElementById('cedula').value.trim();
+    const telefono = document.getElementById('telefono').value.trim();
+    const password = document.getElementById('password').value;
+
+    // Nombre
+    if (!nombre) errores.push('El nombre es obligatorio.');
+    else if (!REGEX_NOMBRE.test(nombre)) errores.push('El nombre solo debe contener letras y espacios.');
+
+    // Apellido
+    if (!apellido) errores.push('El apellido es obligatorio.');
+    else if (!REGEX_NOMBRE.test(apellido)) errores.push('El apellido solo debe contener letras y espacios.');
+
+    // Cédula
+    if (!cedula) errores.push('La cédula es obligatoria.');
+    else if (!REGEX_CEDULA.test(cedula)) errores.push('La cédula debe tener formato V-12345678 o E-12345678 (V mayúscula).');
+
+    // Teléfono
+    if (!telefono) errores.push('El teléfono es obligatorio.');
+    else if (!REGEX_TELEFONO.test(telefono)) errores.push('Teléfono inválido. Usa formato 0414-1234567 o 04141234567 con prefijo válido.');
+
+    // Contraseña
+    if (!password) errores.push('La contraseña es obligatoria.');
+    else if (password.length < 8) errores.push('La contraseña debe tener al menos 8 caracteres.');
+    else if (!/[A-Z]/.test(password)) errores.push('La contraseña debe contener al menos una letra mayúscula.');
+    else if (!/[a-z]/.test(password)) errores.push('La contraseña debe contener al menos una letra minúscula.');
+    else if (!/\d/.test(password)) errores.push('La contraseña debe contener al menos un número.');
+    else if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/.test(password)) errores.push('La contraseña debe contener al menos un carácter especial (ej: @, !, #, $).');
+
+    // Campos de chofer
+    if (isChofer) {
+        const banco  = document.getElementById('banco').value;
+        const cuenta = document.getElementById('cuenta').value.trim();
+
+        if (!banco) errores.push('Debes seleccionar un banco.');
+        if (!cuenta) errores.push('El número de cuenta es obligatorio.');
+        else if (!REGEX_CUENTA.test(cuenta)) errores.push('El número de cuenta debe ser exactamente 20 dígitos numéricos.');
+
+        // Contactos de emergencia
+        const e1n = document.getElementById('emergencia1_nombre').value.trim();
+        const e1t = document.getElementById('emergencia1_tel').value.trim();
+        const e1p = document.getElementById('emergencia1_parentesco').value.trim();
+        const e2n = document.getElementById('emergencia2_nombre').value.trim();
+        const e2t = document.getElementById('emergencia2_tel').value.trim();
+        const e2p = document.getElementById('emergencia2_parentesco').value.trim();
+
+        if (!e1n || !REGEX_NOMBRE.test(e1n)) errores.push('Nombre del contacto 1: solo letras y espacios.');
+        if (!e1t || !REGEX_TELEFONO.test(e1t)) errores.push('Teléfono del contacto 1: formato inválido.');
+        if (!e1p || !REGEX_NOMBRE.test(e1p)) errores.push('Parentesco del contacto 1: solo letras y espacios.');
+
+        if (!e2n || !REGEX_NOMBRE.test(e2n)) errores.push('Nombre del contacto 2: solo letras y espacios.');
+        if (!e2t || !REGEX_TELEFONO.test(e2t)) errores.push('Teléfono del contacto 2: formato inválido.');
+        if (!e2p || !REGEX_NOMBRE.test(e2p)) errores.push('Parentesco del contacto 2: solo letras y espacios.');
+    }
+
+    return errores;
+}
+
+function setRule(id, ok) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.toggle('pass', ok);
+    el.classList.toggle('fail', !ok);
+}

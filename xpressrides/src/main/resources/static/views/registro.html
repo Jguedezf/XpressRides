@@ -102,27 +102,48 @@
             <div class="d-flex gap-sm">
                 <div class="input-group">
                     <label for="nombre" class="input-label">Nombre</label>
-                    <input type="text" id="nombre" name="nombre" class="input-field" placeholder="Ej. Juan" autocomplete="given-name" required>
+                    <input type="text" id="nombre" name="nombre" class="input-field" placeholder="Ej. Juan" autocomplete="given-name" required
+                           pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$"
+                           title="Solo letras y espacios">
+                    <span class="input-hint">Solo letras y espacios</span>
                 </div>
                 <div class="input-group">
                     <label for="apellido" class="input-label">Apellido</label>
-                    <input type="text" id="apellido" name="apellido" class="input-field" placeholder="Ej. Pérez" autocomplete="family-name" required>
+                    <input type="text" id="apellido" name="apellido" class="input-field" placeholder="Ej. Pérez" autocomplete="family-name" required
+                           pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$"
+                           title="Solo letras y espacios">
+                    <span class="input-hint">Solo letras y espacios</span>
                 </div>
             </div>
 
             <div class="input-group">
                 <label for="cedula" class="input-label">Cédula de Identidad</label>
-                <input type="text" id="cedula" name="cedula" class="input-field" placeholder="V-12345678" autocomplete="off" required>
+                <input type="text" id="cedula" name="cedula" class="input-field" placeholder="V-12345678" autocomplete="off" required
+                       pattern="^[VE]-\d{7,9}$"
+                       title="Formato: V-12345678 o E-12345678">
+                <span class="input-hint">Formato: V-12345678 (V o E, guion, 7 a 9 dígitos)</span>
             </div>
 
             <div class="input-group">
                 <label for="telefono" class="input-label">Teléfono</label>
-                <input type="tel" id="telefono" name="telefono" class="input-field" placeholder="0414-1234567" autocomplete="tel" required>
+                <input type="tel" id="telefono" name="telefono" class="input-field" placeholder="0414-1234567" autocomplete="tel" required
+                       pattern="^(0414|0424|0416|0426|0412)-?\d{7}$"
+                       title="Formato: 0414-1234567 o 04141234567">
+                <span class="input-hint">Ej: 0414-1234567 o 04141234567</span>
             </div>
 
             <div class="input-group">
                 <label for="password" class="input-label">Contraseña</label>
-                <input type="password" id="password" name="new-password" class="input-field" placeholder="Crea una contraseña segura" autocomplete="new-password" required>
+                <input type="password" id="password" name="new-password" class="input-field" placeholder="Crea una contraseña segura" autocomplete="new-password" required
+                       minlength="8"
+                       title="Mínimo 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial">
+                <div class="password-rules" id="password-rules">
+                    <span class="rule" id="rule-length">8+ caracteres</span>
+                    <span class="rule" id="rule-upper">Mayúscula</span>
+                    <span class="rule" id="rule-lower">Minúscula</span>
+                    <span class="rule" id="rule-number">Número</span>
+                    <span class="rule" id="rule-special">Especial (@!#$...)</span>
+                </div>
             </div>
 
             <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
@@ -147,7 +168,10 @@
 
                 <div class="input-group">
                     <label for="cuenta" class="input-label">Número de Cuenta (20 dígitos)</label>
-                    <input type="text" id="cuenta" class="input-field" placeholder="0102...">
+                    <input type="text" id="cuenta" class="input-field" placeholder="0102..."
+                           pattern="^\d{20}$"
+                           title="Exactamente 20 dígitos numéricos" maxlength="20">
+                    <span class="input-hint">Exactamente 20 dígitos numéricos</span>
                 </div>
 
                 <p class="text-small mt-md mb-sm" style="font-weight: 600;">Contactos de Emergencia (Mínimo 2 requeridos)</p>
@@ -155,30 +179,48 @@
                 <div class="card" style="padding: var(--space-md); margin-bottom: var(--space-sm); background-color: white; border: 1px solid #ddd;">
                     <div class="input-group">
                         <label class="input-label">Nombre del Contacto 1</label>
-                        <label for="emergencia1_nombre"></label><input type="text" id="emergencia1_nombre" class="input-field" placeholder="Ej. María Pérez" required>
+                        <label for="emergencia1_nombre"></label><input type="text" id="emergencia1_nombre" class="input-field" placeholder="Ej. María Pérez" required
+                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$"
+                               title="Solo letras y espacios">
+                        <span class="input-hint">Solo letras y espacios</span>
                     </div>
                     <div class="input-group">
                         <label class="input-label">Teléfono del Contacto 1</label>
-                        <label for="emergencia1_tel"></label><input type="text" id="emergencia1_tel" class="input-field" placeholder="0414-0000000" required>
+                        <label for="emergencia1_tel"></label><input type="text" id="emergencia1_tel" class="input-field" placeholder="0414-0000000" required
+                               pattern="^(0414|0424|0416|0426|0412)-?\d{7}$"
+                               title="Formato: 0414-1234567 o 04141234567">
+                        <span class="input-hint">Ej: 0414-1234567 o 04141234567</span>
                     </div>
                     <div class="input-group" style="margin-bottom: 0;">
                         <label class="input-label">Parentesco del Contacto 1</label>
-                        <label for="emergencia1_parentesco"></label><input type="text" id="emergencia1_parentesco" class="input-field" placeholder="Ej. Madre" required>
+                        <label for="emergencia1_parentesco"></label><input type="text" id="emergencia1_parentesco" class="input-field" placeholder="Ej. Madre" required
+                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$"
+                               title="Solo letras y espacios">
+                        <span class="input-hint">Solo letras y espacios</span>
                     </div>
                 </div>
 
                 <div class="card" style="padding: var(--space-md); margin-bottom: var(--space-md); background-color: white; border: 1px solid #ddd;">
                     <div class="input-group">
                         <label class="input-label">Nombre del Contacto 2</label>
-                        <label for="emergencia2_nombre"></label><input type="text" id="emergencia2_nombre" class="input-field" placeholder="Ej. Carlos López" required>
+                        <label for="emergencia2_nombre"></label><input type="text" id="emergencia2_nombre" class="input-field" placeholder="Ej. Carlos López" required
+                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$"
+                               title="Solo letras y espacios">
+                        <span class="input-hint">Solo letras y espacios</span>
                     </div>
                     <div class="input-group">
                         <label class="input-label">Teléfono del Contacto 2</label>
-                        <label for="emergencia2_tel"></label><input type="text" id="emergencia2_tel" class="input-field" placeholder="0424-0000000" required>
+                        <label for="emergencia2_tel"></label><input type="text" id="emergencia2_tel" class="input-field" placeholder="0424-0000000" required
+                               pattern="^(0414|0424|0416|0426|0412)-?\d{7}$"
+                               title="Formato: 0414-1234567 o 04141234567">
+                        <span class="input-hint">Ej: 0414-1234567 o 04141234567</span>
                     </div>
                     <div class="input-group" style="margin-bottom: 0;">
                         <label class="input-label">Parentesco del Contacto 2</label>
-                        <label for="emergencia2_parentesco"></label><input type="text" id="emergencia2_parentesco" class="input-field" placeholder="Ej. Esposo" required>
+                        <label for="emergencia2_parentesco"></label><input type="text" id="emergencia2_parentesco" class="input-field" placeholder="Ej. Esposo" required
+                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$"
+                               title="Solo letras y espacios">
+                        <span class="input-hint">Solo letras y espacios</span>
                     </div>
                 </div>
             </div>

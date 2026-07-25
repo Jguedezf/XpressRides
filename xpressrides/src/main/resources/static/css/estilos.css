@@ -568,6 +568,56 @@ input:checked + .toggle-slider:before {
     }
 }
 
+/* --- VALIDACIÓN DE FORMULARIOS --- */
+.input-hint {
+    display: block;
+    font-size: 11px;
+    color: var(--color-text-muted);
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+.input-field:invalid:not(:placeholder-shown) {
+    border-color: var(--color-error);
+}
+
+.input-field:invalid:not(:placeholder-shown) ~ .input-hint {
+    color: var(--color-error);
+}
+
+.input-field:valid:not(:placeholder-shown) {
+    border-color: var(--color-success);
+}
+
+.password-rules {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.password-rules .rule {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background-color: var(--color-bg-card);
+    color: var(--color-text-muted);
+    border: 1px solid #ddd;
+    transition: all 0.2s ease;
+}
+
+.password-rules .rule.pass {
+    background-color: var(--color-success-bg);
+    color: var(--color-success);
+    border-color: var(--color-success);
+}
+
+.password-rules .rule.fail {
+    background-color: var(--color-error-bg);
+    color: var(--color-error);
+    border-color: var(--color-error);
+}
+
 /* --- FIX: Centrado Absoluto del Nav Desktop --- */
 .top-bar {
     position: relative;
