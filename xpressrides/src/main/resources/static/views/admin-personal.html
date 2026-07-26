@@ -160,7 +160,15 @@
             <div class="form-row">
                 <div>
                     <label class="premium-label" for="personal-password">Contraseña</label>
-                    <input type="password" id="personal-password" class="premium-input" minlength="8" required>
+                    <div style="position: relative;">
+                        <input type="password" id="personal-password" class="premium-input" minlength="8" required style="padding-right: 40px;">
+                        <button type="button" id="toggle-personal-password" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-text-muted);">
+                            <svg id="eye-icon-personal" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <div>
                     <label class="premium-label" for="personal-cargo">Cargo (opcional)</label>
