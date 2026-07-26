@@ -1,4 +1,4 @@
-﻿package com.xpressrides.backend.exception;
+package com.xpressrides.backend.exception;
 
 import java.util.Map;
 
