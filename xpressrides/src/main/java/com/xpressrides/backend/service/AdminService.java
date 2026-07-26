@@ -122,8 +122,17 @@ public class AdminService {
     }
 
     // Retorna todos los choferes con su estado operativo
+    @Transactional
     public List<Map<String, Object>> getAllDrivers() {
         return driverRepository.findAll().stream().map(d -> {
+            boolean hasActiveVehicle = vehicleRepository.findByDriver_IdAndInUseTrue(d.getId()).isPresent();
+            
+            // Auto-corrección en BD: si no tiene vehículo activo, NO puede estar disponible.
+            if (d.isAvailable() && !hasActiveVehicle) {
+                d.setAvailable(false);
+                driverRepository.save(d);
+            }
+
             Map<String, Object> item = new HashMap<>();
             item.put("id", d.getId());
             item.put("nombre", d.getUsername().getName());

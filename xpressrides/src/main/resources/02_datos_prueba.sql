@@ -855,3 +855,25 @@ INSERT INTO traslado (
 (36, 2, 1, 1, 2, 1, NULL, 1, 5.0, 14.76, 0.0, 1.0, 0.0, 14.76, 11.07, 3.69, 538.74, 'completado', 3, '2026-06-26 16:23:43', '2026-06-26 16:23:43', '2026-06-26 16:23:43', '2026-06-26 16:30:43', '2026-06-26 17:11:43'),
 (59, 16, 1, 1, 2, 1, NULL, 1, 5.0, 2.87, 0.0, 1.0, 0.0, 2.87, 2.15, 0.72, 104.76, 'completado', 5, '2026-07-09 02:49:33', '2026-07-09 02:49:33', '2026-07-09 02:49:33', '2026-07-09 03:02:33', '2026-07-09 03:24:33'),
 (22, 22, 1, 1, 2, 1, NULL, 1, 5.0, 12.18, 0.0, 1.0, 0.0, 12.18, 9.13, 3.05, 444.57, 'completado', 5, '2026-07-08 12:09:39', '2026-07-08 12:09:39', '2026-07-08 12:09:39', '2026-07-08 12:14:39', '2026-07-08 12:32:39');
+
+-- Generar facturas para todos los traslados completados de prueba
+INSERT INTO factura (
+  id_traslado, nro_documento, nro_control, serie,
+  razon_social, rif_cedula, direccion_fiscal,
+  igtf_porcentaje, igtf_monto_usd
+)
+SELECT
+  t.id,
+  CONCAT('FAC-', LPAD(t.id, 8, '0')),
+  CONCAT('00-', LPAD(t.id, 8, '0')),
+  'A',
+  CONCAT(u.nombre, ' ', u.apellido),
+  u.cedula,
+  'Ciudad Guayana, Venezuela',
+  3.00,
+  ROUND(t.costo_cliente_usd * 0.03, 2)
+FROM traslado t
+JOIN cliente cl ON t.id_cliente = cl.id
+JOIN usuario u ON cl.id_usuario = u.id
+WHERE t.estado = 'completado';
+

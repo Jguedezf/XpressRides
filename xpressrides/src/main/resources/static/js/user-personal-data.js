@@ -15,15 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
 function ajustarNavegacionPorRol(usuario) {
     if (usuario.rol !== 'chofer') return;
 
-    const desktopLinks = document.querySelectorAll('.desktop-nav a');
-    if (desktopLinks.length >= 3) {
-        desktopLinks[0].href = '../views/chofer-viaje.html';
-        desktopLinks[1].href = '../views/chofer-travel-history.html';
-        desktopLinks[1].textContent = 'Mis Viajes';
-        desktopLinks[2].href = '../views/chofer-dashboard.html';
-        desktopLinks[2].textContent = 'Mi perfil';
-    }
-
     const bottomLinks = document.querySelectorAll('.bottom-nav a');
     if (bottomLinks.length >= 3) {
         bottomLinks[0].href = '../views/chofer-viaje.html';
@@ -127,33 +118,16 @@ async function cargarContactosEmergencia() {
     }
 }
 
-async function editarContactoEmergencia(id, nombreActual, telefonoActual, parentescoActual) {
-    const nuevoNombre = prompt("Nombre del contacto:", nombreActual);
-    if (!nuevoNombre) return; // Cancelado o vacío
-    
-    const nuevoTelefono = prompt("Teléfono del contacto:", telefonoActual);
-    if (!nuevoTelefono) return;
-    
-    const nuevoParentesco = prompt("Parentesco (ej. Madre, Hermano):", parentescoActual);
-    if (!nuevoParentesco) return;
-    
-    try {
-        const usuario = getUsuario();
-        await fetchAPI('/emergencias/' + id, {
-            method: 'PUT',
-            body: JSON.stringify({
-                driverId: usuario.id,
-                name: nuevoNombre,
-                phone: nuevoTelefono,
-                relationship: nuevoParentesco
-            })
-        });
-        alert('Contacto actualizado con éxito.');
-        cargarContactosEmergencia(); // Recargar la lista
-    } catch (e) {
-        console.error('Error actualizando contacto:', e);
-        alert('No se pudo actualizar el contacto de emergencia.');
-    }
+function editarContactoEmergencia(id, nombreActual, telefonoActual, parentescoActual) {
+    document.getElementById('edit-emergencia-id').value = id;
+    document.getElementById('edit-emergencia-nombre').value = nombreActual;
+    document.getElementById('edit-emergencia-telefono').value = telefonoActual;
+    document.getElementById('edit-emergencia-parentesco').value = parentescoActual;
+    document.getElementById('modal-editar-emergencia').style.display = 'flex';
+}
+
+function cerrarModalEmergencia() {
+    document.getElementById('modal-editar-emergencia').style.display = 'none';
 }
 
 /**
@@ -268,4 +242,50 @@ function configurarFormulario() {
             }, 2000);
         }
     });
+
+    const formEmergencia = document.getElementById('form-editar-emergencia');
+    if (formEmergencia) {
+        formEmergencia.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-emergencia-id').value;
+            const nuevoNombre = document.getElementById('edit-emergencia-nombre').value.trim();
+            const nuevoTelefono = document.getElementById('edit-emergencia-telefono').value.trim();
+            const nuevoParentesco = document.getElementById('edit-emergencia-parentesco').value.trim();
+            
+            const REGEX_NOMBRE = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+            const REGEX_TELEFONO = /^04(14|24|16|26|12)-?\d{7}$/;
+            
+            if (!REGEX_NOMBRE.test(nuevoNombre)) {
+                alert('El nombre solo debe contener letras y espacios.');
+                return;
+            }
+            if (!REGEX_TELEFONO.test(nuevoTelefono)) {
+                alert('Teléfono inválido. Usa formato 0414-1234567 o 04141234567 con prefijo válido.');
+                return;
+            }
+            if (!REGEX_NOMBRE.test(nuevoParentesco)) {
+                alert('El parentesco solo debe contener letras y espacios.');
+                return;
+            }
+            
+            try {
+                const usuario = getUsuario();
+                await fetchAPI('/emergencias/' + id, {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        driverId: usuario.id,
+                        name: nuevoNombre,
+                        phone: nuevoTelefono,
+                        relationship: nuevoParentesco
+                    })
+                });
+                alert('Contacto actualizado con éxito.');
+                cerrarModalEmergencia();
+                cargarContactosEmergencia(); // Recargar la lista
+            } catch (err) {
+                console.error('Error actualizando contacto:', err);
+                alert('No se pudo actualizar el contacto de emergencia.');
+            }
+        });
+    }
 }

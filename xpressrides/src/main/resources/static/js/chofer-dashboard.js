@@ -59,6 +59,15 @@ function cargarDatosChofer() {
         toggleInput.checked = disponible;
         statusText.textContent = disponible ? 'En línea' : 'Inactivo';
         statusText.classList.toggle('offline', !disponible);
+
+        const hasActiveVehicle = usuario.vehiculos && usuario.vehiculos.some(v => v.enUso === true);
+        if (!hasActiveVehicle && !usuario.vehiculos) {
+            // si aun no han cargado los vehiculos en el localstorage, asumiremos que si hasta que actualice el backend
+        } else if (!hasActiveVehicle) {
+            toggleInput.checked = false;
+            statusText.textContent = 'Inactivo';
+            statusText.classList.add('offline');
+        }
     }
 
     // Calificación
@@ -98,15 +107,34 @@ async function actualizarDatosBackendChofer(usuario, driverBalance) {
 
             // Actualizar toggle switch UI
             if (profileData.disponible !== undefined) {
+                const hasActiveVehicle = profileData.vehiculos && profileData.vehiculos.some(v => v.enUso === true);
+                if (!hasActiveVehicle && profileData.disponible) {
+                    // Force offline in backend if they are online without a vehicle
+                    fetchAPI('/chofer/disponibilidad', {
+                        method: 'PUT',
+                        body: JSON.stringify({ disponible: false })
+                    }).catch(err => console.warn(err));
+                    profileData.disponible = false;
+                    updatedUser.disponible = false;
+                }
+
                 updatedUser.disponible = profileData.disponible;
                 localStorage.setItem('xpressUsuario', JSON.stringify(updatedUser));
 
                 const toggleInput = document.getElementById('availability-toggle');
                 const statusText = document.getElementById('status-text');
                 if (toggleInput && statusText) {
-                    toggleInput.checked = profileData.disponible;
-                    statusText.textContent = profileData.disponible ? 'En línea' : 'Inactivo';
-                    statusText.classList.toggle('offline', !profileData.disponible);
+                    if (!hasActiveVehicle) {
+                        toggleInput.checked = false;
+                        statusText.textContent = 'Inactivo';
+                        statusText.classList.add('offline');
+                        toggleInput.parentElement.title = "Selecciona un vehículo en tu perfil primero";
+                    } else {
+                        toggleInput.checked = profileData.disponible;
+                        statusText.textContent = profileData.disponible ? 'En línea' : 'Inactivo';
+                        statusText.classList.toggle('offline', !profileData.disponible);
+                        toggleInput.parentElement.title = "";
+                    }
                 }
             }
         }
@@ -121,7 +149,18 @@ function configurarToggle() {
 
     if (!toggleInput || !statusText) return;
 
-    toggleInput.addEventListener('change', function() {
+    toggleInput.addEventListener('change', function(e) {
+        try {
+            const usuario = JSON.parse(localStorage.getItem('xpressUsuario'));
+            const hasActiveVehicle = usuario.vehiculos && usuario.vehiculos.some(v => v.enUso === true);
+            if (!hasActiveVehicle) {
+                e.preventDefault();
+                this.checked = false;
+                mostrarMensajeTemporal("Debes seleccionar un vehículo en uso antes de ponerte en línea.", "error");
+                return;
+            }
+        } catch (err) {}
+
         const disponible = this.checked;
         statusText.textContent = disponible ? 'En línea' : 'Inactivo';
         statusText.classList.toggle('offline', !disponible);

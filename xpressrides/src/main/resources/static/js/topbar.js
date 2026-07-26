@@ -66,10 +66,20 @@ function populateTopbarUser() {
                 profileLink.style.display = 'block';
             }
         } else {
+            // Find the "Ver mi perfil" link which is originally in the HTML (before the logout link is added)
+            if (!profileLink) {
+                profileLink = document.querySelector('#topbar-profile-dropdown a:not(#topbar-logout-link)');
+            }
             if (userRole === 'chofer') {
                 roleStr = 'Chofer';
+                if (profileLink) {
+                    profileLink.href = '../views/chofer-dashboard.html';
+                }
             } else if (userRole === 'cliente') {
                 roleStr = 'Cliente';
+                if (profileLink) {
+                    profileLink.href = '../views/user-profile.html';
+                }
             }
         }
         
@@ -86,7 +96,7 @@ function populateTopbarUser() {
     }
 
     // Renderizar Navegación Dinámica Global si existe el contenedor
-    const dynamicNav = document.getElementById('dynamic-desktop-nav');
+    const dynamicNav = document.getElementById('dynamic-desktop-nav') || document.querySelector('.desktop-nav');
     if (dynamicNav) {
         if (userRole === 'chofer') {
             dynamicNav.innerHTML = `

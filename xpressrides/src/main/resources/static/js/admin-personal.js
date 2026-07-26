@@ -193,12 +193,39 @@ function cerrarModalEditar() {
 document.getElementById('form-editar-usuario').addEventListener('submit', async function(e) {
     e.preventDefault();
     const id = document.getElementById('edit-user-id').value;
+    const nombre = document.getElementById('edit-nombre').value.trim();
+    const apellido = document.getElementById('edit-apellido').value.trim();
+    const cedula = document.getElementById('edit-cedula').value.trim();
+    const telefono = document.getElementById('edit-telefono').value.trim();
+    const email = document.getElementById('edit-correo').value.trim();
+
+    const REGEX_NOMBRE = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
+    const REGEX_CEDULA = /^[VE]-\d{7,9}$/;
+    const REGEX_TELEFONO = /^04(14|24|16|26|12)-?\d{7}$/;
+
+    if (!REGEX_NOMBRE.test(nombre)) {
+        alert('El nombre solo debe contener letras y espacios.');
+        return;
+    }
+    if (!REGEX_NOMBRE.test(apellido)) {
+        alert('El apellido solo debe contener letras y espacios.');
+        return;
+    }
+    if (!REGEX_CEDULA.test(cedula)) {
+        alert('La cédula debe tener formato V-12345678 o E-12345678 (V mayúscula).');
+        return;
+    }
+    if (!REGEX_TELEFONO.test(telefono)) {
+        alert('Teléfono inválido. Usa formato 0414-1234567 o 04141234567 con prefijo válido.');
+        return;
+    }
+
     const body = {
-        name: document.getElementById('edit-nombre').value,
-        lastName: document.getElementById('edit-apellido').value,
-        ci: document.getElementById('edit-cedula').value,
-        phone: document.getElementById('edit-telefono').value,
-        email: document.getElementById('edit-correo').value
+        name: nombre,
+        lastName: apellido,
+        ci: cedula,
+        phone: telefono,
+        email: email
     };
 
     try {

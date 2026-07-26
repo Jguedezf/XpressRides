@@ -73,7 +73,7 @@ public class PaymentController {
     }
 
     // POST /api/driver-payments — personal admin registra pago a chofer
-    @PreAuthorize("hasRole('personal_admin')")
+    @PreAuthorize("hasAnyRole('administrador', 'personal_admin')")
     @PostMapping("/pagos-chofer")
     public ResponseEntity<Map<String, Object>> registerDriverPayment(
             @Valid @RequestBody DriverPayment payment,

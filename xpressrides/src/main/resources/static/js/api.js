@@ -169,3 +169,34 @@ window.addEventListener('storage', function(e) {
         window.location.reload();
     }
 });
+
+function volverAlPerfil() {
+    const usuario = getUsuario();
+    if (usuario && usuario.rol === 'chofer') {
+        window.location.href = 'chofer-dashboard.html';
+    } else {
+        window.location.href = 'user-profile.html';
+    }
+}
+function mostrarMensajeTemporal(mensaje, tipo) {
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        container.style.cssText = 'position: fixed; bottom: 20px; right: 20px; z-index: 10000;';
+        document.body.appendChild(container);
+    }
+    const toast = document.createElement('div');
+    toast.style.cssText = `        background: ;
+        color: white; padding: 12px 24px; border-radius: 8px;
+        margin-top: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        font-family: inherit; font-size: 14px; opacity: 0; transition: opacity 0.3s;
+    `;
+    toast.textContent = mensaje;
+    container.appendChild(toast);
+    requestAnimationFrame(() => toast.style.opacity = '1');
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}

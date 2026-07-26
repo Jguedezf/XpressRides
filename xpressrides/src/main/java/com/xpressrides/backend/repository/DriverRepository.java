@@ -32,6 +32,8 @@ public interface DriverRepository extends JpaRepository<Driver, Integer> {
     void subtractBalance(@Param("id") Integer id, @Param("amount") BigDecimal amount);
 
     // Busca choferes habilitados y disponibles para asignación de traslado
+    // Sólo los considera disponibles si tienen un vehículo en uso.
+    @Query("SELECT d FROM Driver d WHERE d.enabled = true AND d.available = true AND EXISTS (SELECT 1 FROM Vehicle v WHERE v.driver.id = d.id AND v.inUse = true)")
     List<Driver> findByEnabledTrueAndAvailableTrue();
 
     Optional<Driver> findByUsername_Username(String username);

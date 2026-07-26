@@ -24,23 +24,6 @@ function cargarPerfil() {
     }
 
     // Renderizar Navegación Dinámica ahora se maneja globalmente en topbar.js
-    
-    // Ajustar barra de navegación inferior
-    const bottomNav = document.querySelector('.bottom-nav');
-    if (bottomNav) {
-        if (usuario.rol && usuario.rol.toLowerCase() === 'chofer') {
-            bottomNav.innerHTML = `
-                <a href="../views/chofer-dashboard.html" class="bottom-nav-item">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                    <span class="mt-xs">Inicio</span>
-                </a>
-                <a href="../views/user-profile.html" class="bottom-nav-item active">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                    <span class="mt-xs">Perfil</span>
-                </a>
-            `;
-        }
-    }
 
     // 3. Crear avatar con iniciales (Ej: Freddy Salazar → FS)
     const profileAvatar = document.getElementById('profile-avatar');
@@ -48,6 +31,9 @@ function cargarPerfil() {
         const inicial1 = usuario.nombre ? usuario.nombre.charAt(0) : '';
         const inicial2 = usuario.apellido ? usuario.apellido.charAt(0) : '';
         profileAvatar.innerText = `${inicial1}${inicial2}`.toUpperCase() || '??';
+        if (usuario.rol && usuario.rol.toLowerCase() === 'chofer') {
+            profileAvatar.style.backgroundColor = 'var(--color-secondary)';
+        }
     }
 
     // 4. Mostrar badge si es estudiante UNEG
@@ -70,12 +56,51 @@ function cargarPerfil() {
 
     // Ocultar sección de referidos si no es cliente
     const referidosCard = document.getElementById('referidos-card');
+    const rol = (usuario.rol || '').toLowerCase();
+    const isCliente = rol === 'cliente';
+    const isChofer = rol === 'chofer';
+
     if (referidosCard) {
-        const rol = (usuario.rol || '').toLowerCase();
-        if (rol !== 'cliente') {
-            referidosCard.style.display = 'none';
-        } else {
-            referidosCard.style.display = 'block';
+        referidosCard.style.display = isCliente ? 'block' : 'none';
+    }
+
+    // Botón de recargar saldo
+    const btnRecargar = document.getElementById('btn-recargar-saldo-profile');
+    if (btnRecargar) {
+        btnRecargar.style.display = isCliente ? 'inline-block' : 'none';
+    }
+
+    // Enlaces de historial
+    const linkRecargas = document.getElementById('link-historial-recargas');
+    if (linkRecargas) {
+        linkRecargas.style.display = isCliente ? 'flex' : 'none';
+    }
+    const linkPagos = document.getElementById('link-historial-pagos');
+    if (linkPagos) {
+        linkPagos.style.display = isChofer ? 'flex' : 'none';
+    }
+
+
+    // Ajustar menú inferior móvil
+    const bottomNav = document.querySelector('.bottom-nav');
+    if (bottomNav) {
+        if (isChofer) {
+            bottomNav.innerHTML = `
+                <a href="../views/chofer-dashboard.html" class="bottom-nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    <span class="mt-xs">Inicio</span>
+                </a>
+                <a href="../views/chofer-travel-history.html" class="bottom-nav-item">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    <span class="mt-xs">Historial</span>
+                </a>
+                <a href="../views/user-profile.html" class="bottom-nav-item active">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    <span class="mt-xs">Perfil</span>
+                </a>
+            `;
+        } else if (!isCliente) {
+            bottomNav.style.display = 'none';
         }
     }
 
