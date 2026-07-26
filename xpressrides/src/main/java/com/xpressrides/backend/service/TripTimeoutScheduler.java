@@ -15,7 +15,7 @@ import com.xpressrides.backend.repository.TripRepository;
 @Component
 public class TripTimeoutScheduler {
 
-    private static final int RESPONSE_TIMEOUT_SECONDS = 30;
+    private static final int RESPONSE_TIMEOUT_SECONDS = 40;
 
     private final TripRepository tripRepository;
     private final TripRejectionService tripRejectionService;
@@ -40,7 +40,7 @@ public class TripTimeoutScheduler {
     @Scheduled(initialDelay = 5000, fixedDelay = 5000)
     public void checkBuscandoTrips() {
         List<Trip> buscando = tripRepository.findByStatus("buscando");
-        LocalDateTime threshold = LocalDateTime.now().minusMinutes(3); // 3 minutes timeout
+        LocalDateTime threshold = LocalDateTime.now().minusMinutes(5); // 5 minutes timeout
 
         for (Trip trip : buscando) {
             if (trip.getRequestDate() != null && trip.getRequestDate().isBefore(threshold)) {

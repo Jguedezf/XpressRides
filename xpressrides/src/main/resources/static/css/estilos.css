@@ -637,3 +637,8 @@ input:checked + .toggle-slider:before {
     min-height: 300px;
     height: 100%;
 }
+.btn-sm { padding: 4px 10px !important; font-size: 12px !important; border-radius: 4px !important; }
+
+
+.premium-table td { padding: 14px 16px; border-bottom: 1px solid #E2E8F0; vertical-align: middle; }
+.premium-table tbody tr:last-child td { border-bottom: none; }

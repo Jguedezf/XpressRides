@@ -63,9 +63,14 @@ public class AdminService {
     // registro público (AuthService.register() la bloquea a propósito, ver
     // commit 152c5d1). Solo alcanzable vía POST /api/admin/personal-admin,
     // protegido con @PreAuthorize hasRole('administrador') únicamente.
-    public User crearPersonalAdmin(AdminPersonnelRequest request) {
+    public User crearPersonalAdmin(AdminPersonnelRequest request, String creatorUsername) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new BadRequestException("El nombre de usuario ya está en uso");
+        }
+
+        User creator = null;
+        if (creatorUsername != null) {
+            creator = userRepository.findByUsername(creatorUsername).orElse(null);
         }
 
         User user = new User();
@@ -86,10 +91,34 @@ public class AdminService {
         AdminPersonnel admin = new AdminPersonnel();
         admin.setUserId(user);
         admin.setPosition(cargo);
+        admin.setCreatedBy(creator);
         admin.setCreatedAt(LocalDateTime.now());
         adminPersonnelRepository.save(admin);
 
         return user;
+    }
+
+    // Retorna todos los administradores y personal_admin
+    public List<Map<String, Object>> getAllAdmins() {
+        return adminPersonnelRepository.findAll().stream().map(ap -> {
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", ap.getId());
+            item.put("nombre", ap.getUserId().getName());
+            item.put("apellido", ap.getUserId().getLastName());
+            item.put("username", ap.getUserId().getUsername());
+            item.put("ci", ap.getUserId().getCi());
+            item.put("telefono", ap.getUserId().getPhone());
+            item.put("correo", ap.getUserId().getEmail());
+            item.put("cargo", ap.getPosition());
+            item.put("rol", ap.getUserId().getRole()); // administrador o personal_admin
+            item.put("creadoEn", ap.getCreatedAt());
+            if (ap.getCreatedBy() != null) {
+                item.put("creadoPor", ap.getCreatedBy().getName() + " " + ap.getCreatedBy().getLastName());
+            } else {
+                item.put("creadoPor", "Fundador (Sistema)");
+            }
+            return item;
+        }).collect(Collectors.toList());
     }
 
     // Retorna todos los choferes con su estado operativo
@@ -100,6 +129,9 @@ public class AdminService {
             item.put("nombre", d.getUsername().getName());
             item.put("apellido", d.getUsername().getLastName());
             item.put("username", d.getUsername().getUsername());
+            item.put("ci", d.getUsername().getCi());
+            item.put("telefono", d.getUsername().getPhone());
+            item.put("correo", d.getUsername().getEmail());
             item.put("habilitado", d.isEnabled());
             item.put("disponible", d.isAvailable());
             item.put("banco", d.getBank() != null ? d.getBank().getName() : null);
@@ -117,6 +149,9 @@ public class AdminService {
             item.put("nombre", c.getUserId().getName());
             item.put("apellido", c.getUserId().getLastName());
             item.put("username", c.getUserId().getUsername());
+            item.put("ci", c.getUserId().getCi());
+            item.put("telefono", c.getUserId().getPhone());
+            item.put("correo", c.getUserId().getEmail());
             item.put("saldoUsd", c.getBalance());
             item.put("esEstudiante", c.isStudent());
             item.put("primerViajeUsado", c.isFirstTripUsed());
@@ -187,5 +222,51 @@ public class AdminService {
             item.put("fechaSolicitud", t.getRequestDate());
             return item;
         }).collect(Collectors.toList());
+    }
+
+    public void updateUserAdmin(Integer id, com.xpressrides.backend.dto.request.UserUpdateRequest request, String adminUsername) {
+        User targetUser = userRepository.findById(id).orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+        User adminUser = userRepository.findByUsername(adminUsername).orElseThrow(() -> new RuntimeException("Administrador no encontrado"));
+
+        String adminRole = adminUser.getRole();
+        String targetRole = targetUser.getRole();
+
+        if (adminRole.equals("personal_admin")) {
+            if (targetRole.equals("administrador") || targetRole.equals("personal_admin")) {
+                throw new org.springframework.security.access.AccessDeniedException("El personal administrativo no puede modificar a administradores u otro personal");
+            }
+        } else if (adminRole.equals("administrador")) {
+            if (targetRole.equals("administrador") && !targetUser.getId().equals(adminUser.getId())) {
+                throw new org.springframework.security.access.AccessDeniedException("Un administrador no puede modificar a otro administrador");
+            }
+        }
+
+        if (request.getName() != null) targetUser.setName(request.getName());
+        if (request.getLastName() != null) targetUser.setLastName(request.getLastName());
+        if (request.getEmail() != null) targetUser.setEmail(request.getEmail());
+        if (request.getPhone() != null) targetUser.setPhone(request.getPhone());
+        if (request.getCi() != null) targetUser.setCi(request.getCi());
+
+        userRepository.save(targetUser);
+    }
+
+    public void deleteUserAdmin(Integer id, String adminUsername) {
+        User targetUser = userRepository.findById(id).orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+        User adminUser = userRepository.findByUsername(adminUsername).orElseThrow(() -> new RuntimeException("Administrador no encontrado"));
+
+        String adminRole = adminUser.getRole();
+        String targetRole = targetUser.getRole();
+
+        if (adminRole.equals("personal_admin")) {
+            if (targetRole.equals("administrador") || targetRole.equals("personal_admin")) {
+                throw new org.springframework.security.access.AccessDeniedException("El personal administrativo no puede eliminar a administradores u otro personal");
+            }
+        } else if (adminRole.equals("administrador")) {
+            if (targetRole.equals("administrador")) {
+                throw new org.springframework.security.access.AccessDeniedException("Un administrador no puede eliminar a otro administrador");
+            }
+        }
+
+        userRepository.delete(targetUser);
     }
 }

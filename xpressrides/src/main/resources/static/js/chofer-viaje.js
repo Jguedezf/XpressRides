@@ -659,7 +659,7 @@ async function cambiarEstado(nuevoEstado) {
         if (nuevoEstado === 'completado') {
             ocultarPaneles();
             mostrarMensaje('✅ Viaje completado exitosamente');
-            renderInterfazPorEstado('completado'); // Para limpiar mapa
+            // renderInterfazPorEstado('completado'); // Removido: ocultarPaneles() ya limpia el mapa
             setTimeout(() => {
                 window.location.href = '/views/chofer-dashboard.html?viaje=completado';
             }, 2000);
@@ -694,6 +694,9 @@ async function cancelarViajeActivo() {
             });
             ocultarPaneles();
             mostrarMensaje('Viaje cancelado');
+            setTimeout(() => {
+                window.location.href = '/views/chofer-dashboard.html?viaje=cancelado';
+            }, 2000);
         } catch (error) {
             mostrarMensaje('Error al cancelar: ' + error.message);
         }

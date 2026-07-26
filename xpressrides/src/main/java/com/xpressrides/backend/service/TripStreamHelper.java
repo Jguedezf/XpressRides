@@ -46,6 +46,9 @@ final class TripStreamHelper {
                     if (futureHolder[0] != null) {
                         futureHolder[0].cancel(false);
                     }
+                    try {
+                        emitter.send(SseEmitter.event().name("viaje").data(java.util.Collections.emptyMap()));
+                    } catch (Exception ignored) {}
                     emitter.complete();
                     return;
                 }

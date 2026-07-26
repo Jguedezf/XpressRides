@@ -87,12 +87,16 @@ async function fetchAPI(endpoint, options = {}) {
     }
 }
 
+let googleMapsPromise = null;
+
 /**
  * Carga dinámicamente el script de Google Maps obteniendo la API Key del backend.
  * Devuelve una promesa que se resuelve cuando el script termina de cargar.
  */
 function cargarGoogleMaps() {
-    return new Promise(async (resolve, reject) => {
+    if (googleMapsPromise) return googleMapsPromise;
+
+    googleMapsPromise = new Promise(async (resolve, reject) => {
         // Si ya está cargado, resolver inmediatamente
         if (typeof google !== 'undefined' && google.maps) {
             resolve();
@@ -123,18 +127,23 @@ function cargarGoogleMaps() {
 
                 script.onerror = () => {
                     delete window[callbackName];
+                    googleMapsPromise = null; // Permitir reintento
                     reject(new Error('Fallo al cargar el script de Google Maps'));
                 };
 
                 document.head.appendChild(script);
             } else {
+                googleMapsPromise = null;
                 reject(new Error('No se pudo obtener la API Key de Google Maps'));
             }
         } catch (error) {
             console.error('Error cargando configuración de mapas:', error);
+            googleMapsPromise = null;
             reject(error);
         }
     });
+
+    return googleMapsPromise;
 }
 
 /**

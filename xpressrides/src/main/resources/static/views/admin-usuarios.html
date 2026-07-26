@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios - XpressRides</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS conectado -->
+    <link rel="stylesheet" href="/css/estilos.css">
+
+    <style>
+        body {
+            background-color: var(--color-bg-card);
+            font-family: var(--font-family-base);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 76px 20px 20px;
+        }
+
+        .brand-logo-img {
+            max-width: 260px;
+            width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .user-card {
+            flex: 1;
+            min-width: 260px;
+            padding: var(--space-xl) var(--space-md);
+            text-align: center;
+            background-color: var(--color-bg-main);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border: 2px solid transparent;
+        }
+        
+        .user-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+
+        .user-card.choferes:hover { border-color: var(--color-secondary); }
+        .user-card.clientes:hover { border-color: var(--color-success); }
+        .user-card.admin:hover { border-color: var(--color-primary); }
+
+        .icon-circle {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: var(--space-md);
+            color: white;
+        }
+        
+        .bg-choferes { background-color: var(--color-secondary); }
+        .bg-clientes { background-color: var(--color-success); }
+        .bg-admin { background-color: var(--color-primary); }
+    </style>
+</head>
+<body>
+
+<header style="position:fixed;top:0;left:0;right:0;z-index:1000;background:#1F4E79;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+    <div class="top-bar-left d-flex align-center" style="gap: 16px;">
+        <span style="color:white;font-weight:700;font-size:18px;">Xpress<span style="color:#C55A11;">Rides</span><span style="font-weight:400;font-size:13px;opacity:0.75;"> | Admin</span></span>
+    </div>
+    <nav style="display:flex;gap:8px;">
+        <a href="/views/admin-dashboard.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Panel Principal</a>
+        <a href="/views/admin-reportes.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Reporte de Ingresos</a>
+        <a href="/views/admin-pagos.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Control de Pagos</a>
+        <a href="/views/admin-notificaciones.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Notificaciones</a>
+        <a href="/views/admin-usuarios.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;background:#C55A11;">Gestión de Usuarios</a>
+        <a href="/views/admin-bancos.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Bancos</a>
+        <a href="/views/admin-cupones.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Cupones</a>
+    </nav>
+    <div class="top-bar-right d-flex align-center" style="gap: 16px;">
+        <div class="user-profile-widget" onclick="toggleProfileDropdown()" style="position:relative; cursor:pointer;">
+            <div id="topbar-user-initial" style="width:32px; height:32px; border-radius:50%; background-color:var(--color-primary); color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">U</div>
+            <div id="topbar-profile-dropdown" class="card" style="position:absolute; top:100%; right:0; margin-top:12px; display:none; min-width:180px; z-index:1000; padding:12px; cursor:default;" onclick="event.stopPropagation()">
+                <p id="topbar-user-name" class="h2-subtitle" style="margin:0; font-size:14px; color:var(--color-text-main);">Usuario</p>
+                <p id="topbar-user-role" class="text-small" style="margin-bottom:8px; text-transform:capitalize; color:var(--color-text-muted);">Rol</p>
+            </div>
+        </div>
+        <a href="/views/user-logout.html" style="color:white;text-decoration:none;font-size:13px;opacity:0.75;">Cerrar sesión</a>
+    </div>
+</header>
+
+<main class="d-flex flex-col align-center" style="width: 100%; max-width: 900px;">
+
+    <!-- Título de la Sección -->
+    <div class="text-center mb-lg">
+        <h1 style="color: var(--color-primary); font-size: 28px; margin-bottom: 8px;">Gestión de Usuarios</h1>
+        <p style="color: var(--color-text-muted); font-size: 15px;">Seleccione el tipo de usuario que desea consultar o gestionar.</p>
+    </div>
+
+    <!-- Contenedor para tarjetas -->
+    <div class="d-flex justify-between gap-md mb-lg" style="width: 100%; flex-wrap: wrap; gap: var(--space-md);">
+        
+        <!-- Tarjeta Choferes -->
+        <a href="/views/admin-choferes.html" class="user-card choferes">
+            <div class="icon-circle bg-choferes">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="15" rx="2" ry="2"></rect>
+                    <polyline points="17 2 12 7 7 2"></polyline>
+                </svg>
+            </div>
+            <h2 class="h2-subtitle" style="margin: 0 0 8px 0; color: var(--color-text-main);">Conductores</h2>
+            <p class="text-small text-muted" style="margin: 0; line-height: 1.4;">Consulta la lista completa, verifica su estado y balance.</p>
+        </a>
+
+        <!-- Tarjeta Clientes -->
+        <a href="/views/admin-clientes.html" class="user-card clientes">
+            <div class="icon-circle bg-clientes">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+            </div>
+            <h2 class="h2-subtitle" style="margin: 0 0 8px 0; color: var(--color-text-main);">Clientes</h2>
+            <p class="text-small text-muted" style="margin: 0; line-height: 1.4;">Verifica clientes registrados, saldos y cupones de uso.</p>
+        </a>
+
+        <!-- Tarjeta Administradores -->
+        <a href="/views/admin-personal.html" class="user-card admin">
+            <div class="icon-circle bg-admin">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+            </div>
+            <h2 class="h2-subtitle" style="margin: 0 0 8px 0; color: var(--color-text-main);">Personal Admin</h2>
+            <p class="text-small text-muted" style="margin: 0; line-height: 1.4;">Gestión de perfiles de administradores y credenciales.</p>
+        </a>
+
+    </div>
+
+</main>
+
+<script src="/js/api.js"></script>
+<script src="/js/topbar.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    requireAuth();
+});
+</script>
+</body>
+</html>

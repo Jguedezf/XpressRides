@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Conductores - XpressRides</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Ruta lista para Spring Boot -->
+    <link rel="stylesheet" href="/css/estilos.css">
+
+    <style>
+        body {
+            background-color: var(--color-bg-card, #F8F9FB);
+            font-family: var(--font-family-base);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 76px 20px 40px;
+            min-height: 100vh;
+        }
+
+        .report-container { width: 100%; max-width: 1100px; }
+        .brand-logo-img { max-width: 260px; width: 100%; height: auto; display: block; margin: 0 auto; }
+
+        .premium-table {
+            width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 14px;
+            background-color: white; border-radius: 8px; overflow: hidden;
+            border: 1px solid #CBD5E1;
+        }
+        .premium-table th { background-color: var(--color-secondary); color: white; text-align: left; padding: 12px 16px; font-weight: 600; }
+        .premium-table td { padding: 12px 16px; color: var(--color-text-main); border-bottom: 1px solid #E2E8F0; }
+        .premium-table tbody tr:nth-child(even) { background-color: var(--color-bg-card); }
+        .premium-table tbody tr:hover { background-color: #E2E8F0; }
+
+        .premium-card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid #E2E8F0;
+        }
+        .premium-title { margin-top: 0; }
+        .premium-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #CBD5E1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-family: inherit;
+            background-color: white;
+        }
+        .premium-label { display: block; font-weight: 500; margin-bottom: 5px; font-size: 13px; color: var(--color-text-main); margin-left: 2px; }
+    </style>
+</head>
+<body>
+
+<header style="position:fixed;top:0;left:0;right:0;z-index:1000;background:#1F4E79;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+    <div class="top-bar-left d-flex align-center" style="gap: 16px;">
+        <span style="color:white;font-weight:700;font-size:18px;">Xpress<span style="color:#C55A11;">Rides</span><span style="font-weight:400;font-size:13px;opacity:0.75;"> | Admin</span></span>
+    </div>
+    <nav style="display:flex;gap:8px;">
+        <a href="/views/admin-dashboard.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Panel Principal</a>
+        <a href="/views/admin-reportes.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Reporte de Ingresos</a>
+        <a href="/views/admin-pagos.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Control de Pagos</a>
+        <a href="/views/admin-notificaciones.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Notificaciones</a>
+        <a href="/views/admin-usuarios.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Gestión de Usuarios</a>
+        <a href="/views/admin-bancos.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Bancos</a>
+        <a href="/views/admin-cupones.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Cupones</a>
+    </nav>
+    <div class="top-bar-right d-flex align-center" style="gap: 16px;">
+        <div class="user-profile-widget" onclick="toggleProfileDropdown()" style="position:relative; cursor:pointer;">
+            <div id="topbar-user-initial" style="width:32px; height:32px; border-radius:50%; background-color:var(--color-primary); color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">U</div>
+            <div id="topbar-profile-dropdown" class="card" style="position:absolute; top:100%; right:0; margin-top:12px; display:none; min-width:180px; z-index:1000; padding:12px; cursor:default;" onclick="event.stopPropagation()">
+                <p id="topbar-user-name" class="h2-subtitle" style="margin:0; font-size:14px; color:var(--color-text-main);">Usuario</p>
+                <p id="topbar-user-role" class="text-small" style="margin-bottom:8px; text-transform:capitalize; color:var(--color-text-muted);">Rol</p>
+            </div>
+        </div>
+        <a href="/views/user-logout.html" style="color:white;text-decoration:none;font-size:13px;opacity:0.75;">Cerrar sesión</a>
+    </div>
+</header>
+
+<main class="report-container">
+
+    <div class="text-center mb-24">
+        <img src="/img/logo.png" alt="XpressRides Logo" class="brand-logo-img">
+    </div>
+
+    <!-- SECCIÓN: GESTIÓN DE CHOFERES -->
+    <section class="premium-card" style="margin-bottom: 30px; padding: 30px;">
+        <h2 class="premium-title" style="margin-bottom: 5px; font-size: 20px;">Gestión de Conductores</h2>
+        <p class="premium-subtitle" style="margin-bottom: 20px;">Listado y búsqueda de conductores registrados — <span id="total-choferes">0</span> en total</p>
+
+        <div class="premium-card" style="margin-top: 20px; padding: 20px; margin-bottom: 20px;">
+            <label class="premium-label" for="buscar-chofer">Buscar por nombre, apellido o usuario</label>
+            <input type="text" id="buscar-chofer" class="premium-input" placeholder="Ej. Roberto, Acosta, racostach..." style="height: 40px;">
+        </div>
+
+        <div style="overflow-x: auto;">
+            <table class="premium-table">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Usuario</th>
+                    <th>Balance</th>
+                    <th>Estado</th>
+                    <th style="text-align: center;">Acción</th>
+                </tr>
+                </thead>
+                <tbody id="tbody-choferes">
+                <tr><td colspan="6" class="text-center">Cargando conductores...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div id="pagination-controls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; gap: 16px;">
+            <button id="btn-prev-page" class="btn-secondary btn-auto" style="padding: 8px 16px; font-size: 13px;" disabled>Anterior</button>
+            <span id="page-info" style="font-size: 14px; font-weight: 500; color: var(--color-text-main); white-space: nowrap; flex: 1 1 auto; text-align: center;">Página 1 de 1</span>
+            <button id="btn-next-page" class="btn-primary btn-auto" style="padding: 8px 16px; font-size: 13px;" disabled>Siguiente</button>
+        </div>
+    </section>
+
+</main>
+
+<!-- Modal Editar Usuario -->
+<div id="modal-editar-usuario" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center;">
+    <div class="modal-content card" style="width:90%; max-width:400px; padding:24px; position:relative;">
+        <h2 style="margin-top:0; margin-bottom: 16px; color:var(--color-primary); font-size: 20px; font-weight: 600; text-align: center;">Editar Usuario</h2>
+        <form id="form-editar-usuario">
+            <input type="hidden" id="edit-user-id">
+            <div class="premium-form-group" style="margin-bottom: 12px; text-align: left;">
+                <label class="premium-label" style="display:block; margin-bottom: 4px; font-weight: 500;">Nombre:</label>
+                <input type="text" id="edit-nombre" class="premium-input" style="width:100%; height:36px;" required>
+            </div>
+            <div class="premium-form-group" style="margin-bottom: 12px; text-align: left;">
+                <label class="premium-label" style="display:block; margin-bottom: 4px; font-weight: 500;">Apellido:</label>
+                <input type="text" id="edit-apellido" class="premium-input" style="width:100%; height:36px;" required>
+            </div>
+            <div class="premium-form-group" style="margin-bottom: 12px; text-align: left;">
+                <label class="premium-label" style="display:block; margin-bottom: 4px; font-weight: 500;">Cédula:</label>
+                <input type="text" id="edit-cedula" class="premium-input" style="width:100%; height:36px;" required>
+            </div>
+            <div class="premium-form-group" style="margin-bottom: 12px; text-align: left;">
+                <label class="premium-label" style="display:block; margin-bottom: 4px; font-weight: 500;">Teléfono:</label>
+                <input type="text" id="edit-telefono" class="premium-input" style="width:100%; height:36px;" required>
+            </div>
+            <div class="premium-form-group" style="margin-bottom: 12px; text-align: left;">
+                <label class="premium-label" style="display:block; margin-bottom: 4px; font-weight: 500;">Correo Electrónico:</label>
+                <input type="email" id="edit-correo" class="premium-input" style="width:100%; height:36px;" required>
+            </div>
+            <div class="d-flex gap-md" style="margin-top: 20px;">
+                <button type="button" class="btn-primary" style="background:var(--color-text-muted);" onclick="cerrarModalEditar()">Cancelar</button>
+                <button type="submit" class="btn-primary">Guardar Cambios</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Eliminar Usuario -->
+<div id="modal-eliminar-usuario" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center;">
+    <div class="modal-content card" style="width:90%; max-width:400px; padding:24px; text-align:center;">
+        <h3 style="margin-top:0; color:#d9534f;">Eliminar Usuario</h3>
+        <p>¿Estás seguro de que deseas eliminar permanentemente a este usuario? Esta acción no se puede deshacer.</p>
+        <input type="hidden" id="delete-user-id">
+        <div class="d-flex gap-md justify-center" style="margin-top: 20px;">
+            <button type="button" class="btn-primary" style="background:var(--color-text-muted);" onclick="cerrarModalEliminar()">Cancelar</button>
+            <button type="button" class="btn-primary" style="background:#d9534f;" onclick="confirmarEliminarUsuario()">Sí, Eliminar</button>
+        </div>
+    </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/topbar.js"></script>
+<script src="/js/admin-choferes.js"></script>
+</body>
+</html>

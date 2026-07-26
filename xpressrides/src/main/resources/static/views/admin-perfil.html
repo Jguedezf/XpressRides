@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil (Admin) - XpressRides</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Ruta lista para Spring Boot -->
+    <link rel="stylesheet" href="/css/estilos.css">
+
+    <style>
+        body {
+            background-color: var(--color-bg-card, #F8F9FB);
+            font-family: var(--font-family-base);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 76px 20px 40px;
+            min-height: 100vh;
+        }
+
+        .profile-container { width: 100%; max-width: 600px; }
+        .brand-logo-img { max-width: 260px; width: 100%; height: auto; display: block; margin: 0 auto; }
+
+        .premium-card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid #E2E8F0;
+            padding: 30px;
+        }
+        
+        .premium-title { margin-top: 0; color: var(--color-primary); }
+        
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: #6f42c1;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .premium-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #CBD5E1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-family: inherit;
+            background-color: #F8F9FB;
+            margin-bottom: 16px;
+        }
+        .premium-label { display: block; font-weight: 500; margin-bottom: 5px; font-size: 13px; color: var(--color-text-main); margin-left: 2px; }
+    </style>
+</head>
+<body>
+
+<header style="position:fixed;top:0;left:0;right:0;z-index:1000;background:#1F4E79;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,0.2);">
+    <div class="top-bar-left d-flex align-center" style="gap: 16px;">
+        <span style="color:white;font-weight:700;font-size:18px;">Xpress<span style="color:#C55A11;">Rides</span><span style="font-weight:400;font-size:13px;opacity:0.75;"> | Admin</span></span>
+    </div>
+    <nav style="display:flex;gap:8px;">
+        <a href="/views/admin-dashboard.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Panel Principal</a>
+        <a href="/views/admin-reportes.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Reporte de Ingresos</a>
+        <a href="/views/admin-pagos.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Control de Pagos</a>
+        <a href="/views/admin-notificaciones.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Notificaciones</a>
+        <a href="/views/admin-usuarios.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Gestin de Usuarios</a>
+        <a href="/views/admin-bancos.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Bancos</a>
+    </nav>
+    <div class="top-bar-right d-flex align-center" style="gap: 16px;">
+        <a href="/views/user-logout.html" style="color:white;text-decoration:none;font-size:13px;opacity:0.75;">Cerrar sesión</a>
+    </div>
+</header>
+
+<main class="profile-container">
+
+    <div class="text-center mb-24">
+        <img src="/img/logo.png" alt="XpressRides Logo" class="brand-logo-img">
+    </div>
+
+    <section class="premium-card">
+        <div class="profile-header">
+            <div class="profile-avatar" id="avatar-initials">AD</div>
+            <div>
+                <h2 class="premium-title" id="display-name" style="margin-bottom: 4px; font-size: 24px;">Administrador</h2>
+                <span class="badge-blue" id="display-role" style="font-size: 13px; text-transform: capitalize;">Cargando rol...</span>
+                <span class="badge-gray" id="display-position" style="font-size: 13px; display: none;"></span>
+            </div>
+        </div>
+
+        <h3 style="font-size: 16px; margin-bottom: 20px; border-bottom: 1px solid #E2E8F0; padding-bottom: 10px;">Mis Datos Personales</h3>
+        
+        <form id="admin-profile-form">
+            <div class="d-flex gap-md" style="margin-bottom: 16px;">
+                <div style="flex:1;">
+                    <label class="premium-label" for="admin-nombre">Nombre</label>
+                    <input type="text" id="admin-nombre" class="premium-input" required>
+                </div>
+                <div style="flex:1;">
+                    <label class="premium-label" for="admin-apellido">Apellido</label>
+                    <input type="text" id="admin-apellido" class="premium-input" required>
+                </div>
+            </div>
+
+            <div class="d-flex gap-md" style="margin-bottom: 16px;">
+                <div style="flex:1;">
+                    <label class="premium-label" for="admin-cedula">Cédula</label>
+                    <input type="text" id="admin-cedula" class="premium-input" required>
+                </div>
+                <div style="flex:1;">
+                    <label class="premium-label" for="admin-telefono">Teléfono</label>
+                    <input type="text" id="admin-telefono" class="premium-input" required>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <label class="premium-label" for="admin-correo">Correo electrónico</label>
+                <input type="email" id="admin-correo" class="premium-input" required>
+            </div>
+
+            <div id="alert-success" class="alert-success" style="display:none; font-size: 14px; margin-bottom: 16px;"></div>
+            <div id="alert-error" class="alert-error" style="display:none; font-size: 14px; margin-bottom: 16px;"></div>
+
+            <button type="submit" class="btn-primary" id="btn-save" style="width: 100%;">Guardar Cambios</button>
+        </form>
+    </section>
+
+</main>
+
+<script src="/js/api.js"></script>
+<script src="/js/admin-perfil.js"></script>
+</body>
+</html>

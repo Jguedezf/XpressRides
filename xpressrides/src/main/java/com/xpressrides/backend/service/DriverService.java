@@ -69,6 +69,14 @@ public class DriverService {
     public void toggleAvailability(String username, boolean available) {
         Driver driver = driverRepository.findByUsername_Username(username)
             .orElseThrow(() -> new ResourceNotFoundException("Chofer no encontrado"));
+            
+        if (available) {
+            boolean hasVehicle = vehicleRepository.findByDriver_IdAndInUseTrue(driver.getId()).isPresent();
+            if (!hasVehicle) {
+                throw new BadRequestException("Debes tener un vehículo en uso para poder conectarte.");
+            }
+        }
+            
         driver.setAvailable(available);
         driverRepository.save(driver);
     }

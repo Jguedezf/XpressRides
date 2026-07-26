@@ -46,10 +46,9 @@
         <a href="/views/admin-reportes.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Reporte de Ingresos</a>
         <a href="/views/admin-pagos.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Control de Pagos</a>
         <a href="/views/admin-notificaciones.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Notificaciones</a>
-        <a href="/views/admin-clientes.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Clientes</a>
+        <a href="/views/admin-usuarios.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Gestión de Usuarios</a>
         <a href="/views/admin-bancos.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Bancos</a>
         <a href="/views/admin-cupones.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Cupones</a>
-        <a href="/views/admin-personal.html" id="nav-personal-admin-link" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Personal</a>
     </nav>
     <div class="top-bar-right d-flex align-center" style="gap: 16px;">
         <div class="user-profile-widget" onclick="toggleProfileDropdown()" style="position:relative; cursor:pointer;">
@@ -160,28 +159,6 @@
             </div>
         </form>
         </div>
-    </div>
-
-    <!-- Gestión de Conductores -->
-    <div class="card" style="width: 100%; background-color: var(--color-bg-main); margin-top: var(--space-lg); overflow-x: auto; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
-        <h2 class="h2-subtitle mb-md" style="color: var(--color-secondary); border-bottom: 1px solid #eee; padding-bottom: 8px;">Gestión de Conductores</h2>
-        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
-            <thead>
-                <tr style="border-bottom: 2px solid #ddd; color: var(--color-text-muted);">
-                    <th style="padding: 12px 8px;">ID</th>
-                    <th style="padding: 12px 8px;">Nombre</th>
-                    <th style="padding: 12px 8px;">Usuario</th>
-                    <th style="padding: 12px 8px;">Balance</th>
-                    <th style="padding: 12px 8px;">Estado</th>
-                    <th style="padding: 12px 8px; text-align: center;">Acción</th>
-                </tr>
-            </thead>
-            <tbody id="drivers-table-body">
-                <tr>
-                    <td colspan="6" style="text-align: center; padding: 24px; color: var(--color-text-muted);">Cargando conductores...</td>
-                </tr>
-            </tbody>
-        </table>
     </div>
 
 </main>

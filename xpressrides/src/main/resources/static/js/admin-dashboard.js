@@ -4,7 +4,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 2. Cargar datos
     await cargarMetricas();
-    await cargarTablaConductores();
     await cargarChoferesPendientes();
     await cargarTasaBcvActual();
 });

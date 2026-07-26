@@ -36,6 +36,7 @@ public class TripService {
     }
 
 
+    @org.springframework.transaction.annotation.Transactional
     public TripResponse solicitarTraslado(TripRequest request, String username) {
         Customer customer = customerRepository.findByUserId_Username(username)
             .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));

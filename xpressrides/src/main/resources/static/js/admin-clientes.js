@@ -78,7 +78,7 @@ function renderClientes(clientes, startIndex = 0) {
     const tbody = document.getElementById('tbody-clientes');
 
     if (clientes.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center">No hay clientes que coincidan con la búsqueda.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay clientes que coincidan con la búsqueda.</td></tr>';
         return;
     }
 
@@ -96,6 +96,8 @@ function renderClientes(clientes, startIndex = 0) {
         const saldo = c.saldoUsd != null ? Number(c.saldoUsd).toFixed(2) : '0.00';
         const nombreStr = escapeHTML(`${c.nombre || ''} ${c.apellido || ''}`);
         const userStr = escapeHTML(c.username || '');
+        const clientData = JSON.stringify(c).replace(/"/g, '&quot;');
+        
         return `
             <tr>
                 <td>${startIndex + index + 1}</td>
@@ -104,7 +106,81 @@ function renderClientes(clientes, startIndex = 0) {
                 <td>$ ${saldo}</td>
                 <td>${c.esEstudiante ? 'Sí' : 'No'}</td>
                 <td>${c.primerViajeUsado ? 'Sí' : 'No'}</td>
+                <td style="text-align: center;">
+                    <div style="display: flex; gap: 4px; justify-content: center; flex-wrap: wrap;">
+                        <button class="btn-primary btn-auto btn-sm" onclick='abrirModalEditar(${clientData})'>Editar</button>
+                        <button class="btn-danger btn-auto btn-sm" onclick="abrirModalEliminar(${c.id})">Eliminar</button>
+                    </div>
+                </td>
             </tr>
         `;
     }).join("");
+}
+
+// Modal logic
+function abrirModalEditar(user) {
+    document.getElementById('edit-user-id').value = user.id;
+    document.getElementById('edit-nombre').value = user.nombre || '';
+    document.getElementById('edit-apellido').value = user.apellido || '';
+    document.getElementById('edit-cedula').value = user.ci || '';
+    document.getElementById('edit-telefono').value = user.telefono || '';
+    document.getElementById('edit-correo').value = user.correo || '';
+    document.getElementById('modal-editar-usuario').style.display = 'flex';
+}
+
+function cerrarModalEditar() {
+    document.getElementById('modal-editar-usuario').style.display = 'none';
+}
+
+document.getElementById('form-editar-usuario').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const id = document.getElementById('edit-user-id').value;
+    const body = {
+        name: document.getElementById('edit-nombre').value,
+        lastName: document.getElementById('edit-apellido').value,
+        ci: document.getElementById('edit-cedula').value,
+        phone: document.getElementById('edit-telefono').value,
+        email: document.getElementById('edit-correo').value
+    };
+
+    try {
+        const res = await fetchAPI(`/admin/usuarios/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(body)
+        });
+        if (res && res.success) {
+            cerrarModalEditar();
+            cargarClientes();
+        } else {
+            alert(res?.message || 'Error al actualizar usuario');
+        }
+    } catch (error) {
+        alert('Error en la conexión');
+    }
+});
+
+function abrirModalEliminar(id) {
+    document.getElementById('delete-user-id').value = id;
+    document.getElementById('modal-eliminar-usuario').style.display = 'flex';
+}
+
+function cerrarModalEliminar() {
+    document.getElementById('modal-eliminar-usuario').style.display = 'none';
+}
+
+async function confirmarEliminarUsuario() {
+    const id = document.getElementById('delete-user-id').value;
+    try {
+        const res = await fetchAPI(`/admin/usuarios/${id}`, {
+            method: 'DELETE'
+        });
+        if (res && res.success) {
+            cerrarModalEliminar();
+            cargarClientes();
+        } else {
+            alert(res?.message || 'Error al eliminar usuario');
+        }
+    } catch (error) {
+        alert('Error en la conexión');
+    }
 }

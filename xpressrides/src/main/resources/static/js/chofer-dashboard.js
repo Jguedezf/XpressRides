@@ -6,6 +6,17 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarDatosChofer();
     configurarToggle();
     configurarBalance();
+    iniciarPollingViajes();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const viajeStatus = urlParams.get('viaje');
+    if (viajeStatus === 'completado') {
+        mostrarMensajeTemporal('✅ ¡Viaje completado exitosamente! Buen trabajo.', 'success');
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (viajeStatus === 'cancelado') {
+        mostrarMensajeTemporal('⚠️ El viaje fue cancelado.', 'error');
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
 });
 
 function requireAuth() {
@@ -127,7 +138,23 @@ function configurarToggle() {
         fetchAPI('/chofer/disponibilidad', {
             method: 'PUT',
             body: JSON.stringify({ available: disponible })
-        }).catch(err => console.warn('Error actualizando disponibilidad:', err));
+        }).catch(err => {
+            console.warn('Error actualizando disponibilidad:', err);
+            
+            // Revertir UI en caso de error
+            toggleInput.checked = !disponible;
+            statusText.textContent = !disponible ? 'En línea' : 'Inactivo';
+            statusText.classList.toggle('offline', disponible);
+            
+            // Revertir localStorage
+            try {
+                const usuario = JSON.parse(localStorage.getItem('xpressUsuario'));
+                usuario.disponible = !disponible;
+                localStorage.setItem('xpressUsuario', JSON.stringify(usuario));
+            } catch (e) {}
+
+            mostrarMensajeTemporal(err.message || 'Error actualizando disponibilidad', 'error');
+        });
     });
 }
 
@@ -154,7 +181,7 @@ function configurarBalance() {
 let pollingTripInterval = null;
 let currentPendingTripId = null;
 let countdownInterval = null;
-const RESPONSE_TIMEOUT_SECONDS = 30; // debe coincidir con TripTimeoutScheduler (backend)
+const RESPONSE_TIMEOUT_SECONDS = 40; // debe coincidir con TripTimeoutScheduler (backend)
 
 function iniciarPollingViajes() {
     verificarViajePendiente();

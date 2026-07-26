@@ -11,6 +11,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -109,10 +111,10 @@ public class AdminController {
     @PreAuthorize("hasRole('administrador')")
     @PostMapping("/personal-admin")
     public ResponseEntity<Map<String, Object>> crearPersonalAdmin(
-            @Valid @RequestBody AdminPersonnelRequest request) {
+            @Valid @RequestBody AdminPersonnelRequest request, Authentication authentication) {
         Map<String, Object> response = new HashMap<>();
         try {
-            User user = adminService.crearPersonalAdmin(request);
+            User user = adminService.crearPersonalAdmin(request, authentication.getName());
             Map<String, Object> data = new HashMap<>();
             data.put("id", user.getId());
             data.put("username", user.getUsername());
@@ -127,6 +129,24 @@ public class AdminController {
             response.put("data", null);
             response.put("message", e.getMessage());
             return ResponseEntity.status(400).body(response);
+        }
+    }
+
+    // GET /api/admin/personal-admin — lista el personal administrativo
+    @PreAuthorize("hasRole('administrador') or hasRole('personal_admin')")
+    @GetMapping("/personal-admin")
+    public ResponseEntity<Map<String, Object>> getAllAdmins() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            response.put("success", true);
+            response.put("data", adminService.getAllAdmins());
+            response.put("message", "Personal obtenido correctamente");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("data", null);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(500).body(response);
         }
     }
 
@@ -145,6 +165,51 @@ public class AdminController {
             response.put("data", null);
             response.put("message", e.getMessage());
             return ResponseEntity.status(500).body(response);
+        }
+    }
+
+    @PreAuthorize("hasRole('administrador') or hasRole('personal_admin')")
+    @PutMapping("/usuarios/{id}")
+    public ResponseEntity<Map<String, Object>> updateUserAdmin(
+            @PathVariable Integer id,
+            @RequestBody com.xpressrides.backend.dto.request.UserUpdateRequest request,
+            Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            adminService.updateUserAdmin(id, request, authentication.getName());
+            response.put("success", true);
+            response.put("message", "Usuario actualizado correctamente");
+            return ResponseEntity.ok(response);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(403).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(400).body(response);
+        }
+    }
+
+    @PreAuthorize("hasRole('administrador') or hasRole('personal_admin')")
+    @DeleteMapping("/usuarios/{id}")
+    public ResponseEntity<Map<String, Object>> deleteUserAdmin(
+            @PathVariable Integer id,
+            Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            adminService.deleteUserAdmin(id, authentication.getName());
+            response.put("success", true);
+            response.put("message", "Usuario eliminado correctamente");
+            return ResponseEntity.ok(response);
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(403).body(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.status(400).body(response);
         }
     }
 }

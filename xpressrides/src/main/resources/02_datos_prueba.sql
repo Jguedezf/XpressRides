@@ -227,11 +227,11 @@ TRUNCATE TABLE usuario;
 SET FOREIGN_KEY_CHECKS = 1;
 
 INSERT INTO usuario (cedula, nombre, apellido, username, password_hash, email, telefono, rol) VALUES
-('V-31783162', 'Ángel', 'Martínez', 'angelm', '$2a$10$SeAgMoDqTfHmtpDSpSmkteZTMNqT/LSyOOc7tzVkr1Mhhqge3aq5i', 'angelm@admin.com', '0426-1979320', 'personal_admin'),
-('V-32015232', 'Freddy', 'Salazar', 'freddys', '$2a$10$SeAgMoDqTfHmtpDSpSmkteZTMNqT/LSyOOc7tzVkr1Mhhqge3aq5i', 'freddys@admin.com', '0426-4331483', 'personal_admin'),
-('V-32417248', 'Eliuber', 'González', 'eliuberg', '$2a$10$SeAgMoDqTfHmtpDSpSmkteZTMNqT/LSyOOc7tzVkr1Mhhqge3aq5i', 'eliuberg@admin.com', '0412-8633836', 'personal_admin'),
-('V-31757491', 'Manuel', 'Jaimes', 'manuelj', '$2a$10$SeAgMoDqTfHmtpDSpSmkteZTMNqT/LSyOOc7tzVkr1Mhhqge3aq5i', 'manuelj@admin.com', '0414-7502138', 'personal_admin'),
-('V-14089807', 'Johanna', 'Guédez', 'johannag', '$2a$10$SeAgMoDqTfHmtpDSpSmkteZTMNqT/LSyOOc7tzVkr1Mhhqge3aq5i', 'johannag@admin.com', '0424-8905131', 'personal_admin'),
+('V-31783162', 'Ángel', 'Martínez', 'angelm', '$2a$10$SeAgMoDqTfHmtpDSpSmkteZTMNqT/LSyOOc7tzVkr1Mhhqge3aq5i', 'angelm@admin.com', '0426-1979320', 'administrador'),
+('V-32015232', 'Freddy', 'Salazar', 'freddys', '$2a$10$SeAgMoDqTfHmtpDSpSmkteZTMNqT/LSyOOc7tzVkr1Mhhqge3aq5i', 'freddys@admin.com', '0426-4331483', 'administrador'),
+('V-32417248', 'Eliuber', 'González', 'eliuberg', '$2a$10$SeAgMoDqTfHmtpDSpSmkteZTMNqT/LSyOOc7tzVkr1Mhhqge3aq5i', 'eliuberg@admin.com', '0412-8633836', 'administrador'),
+('V-31757491', 'Manuel', 'Jaimes', 'manuelj', '$2a$10$SeAgMoDqTfHmtpDSpSmkteZTMNqT/LSyOOc7tzVkr1Mhhqge3aq5i', 'manuelj@admin.com', '0414-7502138', 'administrador'),
+('V-14089807', 'Johanna', 'Guédez', 'johannag', '$2a$10$SeAgMoDqTfHmtpDSpSmkteZTMNqT/LSyOOc7tzVkr1Mhhqge3aq5i', 'johannag@admin.com', '0424-8905131', 'administrador'),
 ('V-26741146', 'Sofia', 'Castillo', 'scastillo0', '$2a$10$SeAgMoDqTfHmtpDSpSmkteZTMNqT/LSyOOc7tzVkr1Mhhqge3aq5i', 'scastillo0@test.ve', '0416-3264063', 'cliente'),
 ('V-33507370', 'Victoria', 'Rodriguez', 'vrodriguez1', '$2a$10$SeAgMoDqTfHmtpDSpSmkteZTMNqT/LSyOOc7tzVkr1Mhhqge3aq5i', 'vrodriguez1@test.ve', '0426-3903644', 'cliente'),
 ('V-19058936', 'Oscar', 'Molina', 'omolina2', '$2a$10$SeAgMoDqTfHmtpDSpSmkteZTMNqT/LSyOOc7tzVkr1Mhhqge3aq5i', 'omolina2@test.ve', '0424-1865812', 'cliente'),

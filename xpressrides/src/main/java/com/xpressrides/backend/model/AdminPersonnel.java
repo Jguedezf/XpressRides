@@ -40,4 +40,8 @@ public class AdminPersonnel {
 
     @Column(name = "creado_en", insertable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @ManyToOne
+    @JoinColumn(name = "creado_por")
+    private User createdBy;
 }

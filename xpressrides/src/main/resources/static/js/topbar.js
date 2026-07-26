@@ -41,25 +41,47 @@ function populateTopbarUser() {
     if (role) {
         let roleStr = user.rol || 'Rol';
         // Limpiar el rol para mostrarlo más amigable y configurar el enlace del perfil
-        const profileLink = document.querySelector('#topbar-profile-dropdown a');
+        let profileLink = document.querySelector('#topbar-profile-dropdown a#topbar-profile-link');
+        const dropdown = document.getElementById('topbar-profile-dropdown');
+        
         if (userRole === 'personal_admin' || userRole === 'admin' || userRole === 'administrador') {
             roleStr = 'Administrador';
-            if (profileLink) profileLink.style.display = 'none';
+            
+            if (dropdown && !profileLink) {
+                profileLink = document.createElement('a');
+                profileLink.id = 'topbar-profile-link';
+                profileLink.style.cssText = 'font-size:13px; color:var(--color-primary); text-decoration:none; display:block; padding:4px 0; font-weight:600; margin-top:8px; border-top:1px solid #E2E8F0; padding-top:8px;';
+                profileLink.textContent = 'Ver Perfil';
+                // Insert it before logout link if logout link exists, else append
+                const logoutLink = document.getElementById('topbar-logout-link');
+                if (logoutLink) {
+                    dropdown.insertBefore(profileLink, logoutLink);
+                } else {
+                    dropdown.appendChild(profileLink);
+                }
+            }
+
+            if (profileLink) {
+                profileLink.href = '../views/admin-perfil.html';
+                profileLink.style.display = 'block';
+            }
         } else {
             if (userRole === 'chofer') {
-                if (profileLink) profileLink.href = '../views/chofer-dashboard.html';
-            }
-            // Add logout link if it doesn't exist
-            const dropdown = document.getElementById('topbar-profile-dropdown');
-            if (dropdown && !document.getElementById('topbar-logout-link')) {
-                const logoutLink = document.createElement('a');
-                logoutLink.id = 'topbar-logout-link';
-                logoutLink.href = '../views/user-logout.html';
-                logoutLink.style.cssText = 'font-size:13px; color:var(--color-error); text-decoration:none; display:block; padding:4px 0; margin-top:4px;';
-                logoutLink.textContent = 'Cerrar sesión';
-                dropdown.appendChild(logoutLink);
+                roleStr = 'Chofer';
+            } else if (userRole === 'cliente') {
+                roleStr = 'Cliente';
             }
         }
+        
+        if (dropdown && !document.getElementById('topbar-logout-link')) {
+            const logoutLink = document.createElement('a');
+            logoutLink.id = 'topbar-logout-link';
+            logoutLink.href = '../views/user-logout.html';
+            logoutLink.style.cssText = 'font-size:13px; color:var(--color-error); text-decoration:none; display:block; padding:4px 0; margin-top:4px;';
+            logoutLink.textContent = 'Cerrar sesión';
+            dropdown.appendChild(logoutLink);
+        }
+        
         role.textContent = roleStr;
     }
 

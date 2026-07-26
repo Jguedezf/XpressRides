@@ -131,7 +131,9 @@ CREATE TABLE personal_admin (
   id_usuario INT          NOT NULL UNIQUE,
   cargo      VARCHAR(80)  NOT NULL DEFAULT 'Empleado Administrativo',
   creado_en  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_admin_usuario FOREIGN KEY (id_usuario) REFERENCES usuario(id) ON DELETE CASCADE
+  creado_por INT          NULL,
+  CONSTRAINT fk_admin_usuario FOREIGN KEY (id_usuario) REFERENCES usuario(id) ON DELETE CASCADE,
+  CONSTRAINT fk_personal_creador FOREIGN KEY (creado_por) REFERENCES usuario(id) ON DELETE SET NULL
 );
 
 -- ================================================================
@@ -249,8 +251,8 @@ CREATE TABLE recarga_saldo (
 CREATE TABLE traslado (
   id                    INT           AUTO_INCREMENT PRIMARY KEY,
   id_cliente            INT           NOT NULL,
-  id_chofer             INT           NOT NULL,
-  id_vehiculo           INT           NOT NULL,
+  id_chofer             INT           NULL,
+  id_vehiculo           INT           NULL,
   id_zona_origen        INT           NOT NULL,
   id_zona_destino       INT           NOT NULL,
   id_tasa               INT           NOT NULL,
@@ -296,7 +298,7 @@ CREATE TABLE traslado (
   pagado_al_chofer      TINYINT(1)    NOT NULL DEFAULT 0,
 
   CONSTRAINT chk_pasajeros     CHECK (nro_pasajeros BETWEEN 1 AND 3),
-  CONSTRAINT chk_zonas_dist    CHECK (id_zona_origen <> id_zona_destino),
+  -- chk_zonas_dist eliminado: con direcciones libres, zonas pueden ser NULL
   CONSTRAINT chk_estrellas     CHECK (calificacion_estrellas BETWEEN 1 AND 5),
   CONSTRAINT chk_montos_ok     CHECK (costo_cliente_usd >= 0 AND monto_chofer_usd >= 0),
   CONSTRAINT fk_traslado_cliente  FOREIGN KEY (id_cliente)       REFERENCES cliente(id),
@@ -1661,6 +1663,11 @@ USE decarrerita;
 
 -- 1. Actualizar estructura de Estado en la tabla traslado para soportar 'buscando'
 ALTER TABLE traslado MODIFY COLUMN estado ENUM('buscando', 'solicitado', 'aceptado', 'en_camino', 'chofer_llego', 'en_progreso', 'completado', 'cancelado') NOT NULL DEFAULT 'buscando';
+
+-- Hacer nullable id_chofer e id_vehiculo para estado 'buscando'
+ALTER TABLE traslado
+  MODIFY COLUMN id_chofer INT NULL,
+  MODIFY COLUMN id_vehiculo INT NULL;
 
 -- 2. Modificar sp_solicitar_traslado (CON SOPORTE PARA DIRECCIONES LIBRES Y ESTADO BUSCANDO)
 DROP PROCEDURE IF EXISTS sp_solicitar_traslado;

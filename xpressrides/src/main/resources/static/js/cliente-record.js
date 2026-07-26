@@ -61,15 +61,18 @@ async function cargarHistorial() {
             const opcionesFecha = { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' };
             const fechaFormateada = fechaObj.toLocaleDateString('es-VE', opcionesFecha);
 
-            const originName = viaje.originZone ? (viaje.originZone.name || viaje.originZone.nombre) : 'Zona Origen';
-            const destName = viaje.destinationZone ? (viaje.destinationZone.name || viaje.destinationZone.nombre) : 'Zona Destino';
+            const originName = viaje.originZone ? (viaje.originZone.name || viaje.originZone.nombre) : (viaje.originAddress || 'Zona Origen');
+            const destName = viaje.destinationZone ? (viaje.destinationZone.name || viaje.destinationZone.nombre) : (viaje.destinationAddress || 'Zona Destino');
             const driverName = viaje.driver && viaje.driver.username ? `${viaje.driver.username.name} ${viaje.driver.username.lastName}` : '';
 
             const cardHTML = `
                 <div class="trip-card">
                     <div class="trip-header">
                         <span class="trip-date">${fechaFormateada}</span>
-                        <span class="trip-status ${statusClass}">${viaje.status}</span>
+                        <div style="text-align: right;">
+                            <span class="trip-status ${statusClass}">${viaje.status}</span>
+                            ${esCancelado && viaje.cancellationReason ? `<div style="font-size: 11px; color: var(--color-error); margin-top: 4px; max-width: 150px; line-height: 1.2;">${viaje.cancellationReason}</div>` : ''}
+                        </div>
                     </div>
 
                     <div class="trip-route">
@@ -535,15 +538,16 @@ window.abrirModalDetalles = function(viaje) {
         icono.style.background = 'var(--color-primary)';
     }
 
-    const originName = viaje.originZone ? (viaje.originZone.name || viaje.originZone.nombre) : 'Zona Origen';
-    const destName = viaje.destinationZone ? (viaje.destinationZone.name || viaje.destinationZone.nombre) : 'Zona Destino';
+    const originName = viaje.originZone ? (viaje.originZone.name || viaje.originZone.nombre) : (viaje.originAddress || 'Zona Origen');
+    const destName = viaje.destinationZone ? (viaje.destinationZone.name || viaje.destinationZone.nombre) : (viaje.destinationAddress || 'Zona Destino');
     document.getElementById('detalle-ruta-texto').textContent = `${originName}  →  ${destName}`;
 
     // Mostrar quién canceló
     const cancelInfo = document.getElementById('detalle-cancel-info');
     if (estadoActual === 'cancelado') {
         cancelInfo.style.display = 'block';
-        cancelInfo.textContent = `Cancelado por: ${viaje.cancelledBy === 'chofer' ? 'El Chofer' : 'Tú'}`;
+        cancelInfo.innerHTML = `Cancelado por: <b>${viaje.cancelledBy === 'chofer' ? 'El Chofer' : 'Tú'}</b>` + 
+            (viaje.cancellationReason ? `<br><span style="font-size:12px; color:var(--color-error); display:block; margin-top:4px;">Motivo: ${viaje.cancellationReason}</span>` : '');
     } else {
         cancelInfo.style.display = 'none';
     }
