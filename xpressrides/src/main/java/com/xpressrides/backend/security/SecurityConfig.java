@@ -43,7 +43,8 @@ public class SecurityConfig {
             .formLogin(formLogin -> formLogin.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/", "/index.html", "/views/**", "/css/**", "/js/**", "/images/**", "/img/**", "/error").permitAll()
+                .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ASYNC).permitAll()
+                .requestMatchers("/", "/index.html", "/views/**", "/css/**", "/js/**", "/images/**", "/img/**", "/error").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/zonas/**", "/api/bancos/**").permitAll()
                 .anyRequest().authenticated()
