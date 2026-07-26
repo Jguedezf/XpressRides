@@ -90,7 +90,12 @@ public class PaymentService {
 
         topUp.setDateTime(LocalDateTime.now());
 
-        TopUp nueva = topUpRepository.save(topUp);
+        TopUp nueva;
+        try {
+            nueva = topUpRepository.save(topUp);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            throw new com.xpressrides.backend.exception.BadRequestException("El número de referencia ya ha sido utilizado para otra recarga.");
+        }
 
         // UPDATE atómico (saldo_usd = saldo_usd + :monto), no lectura-suma-guardado
         // en Java: así dos recargas casi simultáneas del mismo cliente no se pisan

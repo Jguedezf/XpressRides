@@ -298,20 +298,20 @@
         <div class="ticket-route">UNEG Atlántico <span class="arrow">→</span> Alta Vista</div>
         <hr class="tear">
         <div class="ticket-rows">
-          <div class="ticket-row"><span>Distancia</span><span>6.40 km</span></div>
+          <div class="ticket-row"><span>Distancia</span><span>4.40 km</span></div>
           <div class="ticket-row"><span>Tarifa base</span><span>$1.00</span></div>
-          <div class="ticket-row"><span>Costo por km</span><span>$0.45 × 6.40</span></div>
-          <div class="ticket-row"><span>Tasa BCV vigente</span><span>Bs. 36.50</span></div>
+          <div class="ticket-row"><span>Costo por km</span><span>$0.45 × 4.40</span></div>
+          <div class="ticket-row"><span>Tasa BCV vigente</span><span id="tasa-bcv-display">Bs. --.--</span></div>
           <div class="ticket-row"><span>Primer viaje</span><span>—$3.88</span></div>
         </div>
         <div class="ticket-total">
           <span class="label">Total a pagar</span>
           <span class="amount">$0.00</span>
         </div>
-        <div class="ticket-foot">GRATIS · TOPE 15 KM · Nº 000418</div>
+        <div class="ticket-foot">GRATIS · TOPE 5 KM · Nº 000418</div>
       </div>
 
-      <div class="chip chip-1"><div class="num">100%</div><div class="lab">tu primer viaje, gratis hasta 15&nbsp;km</div></div>
+      <div class="chip chip-1"><div class="num">100%</div><div class="lab">tu primer viaje, gratis hasta 5&nbsp;km</div></div>
       <div class="chip chip-2"><div class="num">30%</div><div class="lab">descuento estudiantil UNEG / UNEXPO</div></div>
       <div class="chip chip-3"><div class="num">3%</div><div class="lab">IGTF detallado en tu factura, nunca oculto</div></div>
       <div class="chip chip-4"><div class="num">1 toque</div><div class="lab">botón SOS y ubicación del chofer en vivo</div></div>
@@ -422,6 +422,23 @@
       btn.classList.add('btn-firing');
       setTimeout(function () { window.location.href = href; }, 420);
     });
+  });
+
+  // Consultar y mostrar la tasa BCV real al cargar la página
+  document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/tasa-bcv/vigente')
+      .then(res => res.json())
+      .then(json => {
+        if(json.success && json.data && json.data.rateVes) {
+          document.getElementById('tasa-bcv-display').innerText = 'Bs. ' + Number(json.data.rateVes).toFixed(2);
+        } else {
+          document.getElementById('tasa-bcv-display').innerText = 'Bs. 36.50';
+        }
+      })
+      .catch(err => {
+        console.error('Error fetching BCV rate:', err);
+        document.getElementById('tasa-bcv-display').innerText = 'Bs. 36.50';
+      });
   });
 </script>
 </body>

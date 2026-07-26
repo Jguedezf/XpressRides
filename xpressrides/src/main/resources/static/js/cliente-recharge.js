@@ -121,8 +121,11 @@ function configurarFormulario() {
         const alertSuccess = document.getElementById('recharge-success');
         const formRecarga = document.getElementById('form-recarga');
 
+        const alertError = document.getElementById('recharge-error');
+
         btnSubmit.innerText = 'Procesando...';
         btnSubmit.disabled = true;
+        alertError.style.display = 'none';
 
         try {
             let montoVes = 0;
@@ -166,7 +169,8 @@ function configurarFormulario() {
 
         } catch (error) {
             console.error("Error al registrar recarga:", error);
-            alert("No se pudo registrar la recarga: " + error.message);
+            alertError.innerText = error.message;
+            alertError.style.display = 'block';
             btnSubmit.innerText = 'Confirmar Recarga';
             btnSubmit.disabled = false;
         }

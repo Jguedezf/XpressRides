@@ -385,7 +385,7 @@ CREATE TABLE notificacion (
   tipo          ENUM('viaje_solicitado','chofer_asignado','chofer_en_camino',
                       'chofer_llego','viaje_iniciado','viaje_completado','factura_emitida',
                       'pago_recibido','recarga_acreditada','viaje_cancelado','sin_chofer','emergencia',
-                      'recompensa_referido')
+                      'recompensa_referido','retiro_solicitado')
                               NOT NULL,
   mensaje       VARCHAR(200)  NOT NULL,
   leida         TINYINT(1)    NOT NULL DEFAULT 0,
@@ -566,8 +566,8 @@ sp_solicitar_traslado: BEGIN
     END IF;
   END IF;
 
-  -- Primer viaje gratis
-  IF v_primer = 0 THEN
+  -- Primer viaje gratis (hasta 5km)
+  IF v_primer = 0 AND v_dist_km <= 5.00 THEN
     SET v_descuento   = v_tarifa;
     SET v_costo_cli   = 0.00;
   ELSE

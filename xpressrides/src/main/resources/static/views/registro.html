@@ -117,11 +117,19 @@
             </div>
 
             <div class="input-group">
+                <label for="username" class="input-label">Usuario</label>
+                <input type="text" id="username" name="username" class="input-field" placeholder="Ej. jperez_123" autocomplete="username" required
+                       pattern="^[a-zA-Z0-9_]{4,20}$"
+                       title="De 4 a 20 caracteres: solo letras, números y guiones bajos">
+                <span class="input-hint">De 4 a 20 caracteres: solo letras, números y guiones bajos</span>
+            </div>
+
+            <div class="input-group">
                 <label for="cedula" class="input-label">Cédula de Identidad</label>
                 <input type="text" id="cedula" name="cedula" class="input-field" placeholder="V-12345678" autocomplete="off" required
-                       pattern="^[VE]-\d{7,9}$"
-                       title="Formato: V-12345678 o E-12345678">
-                <span class="input-hint">Formato: V-12345678 (V o E, guion, 7 a 9 dígitos)</span>
+                       pattern="^[VE]-\d{6,8}$"
+                       title="Formato: V-12345678 (V o E, guion, 6 a 8 dígitos)">
+                <span class="input-hint">Formato: V-12345678 (V o E, guion, 6 a 8 dígitos)</span>
             </div>
 
             <div class="input-group">
@@ -134,9 +142,17 @@
 
             <div class="input-group">
                 <label for="password" class="input-label">Contraseña</label>
-                <input type="password" id="password" name="new-password" class="input-field" placeholder="Crea una contraseña segura" autocomplete="new-password" required
-                       minlength="8"
-                       title="Mínimo 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial">
+                <div style="position: relative;">
+                    <input type="password" id="password" name="new-password" class="input-field" placeholder="Crea una contraseña segura" autocomplete="new-password" required
+                           minlength="8" style="padding-right: 40px;"
+                           title="Mínimo 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial">
+                    <button type="button" id="toggle-password" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-text-muted);">
+                        <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </button>
+                </div>
                 <div class="password-rules" id="password-rules">
                     <span class="rule" id="rule-length">8+ caracteres</span>
                     <span class="rule" id="rule-upper">Mayúscula</span>

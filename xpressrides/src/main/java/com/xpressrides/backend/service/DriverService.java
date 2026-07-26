@@ -430,7 +430,7 @@ public class DriverService {
         for (User admin : admins) {
             Notification notification = new Notification();
             notification.setDateTime(LocalDateTime.now());
-            notification.setType("RETIRO");
+            notification.setType("retiro_solicitado");
             notification.setMessage(mensaje);
             notification.setRead(false);
             notification.setUser(admin);

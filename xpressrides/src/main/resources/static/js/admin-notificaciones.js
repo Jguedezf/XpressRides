@@ -137,7 +137,7 @@ async function cargarNotificaciones() {
             card.className = `notification-card ${isUnread ? 'unread' : ''}`;
             
             card.innerHTML = `
-                <div style="flex: 1;">
+                <div style="width: 100%;">
                     <p style="margin: 0; font-size: 14px; font-weight: ${isUnread ? '600' : '400'}; color: var(--color-text-main);">
                         ${notif.message}
                     </p>
@@ -146,7 +146,7 @@ async function cargarNotificaciones() {
                     </p>
                 </div>
                 ${isUnread ? `
-                <button class="btn-primary" style="padding: 4px 12px; font-size: 12px; margin-left: 12px;" onclick="marcarLeida(${notif.id}, this)">
+                <button class="btn-primary" style="padding: 4px 12px; font-size: 12px; margin-top: 10px;" onclick="marcarLeida(${notif.id}, this)">
                     Marcar leída
                 </button>
                 ` : ''}

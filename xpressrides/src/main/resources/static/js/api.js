@@ -187,10 +187,18 @@ function mostrarMensajeTemporal(mensaje, tipo) {
         document.body.appendChild(container);
     }
     const toast = document.createElement('div');
-    toast.style.cssText = `        background: ;
-        color: white; padding: 12px 24px; border-radius: 8px;
+    let bg = 'white';
+    let textColor = '#000';
+    let borderLeft = tipo === 'error' ? '4px solid #f44336' : (tipo === 'success' ? '4px solid #4CAF50' : '4px solid #333');
+    
+    toast.style.cssText = `
+        background: ${bg};
+        color: ${textColor};
+        padding: 12px 24px; border-radius: 8px;
         margin-top: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         font-family: inherit; font-size: 14px; opacity: 0; transition: opacity 0.3s;
+        border-left: ${borderLeft};
+        font-weight: 500;
     `;
     toast.textContent = mensaje;
     container.appendChild(toast);

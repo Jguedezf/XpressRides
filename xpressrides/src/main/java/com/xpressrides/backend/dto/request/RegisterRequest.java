@@ -18,8 +18,8 @@ public class RegisterRequest {
     private String lastName;
 
     @NotBlank(message = "La cédula es obligatoria")
-    @Pattern(regexp = "^[VE]-\\d{7,9}$",
-            message = "La cédula debe tener formato V-12345678 o E-12345678")
+    @Pattern(regexp = "^[VE]-\\d{6,8}$",
+            message = "La cédula debe tener formato V-12345678 (máximo 8 dígitos)")
     private String ci;
     
     @NotBlank(message = "El teléfono es obligatorio")

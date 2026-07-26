@@ -79,6 +79,19 @@ public class AuthService {
             throw new RuntimeException("El nombre de usuario ya está en uso");
         }
 
+        if (userRepository.existsByCi(request.getCi())) {
+            throw new RuntimeException("La cédula ya está registrada en el sistema");
+        }
+
+        try {
+            int ciNumber = Integer.parseInt(request.getCi().substring(2));
+            if (ciNumber > 45000000) {
+                throw new RuntimeException("El número de cédula excede el límite válido (aprox. 45 millones)");
+            }
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Formato de cédula inválido");
+        }
+
         User user = new User();
         user.setCi(request.getCi());
         user.setName(request.getName());

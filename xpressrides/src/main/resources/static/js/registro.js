@@ -66,8 +66,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         ci: document.getElementById('cedula').value,
                         phone: document.getElementById('telefono').value,
                         password: document.getElementById('password').value,
-                        username: document.getElementById('cedula').value,
-                        email: document.getElementById('cedula').value + '@xpressrides.local',
+                        username: document.getElementById('username').value,
+                        email: document.getElementById('username').value + '@xpressrides.local',
                         role: 'chofer',
                         bankId: parseInt(document.getElementById('banco').value),
                         accountNumber: document.getElementById('cuenta').value
@@ -81,8 +81,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         ci: document.getElementById('cedula').value,
                         phone: document.getElementById('telefono').value,
                         password: document.getElementById('password').value,
-                        username: document.getElementById('cedula').value,
-                        email: document.getElementById('cedula').value + '@xpressrides.local',
+                        username: document.getElementById('username').value,
+                        email: document.getElementById('username').value + '@xpressrides.local',
                         role: 'cliente',
                         isStudent: document.getElementById('es_estudiante').checked
                     };
@@ -191,7 +191,7 @@ window.toggleForm = function() {
 // VALIDACIONES
 // ========================================================================
 const REGEX_NOMBRE   = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/;
-const REGEX_CEDULA   = /^[VE]-\d{7,9}$/;
+const REGEX_CEDULA   = /^[VE]-\d{6,8}$/;
 const REGEX_TELEFONO = /^(0414|0424|0416|0426|0412)-?\d{7}$/;
 const REGEX_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]).{8,}$/;
 const REGEX_CUENTA   = /^\d{20}$/;
@@ -216,7 +216,7 @@ function validarFormulario() {
 
     // Cédula
     if (!cedula) errores.push('La cédula es obligatoria.');
-    else if (!REGEX_CEDULA.test(cedula)) errores.push('La cédula debe tener formato V-12345678 o E-12345678 (V mayúscula).');
+    else if (!REGEX_CEDULA.test(cedula)) errores.push('La cédula debe tener formato V-12345678 (V o E, y máximo 8 dígitos).');
 
     // Teléfono
     if (!telefono) errores.push('El teléfono es obligatorio.');
@@ -265,3 +265,31 @@ function setRule(id, ok) {
     el.classList.toggle('pass', ok);
     el.classList.toggle('fail', !ok);
 }
+
+// Lógica para mostrar/ocultar contraseña
+document.addEventListener('DOMContentLoaded', () => {
+    const togglePasswordBtn = document.getElementById('toggle-password');
+    const passwordInput = document.getElementById('password');
+    const eyeIcon = document.getElementById('eye-icon');
+
+    if (togglePasswordBtn && passwordInput && eyeIcon) {
+        togglePasswordBtn.addEventListener('click', () => {
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            
+            if (isPassword) {
+                // Icono de ojo tachado (ocultar)
+                eyeIcon.innerHTML = `
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                    <line x1="1" y1="1" x2="23" y2="23"></line>
+                `;
+            } else {
+                // Icono de ojo normal (mostrar)
+                eyeIcon.innerHTML = `
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                `;
+            }
+        });
+    }
+});

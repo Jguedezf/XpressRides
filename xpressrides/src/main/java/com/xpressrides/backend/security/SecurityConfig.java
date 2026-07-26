@@ -46,7 +46,7 @@ public class SecurityConfig {
                 .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ASYNC).permitAll()
                 .requestMatchers("/", "/index.html", "/views/**", "/css/**", "/js/**", "/images/**", "/img/**", "/error").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/api/zonas/**", "/api/bancos/**").permitAll()
+                .requestMatchers("/api/zonas/**", "/api/bancos/**", "/api/tasa-bcv/vigente").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

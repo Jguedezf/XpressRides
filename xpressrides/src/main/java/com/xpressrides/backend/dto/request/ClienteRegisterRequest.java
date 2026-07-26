@@ -16,9 +16,14 @@ public class ClienteRegisterRequest {
             message = "El apellido solo debe contener letras y espacios")
     private String apellido;
 
+    @NotBlank(message = "El usuario es obligatorio")
+    @Pattern(regexp = "^[a-zA-Z0-9_]{4,20}$",
+            message = "El usuario debe tener entre 4 y 20 caracteres y solo puede contener letras, números y guiones bajos")
+    private String username;
+
     @NotBlank(message = "La cédula es obligatoria")
-    @Pattern(regexp = "^[VE]-\\d{7,9}$",
-            message = "La cédula debe tener formato V-12345678 o E-12345678")
+    @Pattern(regexp = "^[VE]-\\d{6,8}$",
+            message = "La cédula debe tener formato V-12345678 (máximo 8 dígitos)")
     private String cedula;
 
     @NotBlank(message = "El teléfono es obligatorio")
@@ -41,6 +46,9 @@ public class ClienteRegisterRequest {
 
     public String getApellido() { return apellido; }
     public void setApellido(String apellido) { this.apellido = apellido; }
+
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 
     public String getCedula() { return cedula; }
     public void setCedula(String cedula) { this.cedula = cedula; }

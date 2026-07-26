@@ -61,7 +61,7 @@ public class FareService {
     // en los cupones de referido: si la distancia lo supera, el descuento no se
     // aplica y el cliente paga el viaje completo. Valor confirmado por Johanna
     // el 19/07/2026. Mismo valor que DISTANCIA_MAX_PRIMER_VIAJE en sp_solicitar_traslado.
-    private static final BigDecimal FIRST_TRIP_MAX_DISTANCE_KM = new BigDecimal("15");
+    private static final BigDecimal FIRST_TRIP_MAX_DISTANCE_KM = new BigDecimal("5");
 
     // Zonas universitarias con descuento estudiantil — igual que el SP
     private static final Set<String> UNIVERSITY_ZONES = Set.of(

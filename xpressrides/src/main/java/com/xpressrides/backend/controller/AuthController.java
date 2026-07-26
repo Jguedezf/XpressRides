@@ -83,13 +83,13 @@ public class AuthController {
             registerRequest.setPassword(request.getPassword());
             registerRequest.setRole("cliente");
             registerRequest.setIsStudent(Boolean.TRUE.equals(request.getEsEstudiante()));
-            // username = cédula (identificador único en Venezuela)
-            registerRequest.setUsername(request.getCedula());
+            // username = provisto por el usuario
+            registerRequest.setUsername(request.getUsername());
             // email generado como placeholder — no se usa para verificación
-            registerRequest.setEmail(request.getCedula() + "@xpressrides.local");
+            registerRequest.setEmail(request.getUsername() + "@xpressrides.local");
 
             AuthResponse auth = authService.register(registerRequest);
-            User user = userRepository.findByUsername(request.getCedula()).orElseThrow();
+            User user = userRepository.findByUsername(request.getUsername()).orElseThrow();
             response.put("success", true);
             response.put("data", buildUserData(user, auth));
             response.put("message", "Registro exitoso");
