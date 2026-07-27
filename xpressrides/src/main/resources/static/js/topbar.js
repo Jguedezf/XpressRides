@@ -108,6 +108,7 @@ function populateTopbarUser() {
             dynamicNav.innerHTML = `
                 <a href="../views/cliente-dashboard.html">Inicio</a>
                 <a href="../views/cliente-record.html">Historial de Viajes</a>
+                <a href="../views/cliente-cupones.html">Cupones</a>
                 <a href="../views/cliente-resenas.html">Mis Reseñas</a>
             `;
         }

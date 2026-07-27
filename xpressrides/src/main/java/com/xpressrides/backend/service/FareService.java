@@ -202,41 +202,93 @@ public class FareService {
         // 9. Conversión a bolívares
         BigDecimal finalCostVes = finalCostUsd.multiply(rate.getRateVes()).setScale(2, RoundingMode.HALF_UP);
 
-        // 10. Cupón de referido
+        // 10. Cupones de descuento — buscar TODOS los cupones activos sin usar del cliente
         boolean referralCouponAvailable    = false;
         Integer referralCouponClienteId    = null;
         BigDecimal referralCouponDiscount  = BigDecimal.ZERO;
         BigDecimal costWithCouponUsd       = finalCostUsd;
         BigDecimal costWithCouponVes       = finalCostVes;
+        List<FareResponse.CouponOptionDto> couponOptions = new java.util.ArrayList<>();
 
         if (!firstTripFree) {
-            List<CustomerCoupon> referralCoupons = customerCouponRepository
-                .findByCustomer_IdAndUsedFalseAndCoupon_TypeOrderByCreatedAtAsc(customer.getId(), "referido");
+            List<CustomerCoupon> allCoupons = customerCouponRepository
+                .findByCustomer_IdAndUsedFalse(customer.getId());
 
-            for (CustomerCoupon candidate : referralCoupons) {
-                Integer maxDistanceKm = candidate.getCoupon().getMaxDistanceKm();
-                if (maxDistanceKm != null && distanceKm.compareTo(BigDecimal.valueOf(maxDistanceKm)) > 0) {
+            for (CustomerCoupon candidate : allCoupons) {
+                if (candidate.getCoupon() == null || !Boolean.TRUE.equals(candidate.getCoupon().getActive())) {
                     continue;
                 }
-                BigDecimal cap = finalCostUsd.subtract(REFERRAL_COUPON_MIN_FARE).max(BigDecimal.ZERO);
-                referralCouponDiscount = candidate.getCoupon().getDiscountUsd().min(cap)
-                    .setScale(2, RoundingMode.HALF_UP);
-                referralCouponClienteId = candidate.getId();
-                referralCouponAvailable = true;
-                costWithCouponUsd = finalCostUsd.subtract(referralCouponDiscount).setScale(2, RoundingMode.HALF_UP);
-                costWithCouponVes = costWithCouponUsd.multiply(rate.getRateVes()).setScale(2, RoundingMode.HALF_UP);
-                break;
+
+                FareResponse.CouponOptionDto dto = new FareResponse.CouponOptionDto();
+                dto.setCustomerCouponId(candidate.getId());
+                dto.setCode(candidate.getCoupon().getCode());
+                dto.setType(candidate.getCoupon().getType());
+                dto.setMaxDistanceKm(candidate.getCoupon().getMaxDistanceKm());
+
+                // Validar restricción de distancia
+                Integer maxDist = candidate.getCoupon().getMaxDistanceKm();
+                if (maxDist != null && distanceKm.compareTo(BigDecimal.valueOf(maxDist)) > 0) {
+                    dto.setValid(false);
+                    dto.setInvalidReason("Distancia del viaje (" + distanceKm + " km) excede el máximo del cupón (" + maxDist + " km)");
+                    dto.setDiscountUsd(BigDecimal.ZERO);
+                    dto.setCostWithCouponUsd(finalCostUsd);
+                    dto.setCostWithCouponVes(finalCostVes);
+                    couponOptions.add(dto);
+                    continue;
+                }
+
+                // Calcular descuento efectivo según tipo
+                BigDecimal rawDiscount = candidate.getCoupon().getDiscountUsd();
+                BigDecimal effectiveDiscount;
+
+                if ("referido".equals(candidate.getCoupon().getType())) {
+                    // Referido: no puede bajar la tarifa por debajo de REFERRAL_COUPON_MIN_FARE
+                    BigDecimal cap = finalCostUsd.subtract(REFERRAL_COUPON_MIN_FARE).max(BigDecimal.ZERO);
+                    effectiveDiscount = rawDiscount.min(cap).setScale(2, RoundingMode.HALF_UP);
+                } else {
+                    // Otros tipos: puede llegar hasta $0
+                    effectiveDiscount = rawDiscount.min(finalCostUsd).setScale(2, RoundingMode.HALF_UP);
+                }
+
+                BigDecimal cupCostUsd = finalCostUsd.subtract(effectiveDiscount).setScale(2, RoundingMode.HALF_UP);
+                BigDecimal cupCostVes = cupCostUsd.multiply(rate.getRateVes()).setScale(2, RoundingMode.HALF_UP);
+
+                dto.setValid(true);
+                dto.setDiscountUsd(effectiveDiscount);
+                dto.setCostWithCouponUsd(cupCostUsd);
+                dto.setCostWithCouponVes(cupCostVes);
+                couponOptions.add(dto);
+
+                // Mantener retrocompatibilidad con campos legacy de cupón referido
+                if ("referido".equals(candidate.getCoupon().getType()) && !referralCouponAvailable) {
+                    referralCouponAvailable = true;
+                    referralCouponClienteId = candidate.getId();
+                    referralCouponDiscount  = effectiveDiscount;
+                    costWithCouponUsd       = cupCostUsd;
+                    costWithCouponVes       = cupCostVes;
+                }
             }
         }
 
-        return new FareResponse(
-            distanceKm, BASE_FARE, distanceCost,
-            peakHourSurcharge, nightWeekendSurcharge,
-            discountApplied, finalCostUsd, finalCostVes,
-            rate.getId(), firstTripFree, studentDiscount,
-            referralCouponAvailable, referralCouponClienteId,
-            referralCouponDiscount, costWithCouponUsd, costWithCouponVes
-        );
+        FareResponse resp = new FareResponse();
+        resp.setDistanceKm(distanceKm);
+        resp.setBaseFare(BASE_FARE);
+        resp.setDistanceCost(distanceCost);
+        resp.setPeakHourSurcharge(peakHourSurcharge);
+        resp.setNightWeekendSurcharge(nightWeekendSurcharge);
+        resp.setDiscountApplied(discountApplied);
+        resp.setFinalCostUsd(finalCostUsd);
+        resp.setFinalCostVes(finalCostVes);
+        resp.setExchangeRateId(rate.getId());
+        resp.setFirstTripFree(firstTripFree);
+        resp.setStudentDiscount(studentDiscount);
+        resp.setReferralCouponAvailable(referralCouponAvailable);
+        resp.setReferralCouponClienteId(referralCouponClienteId);
+        resp.setReferralCouponDiscount(referralCouponDiscount);
+        resp.setCostWithCouponUsd(costWithCouponUsd);
+        resp.setCostWithCouponVes(costWithCouponVes);
+        resp.setAvailableCoupons(couponOptions);
+        return resp;
     }
 
     // Llama a fn_distancia_km de MySQL — garantiza el mismo resultado que el SP

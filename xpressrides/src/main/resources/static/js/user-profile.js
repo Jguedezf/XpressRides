@@ -79,6 +79,10 @@ function cargarPerfil() {
     if (linkPagos) {
         linkPagos.style.display = isChofer ? 'flex' : 'none';
     }
+    const linkCupones = document.getElementById('link-mis-cupones');
+    if (linkCupones) {
+        linkCupones.style.display = isCliente ? 'flex' : 'none';
+    }
 
 
     // Ajustar menú inferior móvil

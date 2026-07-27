@@ -552,6 +552,66 @@ function actualizarMarcadoresYRuta() {
 }
 
 function mostrarPreviewTarifa(tarifa, origenNombre, destinoNombre, pasajeros, payloadTarifa, textoOriginalBtn, btnSolicitar) {
+    // Construir opciones del selector de cupones
+    const cupones = tarifa.cuponesDisponibles || [];
+    const cuponesValidos = cupones.filter(c => c.valido);
+    const tieneCupones = cuponesValidos.length > 0;
+
+    // Preseleccionar el cupón con mayor descuento
+    let mejorCuponIdx = -1;
+    let mejorDescuento = 0;
+    cuponesValidos.forEach((c, i) => {
+        if (c.descuentoUsd > mejorDescuento) {
+            mejorDescuento = c.descuentoUsd;
+            mejorCuponIdx = i;
+        }
+    });
+
+    const tipoLabel = (tipo) => {
+        switch(tipo) {
+            case 'referido': return '🤝 Referido';
+            case 'bienvenida': return '👋 Bienvenida';
+            case 'promocional': return '🎉 Promoción';
+            case 'estudiante': return '🎓 Estudiante';
+            default: return '🎫 ' + tipo;
+        }
+    };
+
+    let cuponSelectorHTML = '';
+    if (cupones.length > 0) {
+        let optionsHTML = '<option value="">No usar cupón</option>';
+        cupones.forEach((c) => {
+            const disabled = !c.valido ? 'disabled' : '';
+            const label = c.valido
+                ? `${tipoLabel(c.tipo)} — ${c.codigo} (-$${Number(c.descuentoUsd).toFixed(2)})`
+                : `${tipoLabel(c.tipo)} — ${c.codigo} (${c.motivoInvalido})`;
+            // Preseleccionar el mejor cupón válido
+            const selected = (c.valido && mejorCuponIdx >= 0 && c.idCuponCliente === cuponesValidos[mejorCuponIdx].idCuponCliente) ? 'selected' : '';
+            optionsHTML += `<option value="${c.idCuponCliente}" data-usd="${c.costoConCuponUsd}" data-ves="${c.costoConCuponVes}" data-descuento="${c.descuentoUsd}" ${disabled} ${selected}>${label}</option>`;
+        });
+
+        cuponSelectorHTML = `
+            <div style="background: #eafaf0; border: 2px solid var(--color-success); border-radius: 10px; padding: 12px 14px; margin-bottom: 18px;">
+                <div style="font-size:14px; font-weight:600; margin-bottom:8px; color:var(--color-success);">🎫 Cupones de Descuento</div>
+                <select id="select-cupon-viaje" style="
+                    width:100%; padding:10px 12px; border-radius:8px; border:1px solid #ccc;
+                    font-size:14px; font-family:inherit; background:white; cursor:pointer;
+                    outline:none; transition: border-color 0.2s;">
+                    ${optionsHTML}
+                </select>
+                <div id="cupon-descuento-detalle" style="margin-top:8px; font-size:13px; color:var(--color-text-muted);"></div>
+            </div>
+        `;
+    }
+
+    // Calcular costos iniciales considerando el mejor cupón preseleccionado
+    const costoInicialUsd = (tieneCupones && mejorCuponIdx >= 0)
+        ? cuponesValidos[mejorCuponIdx].costoConCuponUsd
+        : tarifa.costoFinalUsd;
+    const costoInicialVes = (tieneCupones && mejorCuponIdx >= 0)
+        ? cuponesValidos[mejorCuponIdx].costoConCuponVes
+        : tarifa.costoFinalVes;
+
     const modalHTML = `
         <div id="modal-tarifa" style="
             position: fixed; inset: 0; z-index: 9999;
@@ -560,6 +620,7 @@ function mostrarPreviewTarifa(tarifa, origenNombre, destinoNombre, pasajeros, pa
             <div style="
                 background: #fff; border-radius: 12px; padding: 28px 32px;
                 max-width: 480px; width: 90%; box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+                max-height: 90vh; overflow-y: auto;
                 position: relative; font-family: inherit;">
                 
                 <h3 style="margin:0 0 16px 0; color: var(--color-primary);">Confirmar Viaje</h3>
@@ -601,31 +662,19 @@ function mostrarPreviewTarifa(tarifa, origenNombre, destinoNombre, pasajeros, pa
                     </tr>` : ''}
                 </table>
 
-                ${tarifa.cuponReferidoDisponible ? `
-                <div id="oferta-cupon-referido" style="
-                    background: #eafaf0; border: 2px solid var(--color-success);
-                    border-radius: 10px; padding: 12px 14px; margin-bottom: 18px;">
-                    <label style="display:flex; align-items:flex-start; gap:10px; cursor:pointer; font-size:14px;">
-                        <input type="checkbox" id="chk-cupon-referido" checked style="margin-top:3px;">
-                        <span>
-                            🎁 <strong>Tienes un cupón de referido de $${tarifa.descuentoCuponReferido.toFixed(2)} de descuento.</strong>
-                            Con el cupón pagarías <strong>$${tarifa.costoConCuponUsd.toFixed(2)}</strong> en vez de $${tarifa.costoFinalUsd.toFixed(2)}.
-                            Desmarca para no usarlo en este viaje.
-                        </span>
-                    </label>
-                </div>` : ''}
+                ${cuponSelectorHTML}
 
                 <table style="width:100%; border-collapse:collapse; font-size:14px; margin-bottom: 20px;">
                     <tr style="border-top:2px solid var(--color-primary);">
                         <td style="padding:10px 0; font-weight:700;">Costo Final USD</td>
                         <td style="padding:10px 0; text-align:right; font-weight:700; color:var(--color-primary);">
-                            <span id="costo-final-usd">$${(tarifa.cuponReferidoDisponible ? tarifa.costoConCuponUsd : tarifa.costoFinalUsd).toFixed(2)}</span>
+                            <span id="costo-final-usd">$${Number(costoInicialUsd).toFixed(2)}</span>
                         </td>
                     </tr>
                     <tr>
                         <td style="padding:6px 0; font-weight:600;">Costo Final Bs</td>
                         <td style="padding:6px 0; text-align:right; font-weight:600;">
-                            Bs <span id="costo-final-ves">${(tarifa.cuponReferidoDisponible ? tarifa.costoConCuponVes : tarifa.costoFinalVes).toFixed(2)}</span>
+                            Bs <span id="costo-final-ves">${Number(costoInicialVes).toFixed(2)}</span>
                         </td>
                     </tr>
                 </table>
@@ -641,16 +690,23 @@ function mostrarPreviewTarifa(tarifa, origenNombre, destinoNombre, pasajeros, pa
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 
     const modal = document.getElementById('modal-tarifa');
-    let usarCupon = tarifa.cuponReferidoDisponible ? true : false;
 
-    const chkCuponReferido = document.getElementById('chk-cupon-referido');
-    if (chkCuponReferido) {
-        chkCuponReferido.addEventListener('change', () => {
-            usarCupon = chkCuponReferido.checked;
-            document.getElementById('costo-final-usd').textContent =
-                '$' + (usarCupon ? tarifa.costoConCuponUsd : tarifa.costoFinalUsd).toFixed(2);
-            document.getElementById('costo-final-ves').textContent =
-                (usarCupon ? tarifa.costoConCuponVes : tarifa.costoFinalVes).toFixed(2);
+    // Selector de cupones — actualiza precios en tiempo real
+    const selectCupon = document.getElementById('select-cupon-viaje');
+    if (selectCupon) {
+        // Mostrar detalle del cupón preseleccionado
+        actualizarDetalleCupon(selectCupon, tarifa);
+
+        selectCupon.addEventListener('change', () => {
+            actualizarDetalleCupon(selectCupon, tarifa);
+            const selected = selectCupon.options[selectCupon.selectedIndex];
+            if (selected.value) {
+                document.getElementById('costo-final-usd').textContent = '$' + Number(selected.dataset.usd).toFixed(2);
+                document.getElementById('costo-final-ves').textContent = Number(selected.dataset.ves).toFixed(2);
+            } else {
+                document.getElementById('costo-final-usd').textContent = '$' + tarifa.costoFinalUsd.toFixed(2);
+                document.getElementById('costo-final-ves').textContent = tarifa.costoFinalVes.toFixed(2);
+            }
         });
     }
 
@@ -666,6 +722,10 @@ function mostrarPreviewTarifa(tarifa, origenNombre, destinoNombre, pasajeros, pa
         btnConfirm.textContent = 'Solicitando...';
 
         try {
+            // Capturar el cupón seleccionado
+            const cuponSelect = document.getElementById('select-cupon-viaje');
+            const selectedCouponId = cuponSelect ? (cuponSelect.value ? parseInt(cuponSelect.value) : null) : null;
+
             const finalPayload = {
                 originAddress: payloadTarifa.origenStr,
                 destinationAddress: payloadTarifa.destinoStr,
@@ -674,7 +734,7 @@ function mostrarPreviewTarifa(tarifa, origenNombre, destinoNombre, pasajeros, pa
                 destinationLat: payloadTarifa.destinationLat,
                 destinationLng: payloadTarifa.destinationLng,
                 passengerCount: payloadTarifa.passengerCount,
-                customerCouponId: usarCupon ? tarifa.idCuponUsado : null
+                customerCouponId: selectedCouponId
             };
 
             const responseSolicitud = await fetchAPI('/traslados/solicitar', {
@@ -694,6 +754,18 @@ function mostrarPreviewTarifa(tarifa, origenNombre, destinoNombre, pasajeros, pa
             btnConfirm.textContent = 'Confirmar y Solicitar';
         }
     });
+}
+
+function actualizarDetalleCupon(selectEl, tarifa) {
+    const detalle = document.getElementById('cupon-descuento-detalle');
+    if (!detalle) return;
+    const selected = selectEl.options[selectEl.selectedIndex];
+    if (selected.value) {
+        const descuento = Number(selected.dataset.descuento).toFixed(2);
+        detalle.innerHTML = `✅ Descuento de <strong>$${descuento}</strong> aplicado. Pagarás <strong>$${Number(selected.dataset.usd).toFixed(2)}</strong> en vez de $${tarifa.costoFinalUsd.toFixed(2)}.`;
+    } else {
+        detalle.innerHTML = '';
+    }
 }
 
 function iniciarPollingViajeActivo() {

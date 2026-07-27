@@ -270,10 +270,13 @@ public class CustomerService {
         }
     }
 
-    public List<CustomerCoupon> getCoupons(String username) {
+    public Map<String, Object> getCoupons(String username) {
         Customer customer = customerRepository.findByUserId_Username(username)
             .orElseThrow(() -> new ResourceNotFoundException("Cliente no encontrado"));
-        return customerCouponRepository.findByCustomer_IdAndUsedFalse(customer.getId());
+        Map<String, Object> result = new HashMap<>();
+        result.put("disponibles", customerCouponRepository.findByCustomer_IdAndUsedFalse(customer.getId()));
+        result.put("usados", customerCouponRepository.findByCustomer_IdAndUsedTrue(customer.getId()));
+        return result;
     }
 
     @Transactional(readOnly = true)

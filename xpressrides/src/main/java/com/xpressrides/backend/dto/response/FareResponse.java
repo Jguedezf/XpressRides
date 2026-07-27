@@ -16,15 +16,15 @@
 package com.xpressrides.backend.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class FareResponse {
 
     @JsonProperty("distanciaKm")
@@ -77,4 +77,39 @@ public class FareResponse {
 
     @JsonProperty("costoConCuponVes")
     private BigDecimal costWithCouponVes;
+
+    @JsonProperty("cuponesDisponibles")
+    private List<CouponOptionDto> availableCoupons;
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CouponOptionDto {
+        @JsonProperty("idCuponCliente")
+        private Integer customerCouponId;
+
+        @JsonProperty("codigo")
+        private String code;
+
+        @JsonProperty("tipo")
+        private String type;
+
+        @JsonProperty("descuentoUsd")
+        private BigDecimal discountUsd;
+
+        @JsonProperty("costoConCuponUsd")
+        private BigDecimal costWithCouponUsd;
+
+        @JsonProperty("costoConCuponVes")
+        private BigDecimal costWithCouponVes;
+
+        @JsonProperty("distanciaMaxKm")
+        private Integer maxDistanceKm;
+
+        @JsonProperty("valido")
+        private boolean valid;
+
+        @JsonProperty("motivoInvalido")
+        private String invalidReason;
+    }
 }

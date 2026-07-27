@@ -13,6 +13,7 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "cupon_cliente")
@@ -29,6 +30,7 @@ public class CustomerCoupon {
     @JoinColumn(name = "id_cupon")
     private Coupon coupon;
 
+    @JsonIgnore
     @ManyToOne
     @JoinColumn(name = "id_cliente")
     private Customer customer;
