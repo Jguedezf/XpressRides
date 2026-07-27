@@ -64,12 +64,6 @@ public class DriverRegistrationService {
         driverRepository.findById(driverId)
                 .orElseThrow(() -> new RuntimeException("Chofer no encontrado con ID: " + driverId));
 
-        if (eval.getScore() == null || eval.getScore().compareTo(BigDecimal.valueOf(73)) < 0) {
-            throw new BadRequestException(
-                "La calificación mínima aprobatoria para la evaluación psicológica es 73. " +
-                "Calificación recibida: " + eval.getScore());
-        }
-
         int year = eval.getEvaluationDate().getYear();
         if (psychEvalRepository.existsByDriver_IdAndEvaluationDateBetween(
                 driverId, LocalDate.of(year, 1, 1), LocalDate.of(year, 12, 31))) {
@@ -94,12 +88,6 @@ public class DriverRegistrationService {
     public VehicleInspection registerVehicleInspection(VehicleInspection inspection) {
         Vehicle vehicle = vehicleRepository.findById(inspection.getVehicle().getId())
                 .orElseThrow(() -> new RuntimeException("Vehículo no encontrado."));
-
-        if (inspection.getScore() == null || inspection.getScore().compareTo(BigDecimal.valueOf(65)) < 0) {
-            throw new BadRequestException(
-                "La calificación mínima aprobatoria para la revisión vehicular es 65. " +
-                "Calificación recibida: " + inspection.getScore());
-        }
 
         int year = inspection.getInspectionDate().getYear();
         if (vehicleInspectionRepository.existsByVehicle_IdAndInspectionDateBetween(

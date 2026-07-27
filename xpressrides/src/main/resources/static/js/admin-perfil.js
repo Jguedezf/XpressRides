@@ -1,4 +1,4 @@
-﻿document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     // Prevent access if not logged in
     const user = getUsuario();
     if (!user) {
@@ -37,6 +37,23 @@ function cargarDatosPerfil(user) {
         const init2 = user.apellido.charAt(0).toUpperCase();
         document.getElementById('avatar-initials').textContent = init1 + init2;
     }
+    
+    // Add logic to get username
+    document.getElementById('admin-username').value = user.username || '';
+}
+
+function togglePasswordVisibility(inputId, iconId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
 }
 
 async function guardarPerfil(e) {
@@ -56,8 +73,27 @@ async function guardarPerfil(e) {
         lastName: document.getElementById('admin-apellido').value.trim(),
         ci: document.getElementById('admin-cedula').value.trim(),
         phone: document.getElementById('admin-telefono').value.trim(),
-        email: document.getElementById('admin-correo').value.trim()
+        email: document.getElementById('admin-correo').value.trim(),
+        username: document.getElementById('admin-username').value.trim()
     };
+    
+    const password = document.getElementById('admin-password').value;
+    if (password) {
+        payload.password = password;
+    }
+
+    const REGEX_PASSWORD = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]).{8,}$/;
+    const REGEX_USERNAME = /^[a-zA-Z0-9_]{5,}$/;
+
+    if (!REGEX_USERNAME.test(payload.username)) {
+        alert('El nombre de usuario debe tener mínimo 5 caracteres alfanuméricos.');
+        return;
+    }
+
+    if (password && !REGEX_PASSWORD.test(password)) {
+        alert('La nueva contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula, un número y un carácter especial.');
+        return;
+    }
 
     const originalText = btn.textContent;
     btn.disabled = true;
@@ -73,8 +109,18 @@ async function guardarPerfil(e) {
             successAlert.textContent = 'Perfil actualizado correctamente.';
             successAlert.style.display = 'block';
 
+            // Si se cambió la contraseña o el username, invalidar token local y redirigir
+            if (password || user.username !== payload.username) {
+                alert('Tus credenciales fueron actualizadas exitosamente. Deberás iniciar sesión nuevamente.');
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                localStorage.removeItem('xpressUsuario');
+                window.location.href = '/views/login.html';
+                return;
+            }
+
             // Actualizar datos en sesión
-            const updatedUser = { ...user, nombre: payload.name, apellido: payload.lastName, cedula: payload.ci, ci: payload.ci, telefono: payload.phone, correo: payload.email };
+            const updatedUser = { ...user, nombre: payload.name, apellido: payload.lastName, cedula: payload.ci, ci: payload.ci, telefono: payload.phone, correo: payload.email, username: payload.username };
             localStorage.setItem('xpressUsuario', JSON.stringify(updatedUser));
             
             cargarDatosPerfil(updatedUser);

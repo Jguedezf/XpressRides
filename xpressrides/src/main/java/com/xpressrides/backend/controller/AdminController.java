@@ -90,12 +90,16 @@ public class AdminController {
     @PostMapping("/choferes/{id}/evaluar")
     public ResponseEntity<Map<String, Object>> evaluarChofer(
             @PathVariable Integer id,
-            @Valid @RequestBody EvaluarChoferRequest body) {
+            @Valid @RequestBody EvaluarChoferRequest body,
+            org.springframework.security.core.Authentication authentication) {
         Map<String, Object> response = new HashMap<>();
         try {
             BigDecimal notaPsicologica = body.getNotaPsicologica();
             BigDecimal notaVehicular   = body.getNotaVehicular();
-            adminService.evaluarChofer(id, notaPsicologica, notaVehicular);
+            String obsPsicologica      = body.getObsPsicologica();
+            String obsVehicular        = body.getObsVehicular();
+            String adminUsername = authentication.getName();
+            adminService.evaluarChofer(id, notaPsicologica, notaVehicular, obsPsicologica, obsVehicular, adminUsername);
             response.put("success", true);
             response.put("message", "Chofer evaluado correctamente");
             return ResponseEntity.ok(response);

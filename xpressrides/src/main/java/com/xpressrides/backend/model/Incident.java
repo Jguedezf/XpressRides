@@ -45,7 +45,7 @@ public class Incident {
     @JoinColumn(name = "id_admin_cierra")
     private User closedBy;
 
-    @Column(name = "fecha_creacion")
+    @Column(name = "fecha_creacion", insertable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "fecha_cierre")

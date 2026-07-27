@@ -71,6 +71,9 @@ public class DriverService {
             .orElseThrow(() -> new ResourceNotFoundException("Chofer no encontrado"));
             
         if (available) {
+            if (!driver.isEnabled()) {
+                throw new BadRequestException("No puedes conectarte porque estás inhabilitado por la administración.");
+            }
             boolean hasVehicle = vehicleRepository.findByDriver_IdAndInUseTrue(driver.getId()).isPresent();
             if (!hasVehicle) {
                 throw new BadRequestException("Debes tener un vehículo en uso para poder conectarte.");
@@ -84,7 +87,24 @@ public class DriverService {
     public void toggleEnabled(Integer driverId, boolean enabled) {
         Driver driver = driverRepository.findById(driverId)
             .orElseThrow(() -> new ResourceNotFoundException("Chofer no encontrado"));
+            
+        if (enabled) {
+            boolean hasApprovedEval = psychEvalRepository.existsByDriver_IdAndApprovedTrue(driverId);
+            boolean hasAptVehicle = vehicleRepository.findByDriver_IdAndInUseTrue(driverId)
+                .flatMap(v -> vehicleInspectionRepository.findFirstByVehicle_IdOrderByInspectionDateDesc(v.getId()))
+                .map(com.xpressrides.backend.model.VehicleInspection::isFitForUse)
+                .orElse(false);
+            long contacts = emergencyContactRepository.countByDriver_Id(driverId);
+            
+            if (!hasApprovedEval || !hasAptVehicle || contacts != 2) {
+                throw new BadRequestException("El chofer no cumple con los requisitos mínimos (evaluación psicológica aprobada, revisión vehicular del vehículo en uso aprobada y 2 contactos de emergencia).");
+            }
+        }
+        
         driver.setEnabled(enabled);
+        if (!enabled) {
+            driver.setAvailable(false);
+        }
         driverRepository.save(driver);
     }
 

@@ -478,6 +478,7 @@ sp_solicitar_traslado: BEGIN
   DECLARE v_factor         DECIMAL(4,2)  DEFAULT 1.00;
   DECLARE v_es_est         TINYINT(1);
   DECLARE v_primer         TINYINT(1);
+  DECLARE v_viajes_previos INT DEFAULT 0;
   DECLARE v_descuento      DECIMAL(8,2)  DEFAULT 0.00;
   DECLARE v_dist_max       INT;
   DECLARE v_tarifa         DECIMAL(10,2);
@@ -554,6 +555,9 @@ sp_solicitar_traslado: BEGIN
     INTO v_es_est, v_primer
     FROM cliente WHERE id = p_id_cliente;
 
+  SELECT COUNT(*) INTO v_viajes_previos
+    FROM traslado WHERE id_cliente = p_id_cliente;
+
   -- Descuento estudiantil (zona origen O destino = sede universitaria)
   IF v_es_est = 1 THEN
     SELECT id INTO v_id_zona_dest FROM zona
@@ -567,7 +571,7 @@ sp_solicitar_traslado: BEGIN
   END IF;
 
   -- Primer viaje gratis (hasta 5km)
-  IF v_primer = 0 AND v_dist_km <= 5.00 THEN
+  IF v_primer = 0 AND v_viajes_previos = 0 AND v_dist_km <= 5.00 THEN
     SET v_descuento   = v_tarifa;
     SET v_costo_cli   = 0.00;
   ELSE

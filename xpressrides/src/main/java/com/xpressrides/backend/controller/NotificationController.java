@@ -79,7 +79,7 @@ public class NotificationController {
     public ResponseEntity<Map<String, Object>> takeIncident(@PathVariable Integer id) {
         Map<String, Object> response = new HashMap<>();
         try {
-            Incident incident = notificationService.takeIncident(id);
+            Map<String, Object> incident = notificationService.takeIncident(id);
             response.put("success", true);
             response.put("data", incident);
             response.put("message", "Incidente marcado como en proceso");
@@ -101,8 +101,12 @@ public class NotificationController {
             Authentication authentication) {
         Map<String, Object> response = new HashMap<>();
         try {
-            String notas = body != null ? body.getOrDefault("notas", null) : null;
-            Incident incident = notificationService.closeIncident(id, authentication.getName(), notas);
+            String adminUsername = authentication.getName();
+            String notas = null;
+            if (body != null && body.containsKey("notas") && body.get("notas") != null) {
+                notas = body.get("notas").toString();
+            }
+            Map<String, Object> incident = notificationService.closeIncident(id, adminUsername, notas);
             response.put("success", true);
             response.put("data", incident);
             response.put("message", "Incidente cerrado");

@@ -103,6 +103,7 @@ public class AdminService {
         return adminPersonnelRepository.findAll().stream().map(ap -> {
             Map<String, Object> item = new HashMap<>();
             item.put("id", ap.getId());
+            item.put("usuarioId", ap.getUserId().getId());
             item.put("nombre", ap.getUserId().getName());
             item.put("apellido", ap.getUserId().getLastName());
             item.put("username", ap.getUserId().getUsername());
@@ -135,6 +136,7 @@ public class AdminService {
 
             Map<String, Object> item = new HashMap<>();
             item.put("id", d.getId());
+            item.put("usuarioId", d.getUsername().getId());
             item.put("nombre", d.getUsername().getName());
             item.put("apellido", d.getUsername().getLastName());
             item.put("username", d.getUsername().getUsername());
@@ -155,15 +157,17 @@ public class AdminService {
         return customerRepository.findAll().stream().map(c -> {
             Map<String, Object> item = new HashMap<>();
             item.put("id", c.getId());
+            item.put("usuarioId", c.getUserId().getId());
             item.put("nombre", c.getUserId().getName());
             item.put("apellido", c.getUserId().getLastName());
             item.put("username", c.getUserId().getUsername());
             item.put("ci", c.getUserId().getCi());
             item.put("telefono", c.getUserId().getPhone());
             item.put("correo", c.getUserId().getEmail());
+            long existingTrips = tripRepository.countByCustomer_Id(c.getId());
             item.put("saldoUsd", c.getBalance());
             item.put("esEstudiante", c.isStudent());
-            item.put("primerViajeUsado", c.isFirstTripUsed());
+            item.put("primerViajeUsado", c.isFirstTripUsed() || existingTrips > 0);
             return item;
         }).collect(Collectors.toList());
     }
@@ -191,13 +195,18 @@ public class AdminService {
 
     // Registra evaluación psicológica y revisión vehicular para un chofer en un solo paso
     @Transactional
-    public void evaluarChofer(Integer driverId, BigDecimal notaPsicologica, BigDecimal notaVehicular) {
+    public void evaluarChofer(Integer driverId, BigDecimal notaPsicologica, BigDecimal notaVehicular, String obsPsicologica, String obsVehicular, String adminUsername) {
+        AdminPersonnel admin = adminPersonnelRepository.findByUserId_Username(adminUsername)
+            .orElseThrow(() -> new ResourceNotFoundException("Personal administrativo no encontrado"));
+
         Driver driver = driverRepository.findById(driverId)
             .orElseThrow(() -> new ResourceNotFoundException("Chofer no encontrado"));
 
         PsychologicalEvaluation eval = new PsychologicalEvaluation();
         eval.setDriver(driver);
+        eval.setAdmin(admin);
         eval.setScore(notaPsicologica);
+        eval.setObservation(obsPsicologica);
         eval.setEvaluationDate(LocalDate.now());
         driverRegistrationService.registerPsychologicalEvaluation(eval);
 
@@ -205,7 +214,9 @@ public class AdminService {
             .orElseThrow(() -> new ResourceNotFoundException("El chofer no tiene un vehículo en uso registrado"));
         VehicleInspection inspection = new VehicleInspection();
         inspection.setVehicle(vehicle);
+        inspection.setAdmin(admin);
         inspection.setScore(notaVehicular);
+        inspection.setObservation(obsVehicular);
         inspection.setInspectionDate(LocalDate.now());
         driverRegistrationService.registerVehicleInspection(inspection);
     }
@@ -255,6 +266,20 @@ public class AdminService {
         if (request.getEmail() != null) targetUser.setEmail(request.getEmail());
         if (request.getPhone() != null) targetUser.setPhone(request.getPhone());
         if (request.getCi() != null) targetUser.setCi(request.getCi());
+        
+        if (request.getUsername() != null && !request.getUsername().isBlank()) {
+            String newUsername = request.getUsername().trim();
+            if (!newUsername.equals(targetUser.getUsername())) {
+                if (userRepository.findByUsername(newUsername).isPresent()) {
+                    throw new RuntimeException("El nombre de usuario ya está en uso");
+                }
+                targetUser.setUsername(newUsername);
+            }
+        }
+        
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            targetUser.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
 
         userRepository.save(targetUser);
     }

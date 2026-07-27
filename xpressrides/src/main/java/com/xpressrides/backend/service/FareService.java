@@ -164,7 +164,13 @@ public class FareService {
         BigDecimal peakHourSurcharge = rawFare.subtract(subtotal).setScale(2, RoundingMode.HALF_UP);
 
         // 8. Descuentos — primer viaje tiene prioridad sobre descuento estudiantil
+        Long existingTrips = entityManager.createQuery(
+            "SELECT COUNT(t) FROM Trip t WHERE t.customer.id = :customerId", Long.class)
+            .setParameter("customerId", customer.getId())
+            .getSingleResult();
+
         boolean firstTripFree = !customer.isFirstTripUsed()
+            && existingTrips == 0
             && distanceKm.compareTo(FIRST_TRIP_MAX_DISTANCE_KM) <= 0;
         boolean studentDiscount = false;
         if (customer.isStudent()) {

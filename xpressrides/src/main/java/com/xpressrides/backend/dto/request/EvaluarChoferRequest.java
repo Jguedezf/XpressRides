@@ -11,6 +11,10 @@ public class EvaluarChoferRequest {
     @NotNull(message = "La nota vehicular es obligatoria")
     private BigDecimal notaVehicular;
 
+    private String obsPsicologica;
+    
+    private String obsVehicular;
+
     public BigDecimal getNotaPsicologica() {
         return notaPsicologica;
     }
@@ -25,5 +29,21 @@ public class EvaluarChoferRequest {
 
     public void setNotaVehicular(BigDecimal notaVehicular) {
         this.notaVehicular = notaVehicular;
+    }
+
+    public String getObsPsicologica() {
+        return obsPsicologica;
+    }
+
+    public void setObsPsicologica(String obsPsicologica) {
+        this.obsPsicologica = obsPsicologica;
+    }
+
+    public String getObsVehicular() {
+        return obsVehicular;
+    }
+
+    public void setObsVehicular(String obsVehicular) {
+        this.obsVehicular = obsVehicular;
     }
 }

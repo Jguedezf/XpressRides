@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Seguridad - XpressRides</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="stylesheet" href="../css/estilos.css">
+
+    <style>
+        body { background-color: var(--color-bg-card); padding-bottom: 80px; }
+
+        .top-bar {
+            background-color: var(--color-bg-main);
+            padding: var(--space-md) var(--space-lg);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .brand-logo-small { color: var(--color-primary); font-weight: 800; font-size: var(--font-size-h2); margin: 0; }
+        .brand-text { color: var(--color-secondary); }
+
+        .input-field {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #CBD5E1;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-family: inherit;
+            background-color: white;
+            transition: border-color 0.2s;
+        }
+        .input-field:focus {
+            border-color: var(--color-primary);
+            outline: none;
+        }
+        .input-label { display: block; font-weight: 500; margin-bottom: 5px; font-size: 13px; color: var(--color-text-main); margin-left: 2px; }
+
+        .main-content { padding: var(--space-lg); max-width: 500px; margin: 0 auto; }
+
+        .desktop-nav { display: none; }
+        @media (min-width: 768px) {
+            .desktop-nav { display: flex; gap: var(--space-lg); align-items: center; }
+            .desktop-nav a { color: var(--color-text-muted); text-decoration: none; font-weight: 600; font-size: var(--font-size-normal); }
+            .desktop-nav a:hover, .desktop-nav a.active { color: var(--color-primary); }
+            .bottom-nav { display: none !important; }
+            .main-content { padding-top: var(--space-xl); }
+        }
+    </style>
+</head>
+<body>
+
+<header class="top-bar d-flex justify-between align-center">
+    <div class="top-bar-left d-flex align-center" style="gap: 16px;">
+        <img src="/img/logo.png" alt="XpressRides" style="height:48px;width:auto;object-fit:contain;">
+        <span id="topbar-bcv-rate" class="badge-green" style="display:none; font-size:12px;">BCV: Cargando...</span>
+    </div>
+    <nav class="desktop-nav" id="dynamic-desktop-nav"></nav>
+    <div class="top-bar-right d-flex align-center" style="gap: 16px;">
+        <div class="user-profile-widget" onclick="toggleProfileDropdown()" style="position:relative; cursor:pointer;">
+            <div id="topbar-user-initial" style="width:32px; height:32px; border-radius:50%; background-color:var(--color-primary); color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">U</div>
+            <div id="topbar-profile-dropdown" class="card" style="position:absolute; top:100%; right:0; margin-top:12px; display:none; min-width:180px; z-index:1000; padding:12px; cursor:default;" onclick="event.stopPropagation()">
+                <p id="topbar-user-name" class="h2-subtitle" style="margin:0; font-size:14px;">Usuario</p>
+                <p id="topbar-user-role" class="text-small" style="margin-bottom:8px; text-transform:capitalize;">Rol</p>
+                <hr style="margin:8px 0; border:none; border-top:1px solid #eee;">
+                <a href="../views/user-profile.html" style="font-size:13px; color:var(--color-accent); text-decoration:none; display:block; padding:4px 0;">Ver mi perfil</a>
+            </div>
+        </div>
+        <div class="notification-bell" onclick="abrirNotificaciones()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--color-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+        </svg>
+        <span class="notification-badge" id="badge-count" style="display:none;"></span>
+    </div>
+</div>
+</header>
+
+<main class="main-content">
+    <div class="mb-md d-flex align-center gap-sm" style="cursor:pointer; color:var(--color-secondary); font-weight:600;" onclick="volverAlPerfil()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Volver al Perfil
+    </div>
+
+    <!-- Sección de Cambio de Contraseña -->
+    <div class="card mt-md">
+        <h2 class="h2-subtitle mb-md" style="color: var(--color-secondary); border-bottom: 1px solid #eee; padding-bottom: 8px;">Cambiar Contraseña</h2>
+        <form id="form-cambiar-password">
+            <div class="input-group" style="margin-bottom: 12px;">
+                <label class="input-label">Contraseña Actual</label>
+                <div style="position: relative;">
+                    <input type="password" id="current-password" class="input-field" style="padding-right: 40px;" required>
+                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('current-password', 'eye-current')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-text-muted);">
+                        <i id="eye-current" class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="input-group" style="margin-bottom: 12px;">
+                <label class="input-label">Nueva Contraseña</label>
+                <div style="position: relative;">
+                    <input type="password" id="new-password" class="input-field" style="padding-right: 40px;" required>
+                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('new-password', 'eye-new')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-text-muted);">
+                        <i id="eye-new" class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <small style="color: var(--color-text-muted); font-size: 11px;">Debe tener al menos 8 caracteres, mayúscula, minúscula, número y un carácter especial.</small>
+            </div>
+            <button type="submit" class="btn-primary mt-sm" id="btn-update-password" style="width: 100%;">Actualizar Contraseña</button>
+        </form>
+    </div>
+</main>
+
+<nav class="bottom-nav">
+    <a href="/views/cliente-dashboard.html" class="bottom-nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        <span class="mt-xs">Inicio</span>
+    </a>
+    <a href="/views/cliente-record.html" class="bottom-nav-item">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        <span class="mt-xs">Historial</span>
+    </a>
+    <a href="/views/user-profile.html" class="bottom-nav-item active">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <span class="mt-xs">Perfil</span>
+    </a>
+</nav>
+
+<script src="../js/api.js"></script>
+<script src="../js/topbar.js"></script>
+<script src="../js/notifications.js"></script>
+<script src="../js/user-security.js"></script>
+</body>
+</html>

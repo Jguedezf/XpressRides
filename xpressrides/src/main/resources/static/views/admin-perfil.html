@@ -80,8 +80,9 @@
         <a href="/views/admin-reportes.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Reporte de Ingresos</a>
         <a href="/views/admin-pagos.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Control de Pagos</a>
         <a href="/views/admin-notificaciones.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Notificaciones</a>
-        <a href="/views/admin-usuarios.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Gestin de Usuarios</a>
+        <a href="/views/admin-usuarios.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Gestión de Usuarios</a>
         <a href="/views/admin-bancos.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Bancos</a>
+        <a href="/views/admin-cupones.html" style="color:white;text-decoration:none;font-weight:600;font-size:14px;padding:6px 14px;border-radius:6px;opacity:0.85;">Cupones</a>
     </nav>
     <div class="top-bar-right d-flex align-center" style="gap: 16px;">
         <a href="/views/user-logout.html" style="color:white;text-decoration:none;font-size:13px;opacity:0.75;">Cerrar sesión</a>
@@ -129,9 +130,26 @@
                 </div>
             </div>
 
-            <div style="margin-bottom: 24px;">
+            <div style="margin-bottom: 16px;">
                 <label class="premium-label" for="admin-correo">Correo electrónico</label>
                 <input type="email" id="admin-correo" class="premium-input" required>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <label class="premium-label" for="admin-username">Nombre de Usuario</label>
+                <input type="text" id="admin-username" class="premium-input" required>
+                <small style="color: var(--color-text-muted); font-size: 11px;">Mínimo 5 caracteres alfanuméricos.</small>
+            </div>
+
+            <div style="margin-bottom: 24px;">
+                <label class="premium-label" style="display:block; margin-bottom: 4px; font-weight: 500;">Contraseña (Dejar en blanco para no cambiar):</label>
+                <div style="position: relative;">
+                    <input type="password" id="admin-password" class="premium-input" style="width:100%; height:36px; padding-right: 40px;" placeholder="Nueva contraseña">
+                    <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('admin-password', 'admin-eye-icon')" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--color-text-muted);">
+                        <i id="admin-eye-icon" class="fas fa-eye"></i>
+                    </button>
+                </div>
+                <small style="color: var(--color-text-muted); font-size: 11px;">Debe tener al menos 8 caracteres, mayúscula, minúscula, número y un carácter especial.</small>
             </div>
 
             <div id="alert-success" class="alert-success" style="display:none; font-size: 14px; margin-bottom: 16px;"></div>

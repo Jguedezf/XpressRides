@@ -23,6 +23,7 @@ public interface TripRepository extends JpaRepository<Trip, Integer>, JpaSpecifi
     Double findAverageRatingByDriverId(@Param("driverId") Integer driverId);
 
     List<Trip> findByCustomer_IdOrderByRequestDateDesc(Integer customerId);
+    long countByCustomer_Id(Integer customerId);
 
     Optional<Trip> findByIdAndCustomer_Id(Integer id, Integer customerId);
 

@@ -128,25 +128,25 @@ BEGIN
   IF NEW.estado = 'aceptado' AND OLD.estado <> 'aceptado' THEN
     INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
     VALUES (v_id_usuario_cliente, NEW.id, 'chofer_asignado',
-      'Tu chofer fue asignado y va en camino hacia tu ubicaciÃ³n.');
+      'Tu chofer fue asignado y va en camino hacia tu ubicación.');
   END IF;
 
   IF NEW.estado = 'en_camino' AND OLD.estado <> 'en_camino' THEN
     INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
     VALUES (v_id_usuario_cliente, NEW.id, 'chofer_en_camino',
-      'Tu chofer estÃ¡ en camino al punto de recogida.');
+      'Tu chofer está en camino al punto de recogida.');
   END IF;
 
   IF NEW.estado = 'chofer_llego' AND OLD.estado <> 'chofer_llego' THEN
     INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
     VALUES (v_id_usuario_cliente, NEW.id, 'chofer_llego',
-      'Tu chofer llegÃ³ al punto de recogida. Â¡EstÃ¡ esperÃ¡ndote!');
+      'Tu chofer llegó al punto de recogida. ¡Está esperándote!');
   END IF;
 
   IF NEW.estado = 'en_progreso' AND OLD.estado <> 'en_progreso' THEN
     INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
     VALUES (v_id_usuario_cliente, NEW.id, 'viaje_iniciado',
-      'Tu viaje ha comenzado. Â¡Buen viaje!');
+      'Tu viaje ha comenzado. ¡Buen viaje!');
   END IF;
 
   IF NEW.estado = 'completado' AND OLD.estado <> 'completado' THEN
@@ -176,7 +176,7 @@ BEGIN
 
     INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
     VALUES (v_id_usuario_cliente, NEW.id, 'factura_emitida',
-      'Tu factura electrÃ³nica fue generada y estÃ¡ disponible para descarga.');
+      'Tu factura electrónica fue generada y está disponible para descarga.');
 
     INSERT INTO notificacion (id_usuario, id_traslado, tipo, mensaje)
     VALUES (v_id_usuario_chofer, NEW.id, 'viaje_completado',
@@ -877,3 +877,6 @@ JOIN cliente cl ON t.id_cliente = cl.id
 JOIN usuario u ON cl.id_usuario = u.id
 WHERE t.estado = 'completado';
 
+
+-- Fix: Marcar primer viaje como usado para los clientes que ya tienen viajes en el historial
+UPDATE cliente SET primer_viaje_usado = 1 WHERE id IN (SELECT DISTINCT id_cliente FROM traslado);

@@ -1,6 +1,9 @@
 package com.xpressrides.backend.service;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -90,20 +93,23 @@ public class NotificationService {
         incidentRepository.save(incident);
     }
 
-    public List<Incident> getIncidents() {
-        return incidentRepository.findAllByOrderByCreatedAtDesc();
+    public List<Map<String, Object>> getIncidents() {
+        return incidentRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(this::mapIncidentToDto)
+                .collect(Collectors.toList());
     }
 
     @Transactional
-    public Incident takeIncident(Integer incidentId) {
+    public Map<String, Object> takeIncident(Integer incidentId) {
         Incident incident = incidentRepository.findById(incidentId)
             .orElseThrow(() -> new ResourceNotFoundException("Incidente no encontrado"));
         incident.setStatus("en_proceso");
-        return incidentRepository.save(incident);
+        incident = incidentRepository.save(incident);
+        return mapIncidentToDto(incident);
     }
 
     @Transactional
-    public Incident closeIncident(Integer incidentId, String adminUsername, String resolutionNotes) {
+    public Map<String, Object> closeIncident(Integer incidentId, String adminUsername, String resolutionNotes) {
         Incident incident = incidentRepository.findById(incidentId)
             .orElseThrow(() -> new ResourceNotFoundException("Incidente no encontrado"));
         User admin = userRepository.findByUsername(adminUsername)
@@ -113,6 +119,43 @@ public class NotificationService {
         incident.setResolutionNotes(resolutionNotes);
         incident.setClosedBy(admin);
         incident.setClosedAt(java.time.LocalDateTime.now());
-        return incidentRepository.save(incident);
+        incident = incidentRepository.save(incident);
+        return mapIncidentToDto(incident);
+    }
+
+    private Map<String, Object> mapIncidentToDto(Incident inc) {
+        Map<String, Object> dto = new HashMap<>();
+        dto.put("id", inc.getId());
+        dto.put("message", inc.getMessage());
+        dto.put("status", inc.getStatus());
+        dto.put("resolutionNotes", inc.getResolutionNotes());
+        dto.put("createdAt", inc.getCreatedAt());
+
+        if (inc.getReportedBy() != null) {
+            Map<String, Object> rb = new HashMap<>();
+            rb.put("name", inc.getReportedBy().getName());
+            rb.put("lastName", inc.getReportedBy().getLastName());
+            rb.put("phone", inc.getReportedBy().getPhone());
+            rb.put("email", inc.getReportedBy().getEmail());
+            dto.put("reportedBy", rb);
+        }
+
+        if (inc.getTrip() != null) {
+            Map<String, Object> tr = new HashMap<>();
+            tr.put("id", inc.getTrip().getId());
+            tr.put("originAddress", inc.getTrip().getOriginAddress());
+            tr.put("destinationAddress", inc.getTrip().getDestinationAddress());
+            tr.put("customerCostUsd", inc.getTrip().getCustomerCostUsd());
+            
+            if (inc.getTrip().getDriver() != null) {
+                Map<String, Object> dr = new HashMap<>();
+                dr.put("latActual", inc.getTrip().getDriver().getLatActual());
+                dr.put("lngActual", inc.getTrip().getDriver().getLngActual());
+                tr.put("driver", dr);
+            }
+            dto.put("trip", tr);
+        }
+
+        return dto;
     }
 }

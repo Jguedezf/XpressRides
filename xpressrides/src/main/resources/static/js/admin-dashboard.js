@@ -205,6 +205,8 @@ document.getElementById('evaluation-form').addEventListener('submit', async (e) 
     const choferId = document.getElementById('choferPostulante').value;
     const notaPsi = parseInt(document.getElementById('notaPsicologica').value);
     const notaVeh = parseInt(document.getElementById('notaVehicular').value);
+    const obsPsi = document.getElementById('obsPsicologica').value.trim();
+    const obsVeh = document.getElementById('obsVehicular').value.trim();
 
     // Validamos que el administrador haya seleccionado a alguien
     if (!choferId) {
@@ -218,7 +220,12 @@ document.getElementById('evaluation-form').addEventListener('submit', async (e) 
     try {
         await fetchAPI(`/admin/choferes/${choferId}/evaluar`, {
             method: 'POST',
-            body: JSON.stringify({ notaPsicologica: notaPsi, notaVehicular: notaVeh })
+            body: JSON.stringify({ 
+                notaPsicologica: notaPsi, 
+                notaVehicular: notaVeh,
+                obsPsicologica: obsPsi,
+                obsVehicular: obsVeh 
+            })
         });
 
         // Si llega hasta aquí, todo salió bien
