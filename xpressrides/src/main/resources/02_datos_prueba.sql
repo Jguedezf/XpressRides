@@ -47,7 +47,8 @@ ALTER TABLE notificacion
   MODIFY COLUMN tipo ENUM(
     'viaje_solicitado','chofer_asignado','chofer_en_camino',
     'chofer_llego','viaje_iniciado','viaje_completado','factura_emitida',
-    'pago_recibido','recarga_acreditada','viaje_cancelado','sin_chofer'
+    'pago_recibido','recarga_acreditada','viaje_cancelado','sin_chofer',
+    'emergencia','recompensa_referido','retiro_solicitado'
   ) NOT NULL;
 
 -- 0.2 Índice compuesto para el conteo del badge de notificaciones
