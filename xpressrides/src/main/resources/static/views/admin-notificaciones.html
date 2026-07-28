@@ -80,16 +80,37 @@
 
 <main class="d-flex flex-col align-center" style="width: 100%; max-width: 800px;">
     <div class="card" style="width: 100%; background-color: var(--color-bg-main); margin-bottom: 20px;">
-        <h2 class="h2-subtitle" style="color: var(--color-secondary); margin-bottom: 20px; font-weight: 700;">Incidentes Reportados</h2>
-        <p class="text-small" style="margin-top:-12px; margin-bottom:16px; color: var(--color-text-muted);">Casos abiertos desde el botón de emergencia de cliente/chofer</p>
+        <div class="d-flex justify-between align-center" style="margin-bottom: 10px;">
+            <h2 class="h2-subtitle" style="color: var(--color-secondary); margin: 0; font-weight: 700;">Incidentes Reportados</h2>
+            <select id="filtro-incidentes" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #CBD5E1; font-family: inherit; font-size: 13px;">
+                <option value="todos">Todos</option>
+                <option value="abierto">Abiertos</option>
+                <option value="en_proceso">En Proceso</option>
+                <option value="cerrado">Cerrados</option>
+            </select>
+        </div>
+        <p class="text-small" style="margin-top:0; margin-bottom:16px; color: var(--color-text-muted);">Casos abiertos desde el botón de emergencia de cliente/chofer</p>
         <div id="incidents-container">
             <p class="text-center">Cargando incidentes...</p>
         </div>
+        <div id="pagination-incidentes" class="pagination-container" style="display: none;">
+            <button class="btn-secondary btn-auto btn-pagination" id="btn-prev-incidentes" disabled>Anterior</button>
+            <span class="pagination-info" id="page-info-incidentes">Página 1 de X</span>
+            <button class="btn-primary btn-auto btn-pagination" id="btn-next-incidentes" disabled>Siguiente</button>
+        </div>
     </div>
     <div class="card" style="width: 100%; background-color: var(--color-bg-main);">
-        <h2 class="h2-subtitle" style="color: var(--color-secondary); margin-bottom: 20px; font-weight: 700;">Centro de Notificaciones</h2>
+        <div class="d-flex justify-between align-center" style="margin-bottom: 20px;">
+            <h2 class="h2-subtitle" style="color: var(--color-secondary); margin: 0; font-weight: 700;">Centro de Notificaciones</h2>
+            <button class="btn-secondary btn-auto" id="btn-limpiar-leidas" style="padding: 6px 16px; font-size: 13px; color: var(--color-accent); border-color: var(--color-accent); margin: 0;">Limpiar leídas</button>
+        </div>
         <div id="notifications-container">
             <p class="text-center">Cargando notificaciones...</p>
+        </div>
+        <div id="pagination-notificaciones" class="pagination-container" style="display: none;">
+            <button class="btn-secondary btn-auto btn-pagination" id="btn-prev-notificaciones" disabled>Anterior</button>
+            <span class="pagination-info" id="page-info-notificaciones">Página 1 de X</span>
+            <button class="btn-primary btn-auto btn-pagination" id="btn-next-notificaciones" disabled>Siguiente</button>
         </div>
     </div>
 </main>

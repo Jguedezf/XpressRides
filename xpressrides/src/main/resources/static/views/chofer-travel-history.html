@@ -119,9 +119,13 @@
             <label for="filtroHasta" class="input-label">Hasta</label>
             <input type="date" id="filtroHasta" class="input-field">
         </div>
-        <div class="input-group" style="margin-bottom: 0; display: flex; align-items: center; gap: 6px;">
-            <input type="checkbox" id="filtroSoloCancelados" style="width: 16px; height: 16px;">
-            <label for="filtroSoloCancelados" style="font-size: var(--font-size-small); color: var(--color-text-muted); cursor: pointer;">Solo cancelados</label>
+        <div class="input-group" style="flex: 1; min-width: 160px; margin-bottom: 0;">
+            <label for="filtroEstadoPago" class="input-label">Estado de Pago</label>
+            <select id="filtroEstadoPago" class="input-field" style="cursor: pointer;">
+                <option value="">Todos los viajes</option>
+                <option value="paid">Pagados por empresa</option>
+                <option value="pending">Pendientes por pagar</option>
+            </select>
         </div>
         <div style="display: flex; gap: 10px; height: 40px;">
             <button type="submit" class="btn-primary" style="padding: 0 20px; height: 100%; margin: 0;">Filtrar</button>
@@ -131,6 +135,12 @@
 
     <div id="trips-container">
         <p class="text-center text-muted mt-lg">Cargando historial...</p>
+    </div>
+
+    <div id="pagination-controls" class="align-center mt-md" style="display: none; gap: 8px;">
+        <button id="btn-prev-page" class="btn-secondary" style="width: auto; flex: none; padding: 8px 16px;" disabled>Anterior</button>
+        <span id="page-info" style="flex: 1; text-align: center; font-size: 14px; font-weight: 600;"></span>
+        <button id="btn-next-page" class="btn-secondary" style="width: auto; flex: none; padding: 8px 16px;" disabled>Siguiente</button>
     </div>
 </main>
 

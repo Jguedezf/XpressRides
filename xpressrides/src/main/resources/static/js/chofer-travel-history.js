@@ -1,5 +1,8 @@
 // js/chofer-travel-history.js
 
+let currentPage = 0;
+const pageSize = 5;
+
 document.addEventListener('DOMContentLoaded', async () => {
     if (!requireAuth()) return;
     await cargarHistorial();
@@ -7,49 +10,85 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 document.getElementById('form-filtro-historial').addEventListener('submit', async (e) => {
     e.preventDefault();
+    currentPage = 0; // Reset a primera página al filtrar
     await cargarHistorial();
 });
 
 document.getElementById('btn-limpiar-filtro').addEventListener('click', async () => {
     document.getElementById('filtroDesde').value = '';
     document.getElementById('filtroHasta').value = '';
-    document.getElementById('filtroSoloCancelados').checked = false;
+    document.getElementById('filtroEstadoPago').value = '';
+    currentPage = 0;
     await cargarHistorial();
+});
+
+// Paginación
+document.addEventListener('DOMContentLoaded', () => {
+    const btnPrev = document.getElementById('btn-prev-page');
+    const btnNext = document.getElementById('btn-next-page');
+
+    if (btnPrev) {
+        btnPrev.addEventListener('click', () => {
+            if (currentPage > 0) {
+                currentPage--;
+                cargarHistorial();
+            }
+        });
+    }
+
+    if (btnNext) {
+        btnNext.addEventListener('click', () => {
+            currentPage++;
+            cargarHistorial();
+        });
+    }
 });
 
 async function cargarHistorial() {
     const container = document.getElementById('trips-container');
+    const paginationControls = document.getElementById('pagination-controls');
     if (!container) return;
 
     const desde = document.getElementById('filtroDesde').value;
     const hasta = document.getElementById('filtroHasta').value;
-    const soloCancelados = document.getElementById('filtroSoloCancelados').checked;
+    const paymentStatus = document.getElementById('filtroEstadoPago').value;
 
     container.innerHTML = '<p class="text-center text-muted mt-lg">Cargando historial...</p>';
+    paginationControls.style.display = 'none';
 
     try {
-        const endpoint = soloCancelados ? '/chofer/traslados/cancelados' : '/chofer/traslados';
         const params = new URLSearchParams();
+        params.set('page', currentPage);
+        params.set('size', pageSize);
         if (desde) params.set('desde', desde);
         if (hasta) params.set('hasta', hasta);
-        const query = params.toString() ? `?${params.toString()}` : '';
+        if (paymentStatus) params.set('paymentStatus', paymentStatus);
 
-        const response = await fetchAPI(`${endpoint}${query}`);
-        const viajes = response.data || response;
+        const response = await fetchAPI(`/chofer/traslados?${params.toString()}`);
+        const pageData = response.data || response;
+        const viajes = pageData.content || pageData || [];
 
         if (!viajes || viajes.length === 0) {
             container.innerHTML = '<p class="text-center text-muted mt-lg">No hay viajes que coincidan con este filtro.</p>';
             return;
         }
 
-        renderTrips(container, viajes);
+        renderTrips(container, viajes, paymentStatus);
+
+        // Configurar paginación
+        if (pageData.totalPages !== undefined) {
+            paginationControls.style.display = 'flex';
+            document.getElementById('page-info').textContent = `Página ${pageData.number + 1} de ${pageData.totalPages || 1}`;
+            document.getElementById('btn-prev-page').disabled = pageData.first;
+            document.getElementById('btn-next-page').disabled = pageData.last;
+        }
 
     } catch (err) {
         container.innerHTML = `<p class="text-center text-error mt-lg">Error al cargar historial: ${err.message}</p>`;
     }
 }
 
-function renderTrips(container, viajes) {
+function renderTrips(container, viajes, paymentStatus) {
     container.innerHTML = '';
 
     viajes.forEach(viaje => {
@@ -73,12 +112,22 @@ function renderTrips(container, viajes) {
             bgColor = 'var(--color-success-bg)';
         }
 
-        // Fallback for amount if not provided by API
+        // Mostrar monto del chofer (70%)
         let montoDisplay = '';
         if (viaje.driverAmountUsd) {
             montoDisplay = `$ ${viaje.driverAmountUsd.toFixed(2)}`;
         } else {
             montoDisplay = isCanceled ? 'Cancelado' : (isCompleted ? 'Completado' : viaje.status);
+        }
+
+        // Badge de estado de pago para viajes completados
+        let paymentBadge = '';
+        if (isCompleted && viaje.pagadoAlChofer != null) {
+            if (viaje.pagadoAlChofer) {
+                paymentBadge = '<div style="font-size: 11px; font-weight: 600; color: #2E7D32; background: #E8F5E9; padding: 2px 8px; border-radius: 4px; margin-top: 4px; display: inline-block;">Pagado</div>';
+            } else {
+                paymentBadge = '<div style="font-size: 11px; font-weight: 600; color: #E65100; background: #FFF3E0; padding: 2px 8px; border-radius: 4px; margin-top: 4px; display: inline-block;">Pendiente</div>';
+            }
         }
 
         const originName = viaje.originZone ? (viaje.originZone.name || viaje.originZone.nombre) : (viaje.originAddress || 'Zona Origen');
@@ -104,6 +153,7 @@ function renderTrips(container, viajes) {
                 </div>
                 <div class="trip-amount">
                     <div class="trip-usd" style="color: ${iconColor}; font-size: 14px; font-weight: bold;">${montoDisplay}</div>
+                    ${paymentBadge}
                     ${viaje.starRating != null ? `
                         <button class="btn-secondary" style="padding: 4px 8px; font-size: 11px; margin-top: 4px; background-color:#FFD700; color:#000; border:none;" onclick="window.location.href='/views/chofer-resenas.html?tripId=${viaje.id}'">
                             Ver Reseña

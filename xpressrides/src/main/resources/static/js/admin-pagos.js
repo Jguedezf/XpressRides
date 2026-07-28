@@ -7,6 +7,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     await cargarHistorialPagos();
 });
 
+let datosPendientes = [];
+let datosHistorialPagos = [];
+
+const PAGE_SIZE = 10;
+let currentPagePendientes = 1;
+let currentPageHistorialPagos = 1;
+
+function renderPaginatedTable(data, currentPage, tbodyId, paginationId, pageInfoId, renderRowFn) {
+    const tbody = document.getElementById(tbodyId);
+    const paginationDiv = document.getElementById(paginationId);
+    const pageInfo = document.getElementById(pageInfoId);
+    
+    if (data.length === 0) {
+        paginationDiv.style.display = 'none';
+        return;
+    }
+
+    const totalPages = Math.ceil(data.length / PAGE_SIZE);
+    
+    if (currentPage < 1) currentPage = 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    const startIdx = (currentPage - 1) * PAGE_SIZE;
+    const endIdx = startIdx + PAGE_SIZE;
+    const pageData = data.slice(startIdx, endIdx);
+
+    tbody.innerHTML = '';
+    pageData.forEach(renderRowFn);
+
+    paginationDiv.style.display = 'flex';
+    pageInfo.innerText = `Página ${currentPage} de ${totalPages}`;
+    
+    const baseName = tbodyId === 'tbody-pagos' ? 'pendientes' : 'historial-pagos';
+    const btnPrev = document.getElementById(`btn-prev-${baseName}`);
+    const btnNext = document.getElementById(`btn-next-${baseName}`);
+    
+    btnPrev.disabled = currentPage === 1;
+    btnNext.disabled = currentPage === totalPages;
+}
+
 /* ==========================================
    MÓDULO: PAGOS A CHOFERES (Pendientes)
 ========================================== */
@@ -15,32 +55,49 @@ async function cargarPagosPendientes() {
 
     try {
         const response = await fetchAPI('/reportes/pendientes-pago');
-        const deudas = response.data || [];
+        datosPendientes = response.data || [];
 
-        if (deudas.length === 0) {
+        if (datosPendientes.length === 0) {
             tbodyPagos.innerHTML = '<tr><td colspan="5" class="text-center" style="color: var(--color-success);">¡Todo al día! No hay pagos pendientes.</td></tr>';
+            document.getElementById('pagination-pendientes').style.display = 'none';
             return;
         }
 
-        tbodyPagos.innerHTML = ''; 
-
-        deudas.forEach(deuda => {
-            tbodyPagos.innerHTML += `
-                <tr>
-                    <td>${deuda.driverName}</td>
-                    <td>${deuda.pendingTrips} viajes</td>
-                    <td style="font-weight: bold; color: var(--color-success);">$ ${Number(deuda.accumulatedBalanceUsd).toFixed(2)}</td>
-                    <td><span style="background-color: #FCE4D6; color: #C00000; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">PENDIENTE</span></td>
-                    <td>
-                        <button class="btn-secondary" style="padding: 6px 12px; font-size: 13px;" onclick="abrirModalPago(${deuda.driverId}, '${deuda.driverName}', ${deuda.accumulatedBalanceUsd})">Registrar Pago</button>
-                    </td>
-                </tr>
-            `;
-        });
+        currentPagePendientes = 1;
+        renderPaginatedTable(datosPendientes, currentPagePendientes, 'tbody-pagos', 'pagination-pendientes', 'page-info-pendientes', renderRowPendientes);
     } catch (error) {
         tbodyPagos.innerHTML = `<tr><td colspan="5" class="text-center" style="color: var(--color-error);">Error: ${error.message}</td></tr>`;
     }
 }
+
+function renderRowPendientes(deuda) {
+    const tbodyPagos = document.getElementById('tbody-pagos');
+    tbodyPagos.innerHTML += `
+        <tr>
+            <td>${deuda.driverName}</td>
+            <td>${deuda.pendingTrips} viajes</td>
+            <td style="font-weight: bold; color: var(--color-success);">$ ${Number(deuda.accumulatedBalanceUsd).toFixed(2)}</td>
+            <td><span style="background-color: #FCE4D6; color: #C00000; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">PENDIENTE</span></td>
+            <td>
+                <button class="btn-secondary" style="padding: 6px 12px; font-size: 13px;" onclick="abrirModalPago(${deuda.driverId}, '${deuda.driverName}', ${deuda.accumulatedBalanceUsd})">Registrar Pago</button>
+            </td>
+        </tr>
+    `;
+}
+
+document.getElementById('btn-prev-pendientes').addEventListener('click', () => {
+    if (currentPagePendientes > 1) {
+        currentPagePendientes--;
+        renderPaginatedTable(datosPendientes, currentPagePendientes, 'tbody-pagos', 'pagination-pendientes', 'page-info-pendientes', renderRowPendientes);
+    }
+});
+document.getElementById('btn-next-pendientes').addEventListener('click', () => {
+    const totalPages = Math.ceil(datosPendientes.length / PAGE_SIZE);
+    if (currentPagePendientes < totalPages) {
+        currentPagePendientes++;
+        renderPaginatedTable(datosPendientes, currentPagePendientes, 'tbody-pagos', 'pagination-pendientes', 'page-info-pendientes', renderRowPendientes);
+    }
+});
 
 /* ==========================================
    MÓDULO: HISTORIAL DE PAGOS
@@ -58,42 +115,59 @@ async function cargarHistorialPagos() {
         if (nombre) url += `nombre=${encodeURIComponent(nombre)}`;
 
         const response = await fetchAPI(url);
-        const pagos = response.data || [];
+        datosHistorialPagos = response.data || [];
 
-        if (pagos.length === 0) {
+        if (datosHistorialPagos.length === 0) {
             tbodyHistorial.innerHTML = '<tr><td colspan="6" class="text-center">No se encontraron pagos con los filtros aplicados.</td></tr>';
+            document.getElementById('pagination-historial-pagos').style.display = 'none';
             return;
         }
 
-        tbodyHistorial.innerHTML = '';
-
-        pagos.forEach(pago => {
-            let fechaStr = 'N/A';
-            let horaStr = '';
-            if (pago.dateTime) {
-                const d = new Date(pago.dateTime);
-                fechaStr = d.toLocaleDateString('es-VE');
-                horaStr = d.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: true });
-            }
-            
-            tbodyHistorial.innerHTML += `
-                <tr>
-                    <td>
-                        ${fechaStr}
-                        <div style="font-size: 0.85em; color: #64748b; margin-top: 2px;">${horaStr}</div>
-                    </td>
-                    <td style="font-weight: 500;">${pago.driverName}</td>
-                    <td style="color: var(--color-success); font-weight: bold;">$ ${Number(pago.amountUsd).toFixed(2)}</td>
-                    <td>Bs. ${Number(pago.amountVes).toFixed(2)}</td>
-                    <td>${pago.bankName}</td>
-                    <td style="font-family: monospace;">${pago.reference}</td>
-                </tr>
-            `;
-        });
+        currentPageHistorialPagos = 1;
+        renderPaginatedTable(datosHistorialPagos, currentPageHistorialPagos, 'tbody-historial', 'pagination-historial-pagos', 'page-info-historial-pagos', renderRowHistorialPagos);
     } catch (error) {
         tbodyHistorial.innerHTML = `<tr><td colspan="6" class="text-center" style="color: var(--color-error);">Error: ${error.message}</td></tr>`;
     }
 }
+
+function renderRowHistorialPagos(pago) {
+    const tbodyHistorial = document.getElementById('tbody-historial');
+    let fechaStr = 'N/A';
+    let horaStr = '';
+    if (pago.dateTime) {
+        const d = new Date(pago.dateTime);
+        fechaStr = d.toLocaleDateString('es-VE');
+        horaStr = d.toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit', hour12: true });
+    }
+    
+    tbodyHistorial.innerHTML += `
+        <tr>
+            <td>
+                ${fechaStr}
+                <div style="font-size: 0.85em; color: #64748b; margin-top: 2px;">${horaStr}</div>
+            </td>
+            <td style="font-weight: 500;">${pago.driverName}</td>
+            <td style="color: var(--color-success); font-weight: bold;">$ ${Number(pago.amountUsd).toFixed(2)}</td>
+            <td>Bs. ${Number(pago.amountVes).toFixed(2)}</td>
+            <td>${pago.bankName}</td>
+            <td style="font-family: monospace;">${pago.reference}</td>
+        </tr>
+    `;
+}
+
+document.getElementById('btn-prev-historial-pagos').addEventListener('click', () => {
+    if (currentPageHistorialPagos > 1) {
+        currentPageHistorialPagos--;
+        renderPaginatedTable(datosHistorialPagos, currentPageHistorialPagos, 'tbody-historial', 'pagination-historial-pagos', 'page-info-historial-pagos', renderRowHistorialPagos);
+    }
+});
+document.getElementById('btn-next-historial-pagos').addEventListener('click', () => {
+    const totalPages = Math.ceil(datosHistorialPagos.length / PAGE_SIZE);
+    if (currentPageHistorialPagos < totalPages) {
+        currentPageHistorialPagos++;
+        renderPaginatedTable(datosHistorialPagos, currentPageHistorialPagos, 'tbody-historial', 'pagination-historial-pagos', 'page-info-historial-pagos', renderRowHistorialPagos);
+    }
+});
 
 // Eventos de filtro
 document.getElementById('form-filtros-historial')?.addEventListener('submit', (e) => {

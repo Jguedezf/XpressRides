@@ -4,6 +4,46 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 let ultimosRegistrosIngresos = [];
+let datosCancelados = [];
+let datosHistorial = [];
+
+const PAGE_SIZE = 10;
+let currentPageGanancias = 1;
+let currentPageCancelados = 1;
+let currentPageHistorial = 1;
+
+function renderPaginatedTable(data, currentPage, tbodyId, paginationId, pageInfoId, renderRowFn) {
+    const tbody = document.getElementById(tbodyId);
+    const paginationDiv = document.getElementById(paginationId);
+    const pageInfo = document.getElementById(pageInfoId);
+    
+    if (data.length === 0) {
+        paginationDiv.style.display = 'none';
+        return;
+    }
+
+    const totalPages = Math.ceil(data.length / PAGE_SIZE);
+    
+    if (currentPage < 1) currentPage = 1;
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    const startIdx = (currentPage - 1) * PAGE_SIZE;
+    const endIdx = startIdx + PAGE_SIZE;
+    const pageData = data.slice(startIdx, endIdx);
+
+    tbody.innerHTML = '';
+    pageData.forEach(renderRowFn);
+
+    paginationDiv.style.display = 'flex';
+    pageInfo.innerText = `Página ${currentPage} de ${totalPages}`;
+    
+    const baseName = tbodyId.split('-')[1]; // ganancias, cancelados, historial
+    const btnPrev = document.getElementById(`btn-prev-${baseName}`);
+    const btnNext = document.getElementById(`btn-next-${baseName}`);
+    
+    btnPrev.disabled = currentPage === 1;
+    btnNext.disabled = currentPage === totalPages;
+}
 
 /* ==========================================
    MÓDULO: GANANCIAS DE LA EMPRESA
@@ -29,42 +69,60 @@ document.getElementById('form-filtro-ganancias').addEventListener('submit', asyn
         ultimosRegistrosIngresos = registros;
 
         if (registros.length === 0) {
-            tbodyGanancias.innerHTML = '<tr><td colspan="4" class="text-center">No hay viajes en este rango de fechas.</td></tr>';
+            tbodyGanancias.innerHTML = '<tr><td colspan="6" class="text-center">No hay viajes en este rango de fechas.</td></tr>';
             totalSpan.innerText = "$ 0.00";
+            document.getElementById('pagination-ganancias').style.display = 'none';
             return;
         }
 
-        tbodyGanancias.innerHTML = '';
         let granTotal = 0;
-
         registros.forEach(reg => {
-            const ganancia = Number(reg.totalCompanyUsd || 0);
-            const costoMovido = Number(reg.totalCostUsd || 0);
-            const descuento = Number(reg.discountUsd || 0);
-            
-            granTotal += ganancia;
-            tbodyGanancias.innerHTML += `
-                <tr>
-                    <td>#${reg.id}</td>
-                    <td>${reg.date}</td>
-                    <td>$ ${costoMovido.toFixed(2)}</td>
-                    <td style="color: var(--color-error);">- $ ${descuento.toFixed(2)}</td>
-                    <td style="color: ${ganancia < 0 ? 'var(--color-error)' : 'var(--color-success)'}; font-weight: bold;">
-                        ${ganancia < 0 ? '' : '+ '} $ ${ganancia.toFixed(2)}
-                    </td>
-                    <td style="font-size: 13px;">${reg.concept}</td>
-                </tr>
-            `;
+            granTotal += Number(reg.totalCompanyUsd || 0);
         });
-
-        // Actualizamos el gran total abajo de la tabla
         totalSpan.innerText = `$ ${granTotal.toFixed(2)}`;
 
+        currentPageGanancias = 1;
+        renderPaginatedTable(ultimosRegistrosIngresos, currentPageGanancias, 'tbody-ganancias', 'pagination-ganancias', 'page-info-ganancias', renderRowGanancias);
+
     } catch (error) {
-        tbodyGanancias.innerHTML = `<tr><td colspan="4" class="text-center" style="color: var(--color-error);">Error: ${error.message}</td></tr>`;
+        tbodyGanancias.innerHTML = `<tr><td colspan="6" class="text-center" style="color: var(--color-error);">Error: ${error.message}</td></tr>`;
     } finally {
         btn.innerText = originalText;
         btn.disabled = false;
+    }
+});
+
+function renderRowGanancias(reg) {
+    const tbodyGanancias = document.getElementById('tbody-ganancias');
+    const ganancia = Number(reg.totalCompanyUsd || 0);
+    const costoMovido = Number(reg.totalCostUsd || 0);
+    const descuento = Number(reg.discountUsd || 0);
+    
+    tbodyGanancias.innerHTML += `
+        <tr>
+            <td>#${reg.id}</td>
+            <td>${reg.date}</td>
+            <td>$ ${costoMovido.toFixed(2)}</td>
+            <td style="color: var(--color-error);">- $ ${descuento.toFixed(2)}</td>
+            <td style="color: ${ganancia < 0 ? 'var(--color-error)' : 'var(--color-success)'}; font-weight: bold;">
+                ${ganancia < 0 ? '' : '+ '} $ ${ganancia.toFixed(2)}
+            </td>
+            <td style="font-size: 13px;">${reg.concept}</td>
+        </tr>
+    `;
+}
+
+document.getElementById('btn-prev-ganancias').addEventListener('click', () => {
+    if (currentPageGanancias > 1) {
+        currentPageGanancias--;
+        renderPaginatedTable(ultimosRegistrosIngresos, currentPageGanancias, 'tbody-ganancias', 'pagination-ganancias', 'page-info-ganancias', renderRowGanancias);
+    }
+});
+document.getElementById('btn-next-ganancias').addEventListener('click', () => {
+    const totalPages = Math.ceil(ultimosRegistrosIngresos.length / PAGE_SIZE);
+    if (currentPageGanancias < totalPages) {
+        currentPageGanancias++;
+        renderPaginatedTable(ultimosRegistrosIngresos, currentPageGanancias, 'tbody-ganancias', 'pagination-ganancias', 'page-info-ganancias', renderRowGanancias);
     }
 });
 
@@ -86,36 +144,53 @@ document.getElementById('form-filtro-cancelados').addEventListener('submit', asy
 
     try {
         const response = await fetchAPI(`/reportes/cancelados?desde=${fechaInicio}&hasta=${fechaFin}`);
-        const registros = response.data || [];
+        datosCancelados = response.data || [];
 
-        if (registros.length === 0) {
+        if (datosCancelados.length === 0) {
             tbodyCancelados.innerHTML = '<tr><td colspan="8" class="text-center">No hay traslados cancelados en este rango de fechas.</td></tr>';
+            document.getElementById('pagination-cancelados').style.display = 'none';
             return;
         }
 
-        tbodyCancelados.innerHTML = '';
-
-        registros.forEach(reg => {
-            const fecha = reg.requestDate ? new Date(reg.requestDate).toLocaleString('es-VE') : '';
-            tbodyCancelados.innerHTML += `
-                <tr>
-                    <td>#${reg.id}</td>
-                    <td>${fecha}</td>
-                    <td>${reg.customerName || ''}</td>
-                    <td>${reg.driverName || ''}</td>
-                    <td>${reg.originZone || ''}</td>
-                    <td>${reg.destinationZone || ''}</td>
-                    <td style="text-transform: capitalize;">${reg.cancelledBy || ''}</td>
-                    <td>${reg.cancellationReason || ''}</td>
-                </tr>
-            `;
-        });
+        currentPageCancelados = 1;
+        renderPaginatedTable(datosCancelados, currentPageCancelados, 'tbody-cancelados', 'pagination-cancelados', 'page-info-cancelados', renderRowCancelados);
 
     } catch (error) {
         tbodyCancelados.innerHTML = `<tr><td colspan="8" class="text-center" style="color: var(--color-error);">Error: ${error.message}</td></tr>`;
     } finally {
         btn.innerText = originalText;
         btn.disabled = false;
+    }
+});
+
+function renderRowCancelados(reg) {
+    const tbodyCancelados = document.getElementById('tbody-cancelados');
+    const fecha = reg.requestDate ? new Date(reg.requestDate).toLocaleString('es-VE') : '';
+    tbodyCancelados.innerHTML += `
+        <tr>
+            <td>#${reg.id}</td>
+            <td>${fecha}</td>
+            <td>${reg.customerName || ''}</td>
+            <td>${reg.driverName || ''}</td>
+            <td>${reg.originZone || ''}</td>
+            <td>${reg.destinationZone || ''}</td>
+            <td style="text-transform: capitalize;">${reg.cancelledBy || ''}</td>
+            <td>${reg.cancellationReason || ''}</td>
+        </tr>
+    `;
+}
+
+document.getElementById('btn-prev-cancelados').addEventListener('click', () => {
+    if (currentPageCancelados > 1) {
+        currentPageCancelados--;
+        renderPaginatedTable(datosCancelados, currentPageCancelados, 'tbody-cancelados', 'pagination-cancelados', 'page-info-cancelados', renderRowCancelados);
+    }
+});
+document.getElementById('btn-next-cancelados').addEventListener('click', () => {
+    const totalPages = Math.ceil(datosCancelados.length / PAGE_SIZE);
+    if (currentPageCancelados < totalPages) {
+        currentPageCancelados++;
+        renderPaginatedTable(datosCancelados, currentPageCancelados, 'tbody-cancelados', 'pagination-cancelados', 'page-info-cancelados', renderRowCancelados);
     }
 });
 
@@ -137,37 +212,54 @@ document.getElementById('form-filtro-historial').addEventListener('submit', asyn
 
     try {
         const response = await fetchAPI(`/reportes/historial-traslados?desde=${fechaInicio}&hasta=${fechaFin}`);
-        const registros = response.data || [];
+        datosHistorial = response.data || [];
 
-        if (registros.length === 0) {
+        if (datosHistorial.length === 0) {
             tbodyHistorial.innerHTML = '<tr><td colspan="8" class="text-center">No hay traslados en este rango de fechas.</td></tr>';
+            document.getElementById('pagination-historial').style.display = 'none';
             return;
         }
 
-        tbodyHistorial.innerHTML = '';
-
-        registros.forEach(reg => {
-            const fecha = reg.requestDate ? new Date(reg.requestDate).toLocaleString('es-VE') : '';
-            const costo = reg.customerCostUsd != null ? Number(reg.customerCostUsd).toFixed(2) : '0.00';
-            tbodyHistorial.innerHTML += `
-                <tr>
-                    <td>#${reg.id}</td>
-                    <td>${fecha}</td>
-                    <td>${reg.customerName || ''}</td>
-                    <td>${reg.driverName || ''}</td>
-                    <td>${reg.originZone || ''}</td>
-                    <td>${reg.destinationZone || ''}</td>
-                    <td style="text-transform: capitalize;">${reg.status || ''}</td>
-                    <td>$ ${costo}</td>
-                </tr>
-            `;
-        });
+        currentPageHistorial = 1;
+        renderPaginatedTable(datosHistorial, currentPageHistorial, 'tbody-historial', 'pagination-historial', 'page-info-historial', renderRowHistorial);
 
     } catch (error) {
         tbodyHistorial.innerHTML = `<tr><td colspan="8" class="text-center" style="color: var(--color-error);">Error: ${error.message}</td></tr>`;
     } finally {
         btn.innerText = originalText;
         btn.disabled = false;
+    }
+});
+
+function renderRowHistorial(reg) {
+    const tbodyHistorial = document.getElementById('tbody-historial');
+    const fecha = reg.requestDate ? new Date(reg.requestDate).toLocaleString('es-VE') : '';
+    const costo = reg.customerCostUsd != null ? Number(reg.customerCostUsd).toFixed(2) : '0.00';
+    tbodyHistorial.innerHTML += `
+        <tr>
+            <td>#${reg.id}</td>
+            <td>${fecha}</td>
+            <td>${reg.customerName || ''}</td>
+            <td>${reg.driverName || ''}</td>
+            <td>${reg.originZone || ''}</td>
+            <td>${reg.destinationZone || ''}</td>
+            <td style="text-transform: capitalize;">${reg.status || ''}</td>
+            <td>$ ${costo}</td>
+        </tr>
+    `;
+}
+
+document.getElementById('btn-prev-historial').addEventListener('click', () => {
+    if (currentPageHistorial > 1) {
+        currentPageHistorial--;
+        renderPaginatedTable(datosHistorial, currentPageHistorial, 'tbody-historial', 'pagination-historial', 'page-info-historial', renderRowHistorial);
+    }
+});
+document.getElementById('btn-next-historial').addEventListener('click', () => {
+    const totalPages = Math.ceil(datosHistorial.length / PAGE_SIZE);
+    if (currentPageHistorial < totalPages) {
+        currentPageHistorial++;
+        renderPaginatedTable(datosHistorial, currentPageHistorial, 'tbody-historial', 'pagination-historial', 'page-info-historial', renderRowHistorial);
     }
 });
 

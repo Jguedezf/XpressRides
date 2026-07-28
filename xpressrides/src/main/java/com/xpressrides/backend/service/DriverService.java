@@ -4,6 +4,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -137,15 +140,44 @@ public class DriverService {
         return response;
     }
 
-    public List<Trip> getTrips(String username, LocalDate desde, LocalDate hasta) {
-        if (desde != null || hasta != null) {
-            LocalDateTime start = desde != null ? desde.atStartOfDay() : LocalDate.of(1970, 1, 1).atStartOfDay();
-            LocalDateTime end = hasta != null ? hasta.atTime(23, 59, 59) : LocalDate.of(2099, 12, 31).atTime(23, 59, 59);
+    public Page<Trip> getTrips(String username, int page, int size,
+                               LocalDate desde, LocalDate hasta, String paymentStatus) {
+        Pageable pageable = PageRequest.of(page, size);
+        boolean hasDateFilter = desde != null || hasta != null;
+        LocalDateTime start = desde != null ? desde.atStartOfDay() : LocalDate.of(1970, 1, 1).atStartOfDay();
+        LocalDateTime end = hasta != null ? hasta.atTime(23, 59, 59) : LocalDate.of(2099, 12, 31).atTime(23, 59, 59);
+
+        // Filtro por estado de pago (solo aplica a viajes completados)
+        if ("paid".equalsIgnoreCase(paymentStatus)) {
+            if (hasDateFilter) {
+                return tripRepository
+                    .findByDriver_Username_UsernameAndStatusAndPagadoAlChoferAndRequestDateBetweenOrderByRequestDateDesc(
+                        username, "completado", true, start, end, pageable);
+            }
+            return tripRepository
+                .findByDriver_Username_UsernameAndStatusAndPagadoAlChoferOrderByRequestDateDesc(
+                    username, "completado", true, pageable);
+        }
+
+        if ("pending".equalsIgnoreCase(paymentStatus)) {
+            if (hasDateFilter) {
+                return tripRepository
+                    .findByDriver_Username_UsernameAndStatusAndPagadoAlChoferAndRequestDateBetweenOrderByRequestDateDesc(
+                        username, "completado", false, start, end, pageable);
+            }
+            return tripRepository
+                .findByDriver_Username_UsernameAndStatusAndPagadoAlChoferOrderByRequestDateDesc(
+                    username, "completado", false, pageable);
+        }
+
+        // Sin filtro de pago: todos los viajes
+        if (hasDateFilter) {
             return tripRepository
                 .findByDriver_Username_UsernameAndRequestDateBetweenOrderByRequestDateDesc(
-                    username, start, end);
+                    username, start, end, pageable);
         }
-        return tripRepository.findByDriver_Username_UsernameOrderByRequestDateDesc(username);
+        return tripRepository
+            .findByDriver_Username_UsernameOrderByRequestDateDesc(username, pageable);
     }
 
     public List<Trip> getCancelledTrips(String username, LocalDate desde, LocalDate hasta) {

@@ -652,3 +652,24 @@ input:checked + .toggle-slider:before {
 
 .premium-table td { padding: 14px 16px; border-bottom: 1px solid #E2E8F0; vertical-align: middle; }
 .premium-table tbody tr:last-child td { border-bottom: none; }
+
+/* --- 8. PAGINACIÓN --- */
+.pagination-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+    gap: 16px;
+}
+.pagination-info {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text-main);
+    white-space: nowrap;
+    flex: 1 1 auto;
+    text-align: center;
+}
+.btn-pagination {
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+}
