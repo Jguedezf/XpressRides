@@ -246,6 +246,83 @@
     .ticket { width: 100%; max-width: 320px; }
     .chip { width: 148px; }
   }
+
+  /* ── Video Section ── */
+  .video-section {
+    padding: 80px 0;
+    background: linear-gradient(165deg, var(--azul-noche) 0%, var(--azul-profundo) 55%, #1a3a5c 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .video-section::before {
+    content: '';
+    position: absolute;
+    top: -120px; right: -120px;
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(217,84,26,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .video-section::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; left: -80px;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(46,117,182,0.2) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .video-section .section-head {
+    color: #fff;
+  }
+  .video-section .section-head h2 {
+    color: #fff;
+  }
+  .video-section .eyebrow {
+    color: rgba(255,255,255,0.7);
+  }
+  .video-card {
+    max-width: 860px;
+    margin: 0 auto;
+    background: rgba(255,255,255,0.06);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 14px;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.35);
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+  }
+  .video-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 40px 80px -20px rgba(0,0,0,0.45);
+  }
+  .video-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #0a1a2e;
+  }
+  .video-wrapper iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+  .video-caption {
+    text-align: center;
+    margin-top: 18px;
+    color: rgba(255,255,255,0.55);
+    font-size: 0.88rem;
+    letter-spacing: 0.02em;
+  }
+  @media (max-width: 768px) {
+    .video-section { padding: 50px 0; }
+    .video-card { margin: 0 8px; }
+  }
 </style>
 <style>
   @keyframes btnPulseRing {
@@ -364,6 +441,27 @@
         <h3>También te llevamos hasta la ayuda</h3>
         <p>¿Quieres llevar tu aporte a un centro de acopio de ayuda humanitaria para los afectados por los terremotos? Pide tu viaje como siempre — nosotros te llevamos hasta allá.</p>
       </div>
+    </div>
+  </div>
+</section>
+
+<section class="video-section">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Conoce el proyecto</div>
+      <h2>Mira XpressRides en acción</h2>
+    </div>
+    <div class="video-card">
+      <div class="video-wrapper">
+        <iframe
+          src="https://www.youtube.com/embed/R-2IdJoCgO8"
+          title="XpressRides — Video de presentación del proyecto"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allowfullscreen>
+        </iframe>
+      </div>
+      <p class="video-caption">Presentación del proyecto — UNEG · Sistemas de Base de Datos I</p>
     </div>
   </div>
 </section>
