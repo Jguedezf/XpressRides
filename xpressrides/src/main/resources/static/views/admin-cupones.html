@@ -157,6 +157,48 @@
         </div>
     </section>
 
+    <!-- Modal reutilizable para asignar, confirmar y mostrar resultados -->
+    <div id="modal-cupones-overlay" style="
+        display:none; position:fixed; inset:0; z-index:9999;
+        background:rgba(0,0,0,0.5); backdrop-filter:blur(2px);
+        align-items:center; justify-content:center;">
+        <div id="modal-cupones-content" style="
+            background:white; border-radius:12px; padding:28px 32px;
+            max-width:440px; width:90%; box-shadow:0 8px 30px rgba(0,0,0,0.25);
+            font-family:inherit; animation: modalFadeIn 0.2s ease-out;">
+            <!-- Se llena dinámicamente -->
+        </div>
+    </div>
+
+    <style>
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        #modal-cupones-overlay.show { display: flex !important; }
+        .modal-title { margin:0 0 6px 0; font-size:18px; font-weight:700; color:var(--color-secondary); }
+        .modal-subtitle { margin:0 0 18px 0; font-size:14px; color:var(--color-text-muted); }
+        .modal-input {
+            width:100%; padding:10px 14px; border:1px solid #CBD5E1; border-radius:8px;
+            font-size:14px; font-family:inherit; box-sizing:border-box;
+            outline:none; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .modal-input:focus { border-color:var(--color-primary); box-shadow:0 0 0 3px rgba(31,78,121,0.12); }
+        .modal-actions { display:flex; gap:10px; margin-top:20px; }
+        .modal-actions button { flex:1; padding:10px 16px; border:none; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; font-family:inherit; transition:background 0.2s, transform 0.1s; }
+        .modal-actions button:active { transform:scale(0.97); }
+        .modal-btn-primary { background:var(--color-primary); color:white; }
+        .modal-btn-primary:hover { background:#163d5c; }
+        .modal-btn-danger { background:#dc3545; color:white; }
+        .modal-btn-danger:hover { background:#c82333; }
+        .modal-btn-cancel { background:#E2E8F0; color:var(--color-text-main); }
+        .modal-btn-cancel:hover { background:#CBD5E1; }
+        .modal-btn-success { background:#2E7D32; color:white; }
+        .modal-btn-success:hover { background:#256d29; }
+        .modal-icon { font-size:36px; margin-bottom:10px; }
+        .modal-result-msg { font-size:14px; color:var(--color-text-main); line-height:1.6; margin:12px 0 0 0; }
+    </style>
+
 </main>
 
 <script src="/js/api.js"></script>
